@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <title>Blender Render (& Cycles)</title>
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+</head>
+
+<body>
+<div id="app">
+    <div class="container ">
+        <h1 class="title is-1">Blender Rendering</h1>
+        <div class="columns">
+            <div class="column is-6">
+                <span v-if="!render_active">
+                <b-field class="file">
+                    <b-upload v-model="blend" accept=".blend">
+                        <a class="button is-primary">
+                            <b-icon icon="upload"></b-icon>
+                            <span>Click to upload a .blend file</span>
+                        </a>
+                    </b-upload>
+                    <span class="file-name  is-centered" v-if="blend">
+                        {{ blend.name }}
+                    </span>
+                </b-field>
+                <b-field label="Render Options">
+                    <b-checkbox v-model="gpu_render">
+                        Render with {{gpu_render?"GPU":"CPU"}}
+                    </b-checkbox>
+                </b-field>
+                <b-field label="Frame Options">
+                    <b-checkbox v-model="all_frames">
+                        Render all frames
+                    </b-checkbox>
+                </b-field>
+                <span v-if="!all_frames">
+                    <b-field label="Starting Frame">
+                            <b-numberinput :min="0" :max="frame_stop" :disabled="all_frames" v-model="frame_start"></b-numberinput>
+                    </b-field>
+                    <b-field label="Ending Frame">
+                        <b-numberinput :min="frame_start>0?frame_start:0" :disabled="all_frames" v-model="frame_stop"></b-numberinput>
+                    </b-field>
+                    <br>
+                </span>
+                <b-field label="Python Scripts (Optional)">
+                    <b-taginput
+                        v-model="py_scripts"
+                        type="is-dark">
+                    </b-taginput>
+                </b-field>
+                <b-field label="Extra Command Arguments (Optional)">
+                    <b-input
+                        v-model="extra_args">
+                    </b-input>
+                </b-field>
+                <span v-if="blend != null">
+                <br>
+                <b>Command:</b> {{generateCommand()}}
+                <br>
+                </span>
+                <br>
+                </span>
+                <div class="notification is-dark">
+                    <div v-if="render_active">
+                        <strong class="is-white">A render is currently in progress</strong>
+                        <br><br>
+                    </div>
+                    <b-button :disabled="render_active" type="is-success" @click="startRender()">
+                        Render
+                    </b-button>
+                    <b-button :disabled="!render_active" type="is-danger" outlined @click="cancelRender()">
+                        Cancel
+                    </b-button>
+                </div>
+            </div>
+            <div class="column is-6">
+                <b-field label="Console Output">
+                    <b-input type="textarea" v-model="render_logs" readonly rows=10></b-input>
+                </b-field>
+                <div class="notification is-warning">
+                    <strong>Note: </strong> Stats are not fully implemented, data may be inaccurate.
+                </div>
+                <hr>
+                <h5 class="title is-5">Options</h5>
+                <!-- <b-field expanded>
+                    <b-select placeholder="Update Interval" v-model="opts.stat.update_interval" label="Update Interval">
+                        <option value=15>Update every 15 seconds</option>
+                        <option value=30>Update every 30 seconds</option>
+                        <option value=45>Update every 45 seconds</option>
+                        <option value=60>Update every 60 seconds</option>
+                    </b-select>
+                </b-field> -->
+                <b-field expanded>
+                    <b-checkbox v-model="opts.stat.celsius">
+                        Use Celsius
+                    </b-checkbox>
+                </b-field>
+                <hr>
+                <b-field :label="'CPU Stats - ' + (stats.cpu.name?stats.cpu.name:'Unknown')">
+                    
+                    <nav :loading="stats.initial" class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU %</p>
+                            <p class="title">{{stats.cpu.usage}}%</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU Temp</p>
+                            <p class="title">{{cm_temp(stats.cpu.temp)}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU Speed</p>
+                            <p class="title">{{stats.cpu.speed}} GHz</p>
+                            </div>
+                        </div>
+                    </nav>
+                </b-field>
+                <b-field label="GPU Stats" v-if="stats.gpu.length == 0">
+                    No GPU found.
+                </b-field>
+                <b-field v-for="(gpu,index) in stats.gpu" :key="index" :label="'GPU #' + ++index + ' Stats - ' + gpu.name">
+                    
+                    <nav class="level">
+                        <b-loading :is-full-page="false" :active="stats.initial"></b-loading>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU %</p>
+                            <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'n/a'}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU Temp</p>
+                            <p class="title">{{cm_temp(gpu.temp)}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU MEM</p>
+                            <p class="title">{{gpu.vram.current>-1?`${cm_vram(gpu.vram.current,true)}/${cm_vram(gpu.vram.max,true)}`:'n/a'}}</p>
+                            </div>
+                        </div>
+                    </nav>
+                </b-field>
+            </div>
+        </div>
+        <br>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue"></script>
+<script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+let socket;
+var app = new Vue({
+    el: '#app',
+    data:{
+        render_logs:'',
+        render_active:false,
+        extra_args:"",
+        py_scripts:[],
+        gpu_render:true,
+        all_frames:true,
+        frame_start:0,
+        frame_stop:0,
+        blend:null,
+        stats:{
+            initial:true,
+            cpu:{
+                usage:0,
+                speed:0,
+                temp:0,
+                fan_speed:0,
+            },
+            gpu:[
+                
+            ]
+        },
+        opts:{
+            stat:{
+                update_interval:30,
+                celsius:false
+            }
+        }
+    },
+    mounted:function() {
+        //this.fetchStats();
+        socket = io.connect('http://localhost:8095');
+        socket.on('connect', () => console.info("Connected to socket"));
+        socket.on('stat', (data) => {
+            this.stats = data;
+        });
+        socket.on('log',data => {
+            console.log(data)
+            if(data.clear) this.render_logs = "";
+            if(data.message) this.render_logs+= data.message;
+            if(data.messages) data.messages.forEach(v => this.render_logs += v)
+            
+        })
+        socket.on('run_error',(data) => {
+            this.$toast.open({
+                type:'is-danger',
+                message:data
+            })
+        })
+        socket.on('disconnect', () => console.error("Disconnected from socket"));
+    },
+    methods:{
+        generateCommand: function() {
+            if(!this.blend) return "[No file selected]"
+            const type = this.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
+            const scripts = this.py_scripts.map(v => `-P ${v}`)
+            return `${type} ${this.blend.name} ${this.all_frames?'':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
+        },
+        startRender: function() {
+            if(!this.blend) {
+                return this.$dialog.alert({
+                    title: 'Render Failed',
+                    message: 'A valid .blend file was not provided',
+                    type: 'is-danger',
+                    hasIcon: true,
+                    icon: 'alert-circle'
+                })
+            }
+            this.render_logs = "";
+            socket.emit('start',{
+                blend:this.blend.name, //need to upload it but sush
+                mode:this.gpu_render?'cpu':'gpu',
+                frames:(this.all_frames)?null:[this.frame_start,this.frame_stop],
+                scripts:this.py_scripts,
+                extra_args:this.extra_args
+            },response => {
+                console.debug(response)
+                if(response.success) {
+                    this.$toast.open({
+                        type:'is-success',
+                        message:'Render has been started.'
+                    })
+                    this.render_active = true;
+                }else if(response.error) {
+                    this.$toast.open({
+                        type:'is-danger',
+                        message:response.error
+                    })
+                }
+            })
+        },
+        cancelRender: function() {
+            this.$toast.open({
+                type:'is-warning',
+                message:'Render has been cancelled'
+            })
+            this.render_active = false;
+        },
+        cm_temp: function(val) {
+            if(val===-1) return "n/a";
+            if(this.opts.stat.celsius) {
+                const c = Math.round((5/9) * (val-32))
+                return c+"°C";
+            }else{
+                return val+"°F";
+            }
+        },
+        cm_vram: function humanFileSize(B,i){var e=i?1e3:1024;if(Math.abs(B)<e)return B+" B";var a=i?["kB","MB","GB","TB","PB","EB","ZB","YB"]:["KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"],t=-1;do B/=e,++t;while(Math.abs(B)>=e&&t<a.length-1);return B.toFixed(1)+" "+a[t]}
+    }
+})
+</script>
+</body>
+</html>
+
