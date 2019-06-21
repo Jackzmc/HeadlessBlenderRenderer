@@ -17,6 +17,11 @@ app.use(express.static("public"))
 app.get('/socket.io-file-client.js', (req, res, next) => {
     return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
 });
+app.get('/download/:name',(req,res) => {
+    res.sendFile('/home/ezra/zips/' + req.params.name,(err) => {
+        if(err) res.status(404).send("File Not Found")
+    });
+})
 
 app.get('*',(req,res) => {
     res.status(404).send("<h1>404</h1>")

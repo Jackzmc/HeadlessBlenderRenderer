@@ -73,6 +73,12 @@
                         Stop
                     </b-button>
                 </div>
+                <b-field>
+                    <a @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth">
+                        <b-icon icon="download"></b-icon>
+                        <span>Download ZIPs</span>
+                    </a>
+                </b-field>
             </div>
             <div class="column is-6">
                 <b-field label="Console Output">
@@ -151,7 +157,7 @@
     <b-modal :active.sync="blend_chooser.active">
         <div class="box">
             <h3 class='title is-3'>Blend File Chooser</h3>
-            <b-loading :is-full-page="false" :active.sync="blend_chooser.blends == null" :can-cancel="true"></b-loading>
+            <b-loading :is-full-page="false" :active.sync="blend_chooser.blends == null"></b-loading>
             <p v-if="blend_chooser.blends == null">Loading blends...</p>
             <h5 class="title is-5">Existing Blend Files</h5>
             <b-table
@@ -161,7 +167,7 @@
             :loading="blend_chooser.blends == null">
 
             <template slot-scope="props">
-                <b-table-column field="name" label="Name" width="40">
+                <b-table-column field="name" label="Name">
                     {{ props.row.name }}
                 </b-table-column>
 
@@ -223,12 +229,51 @@
             </b-field>
         </div>
     </b-modal>
+    <b-modal :active.sync="zips.active">
+        <div class="box">
+            <h3 class='title is-3'>Download ZIPs</h3>
+            <b-loading :is-full-page="false" :active.sync="zips.list == null"></b-loading>
+            <p v-if="zips.list == null">Loading zips...</p>
+            <b-table
+            :data="zips.list||[]"
+            :striped="true"
+            :hoverable="true"
+            :loading="zips.list == null">
+
+            <template slot-scope="props">
+                <b-table-column field="name" label="Name">
+                    {{ props.row.name }}
+                </b-table-column>
+
+                <b-table-column label="Action">
+                    <a @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
+                </b-table-column>
+
+            </template>
+
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>Nothing here.</p>
+                    </div>
+                </section>
+            </template>
+            </b-table>
+        </div>
+    </b-modal>
 </div>
 <script src="https://unpkg.com/vue"></script>
 <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/socket.io-file-client.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js" integrity="sha256-k77iqKeo6Og1Lf5mawux2rTxjaV9zUtyOWKVX3VttKE=" crossorigin="anonymous"></script>
 <script>
     
 const params = new Map(location.search.slice(1).split('&').map(kv => kv.split('=')))
@@ -240,6 +285,10 @@ var app = new Vue({
             active:false,
             blends:null,
             uploads:[]
+        },
+        zips:{
+            active:false,
+            list:null
         },
         render_logs:'',
         render_active:false,
@@ -268,6 +317,8 @@ var app = new Vue({
                 celsius:false
             }
         }
+    },
+    computed:{
     },
     created:function() {
         let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
@@ -318,8 +369,18 @@ var app = new Vue({
         socket.on('disconnect', () => console.error("Disconnected from socket"));
     },
     methods:{
+        downloadZip(name) {
+            axios.get('/download/' + name).then((data) => {
+                download(data, name, "application/blender");
+            }).catch(err => {
+                this.$toast.open({
+                    type:'is-danger',
+                    message:'Failed to download zIP'
+                })
+            })
+        },
         deleteDropFile(index) {
-            this.dropFiles.splice(index, 1)
+            this.blend_chooser.uploads.splice(index, 1)
         },
         generateCommand: function() {
             if(!this.blend) return "[No file selected]"
@@ -354,6 +415,24 @@ var app = new Vue({
                     }
                     this.blend_chooser.blends = res.files;
                 })
+            }
+        },
+        refreshZIPs() {
+            if(this.zips.list == null) {
+                socket.emit('zips',null,res => {
+                if(res.error) {
+                    this.zips.active = false;
+                    this.$dialog.alert({
+                        title: 'Failure',
+                        message: 'Could not get a list of zips',
+                        type: 'is-danger',
+                        hasIcon: true,
+                        icon: 'alert-circle'
+                    })
+                    return;
+                }
+                this.zips.list = res.files;
+            })
             }
         },
         startRender: function() {

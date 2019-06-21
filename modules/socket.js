@@ -52,6 +52,16 @@ function main(io) {
                 callback({error:true})
             }
         })
+        socket.on('zips',async(data,callback) => {
+            //return callback({files:[{name:'test.blend'}]})
+            try {
+                const files = await fs.readdir('/home/ezra/zips');
+                callback({files:files.map(v => {return {name:v}})})
+            }catch(err) {
+                console.log(err)
+                callback({error:true})
+            }
+        })
         socket.on('start',async(data,callback) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
