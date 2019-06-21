@@ -1,5 +1,5 @@
 const {execShellCommand,spawnCommand} = require('../modules/utils.js');
-const spawn = require('child_process')
+const {spawn} = require('child_process')
 const SocketIOFile = require('socket.io-file');
 const csv = require('csvtojson')
 const si = require('systeminformation');
