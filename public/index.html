@@ -80,9 +80,6 @@
                 <b-field label="Console Output">
                     <b-input id="el_renderlog" type="textarea" v-model="render_logs" readonly rows=10></b-input>
                 </b-field>
-                <div class="notification is-warning">
-                    <strong>Note: </strong> Stats are not fully implemented, data may be inaccurate.
-                </div>
                 <hr>
                 <h5 class="title is-5">Options</h5>
                 <!-- <b-field expanded>
@@ -208,6 +205,7 @@ var app = new Vue({
             if(data.messages) data.messages.forEach(v => this.render_logs += v)
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
         })
+        socket.on('frame',data => console.log('FRAME:',data))
         socket.on('run_error',(data) => {
             this.$toast.open({
                 type:'is-danger',
@@ -243,11 +241,7 @@ var app = new Vue({
             },response => {
                 console.debug(response)
                 if(response.success) {
-                    this.$toast.open({
-                        type:'is-success',
-                        message:'Render has been started.'
-                    })
-                    this.render_active = true;
+                    //render completed
                 }else if(response.error) {
                     this.$toast.open({
                         type:'is-danger',
@@ -255,6 +249,11 @@ var app = new Vue({
                     })
                 }
             })
+            this.$toast.open({
+                type:'is-success',
+                message:'Render has been started.'
+            })
+            this.render_active = true;
         },
         cancelRender: function() {
             this.$toast.open({

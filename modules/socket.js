@@ -38,9 +38,16 @@ function main(io) {
             });
             running_proc = proc;
             proc.stdout.on('data',(data) => {
-                console.log('[stdout]',data.toString())
+                const msg = data.toString();
+                if(msg.startsWith("Saved:")) {
+                    const frame = msg.match(/\d\d\d\d\.png/).replace('.png','');
+                    const frame_number = parseInt(frame);
+                    socket.emit('frame',frame_number)
+                    //get frame #
+                }
+                console.log('[stdout]',msg)
                 socket.emit('log',{
-                    message:data.toString()
+                    message:msg
                 })
             })
             proc.stderr.on('data',data => {
