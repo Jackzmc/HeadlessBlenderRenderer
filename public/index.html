@@ -16,7 +16,7 @@
             <div class="column is-6">
                 <span v-if="!render_active">
                 <b-field class=file">
-                    <a @click="openBlendChooser()" class="button is-primary">
+                    <a @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
                         <b-icon icon="file"></b-icon>
                         <span>Choose a blend file</span>
                     </a>
@@ -269,20 +269,28 @@ var app = new Vue({
             }
         }
     },
-    mounted:function() {
-        //this.fetchStats();
+    created:function() {
         let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
         let port = params.has('sk_port') ? params.get('sk_port') : '8095'
         socket = io.connect(`//${domain}:${port}`);
         uploader = new SocketIOFileClient(socket);
+    },
+    mounted:function() {
+        //this.fetchStats();
         uploader.on('start', function(fileInfo) {
             console.log('Start uploading', fileInfo);
         });
-        uploader.on('stream', function(fileInfo) {
+        uploader.on('stream', (fileInfo) => {
             console.log('Streaming... sent ' + fileInfo.sent + ' bytes.');
         });
-        uploader.on('complete', function(fileInfo) {
-            console.log('Upload Complete', fileInfo);
+        uploader.on('complete', (fileInfo) => {
+            this.blend_chooser.uploads = [];
+            this.blend_chooser.blends = null;
+            this.$toast.open({
+                type:'is-success',
+                message:'Uploaded all blend files'
+            })
+            this.refreshBlendChooser();
         });
         uploader.on('error', function(err) {
             console.log('Error!', err);
@@ -320,7 +328,7 @@ var app = new Vue({
             return `${type} ${this.blend} ${this.all_frames?'':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
         },
         uploadFiles() {
-            var el = document.getElementById('native')
+            var el = document.getElementById('uploader')
             var uploadIds = uploader.upload(el, {
                 data: { /* Arbitrary data... */ }
             });
@@ -330,8 +338,7 @@ var app = new Vue({
             this.blend = name;
             this.blend_chooser.active = false;
         },
-        openBlendChooser: function() {
-            this.blend_chooser.active = true;
+        refreshBlendChooser: function() {
             if(this.blend_chooser.blends == null) {
                 socket.emit('blends',null,res => {
                     if(res.error) {
