@@ -9,7 +9,7 @@ const {execShellCommand} = require('./modules/utils.js');
 
 
 server.listen(process.env.WEBPORT||8080,() => {
-    console.info('Listening on :' + process.env.WEBPORT||8080)
+    console.info(`Listening on :${process.env.WEBPORT||8080}`)
 })
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
