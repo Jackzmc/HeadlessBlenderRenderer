@@ -371,7 +371,7 @@ var app = new Vue({
     },
     methods:{
         downloadZip(name) {
-            axios.get(`/zip/${name}/download`).then((data) => {
+            axios.get(`zip/${name}/download`).then((data) => {
                 download(data, name, "application/blender");
             }).catch(err => {
                 this.$toast.open({
@@ -381,7 +381,7 @@ var app = new Vue({
             })
         },
         deleteZip(name) {
-            axios.get(`/zip/${name}/delete`).then(r => {
+            axios.get(`zip/${name}/delete`).then(r => {
                 if(r.data.success) {
                     this.$toast.open({
                         type:'is-success',
