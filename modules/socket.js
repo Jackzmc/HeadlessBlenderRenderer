@@ -35,7 +35,7 @@ function main(io) {
                 //data.extra_args
             ],{
                 cwd:'/home/ezra',
-                shell:true
+                shell:'/bin/bash'
             });
             running_proc = proc;
             proc.stdout.on('data',(data) => {
