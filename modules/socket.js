@@ -85,7 +85,7 @@ function main(io) {
                     message:data.toString()
                 })
             })
-            runninc_proc.stderr.on('end', function () {
+            running_proc_proc.stderr.on('end', function () {
                 console.log('Finished collecting data chunks.');
               });
             running_proc.on('error',data => {
