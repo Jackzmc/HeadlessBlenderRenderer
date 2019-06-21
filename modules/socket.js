@@ -53,13 +53,13 @@ function main(io) {
         })
         socket.on('start',async(data,callback) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
-            const py_scripts = data.scripts.map(v => `-P ${v}`);
+            const py_scripts = data.scripts.map(v => `-P "${v}"`);
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             //console.log("run",command);
 
             const proc = spawnCommand(render_prefix,[
-                data.blend,
+                `"data.blend"`,
                 data.frames?data.frames[0]:'all',
                 data.frames?data.frames[1]:'all',
                 py_scripts

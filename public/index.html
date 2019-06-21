@@ -325,7 +325,7 @@ var app = new Vue({
             if(!this.blend) return "[No file selected]"
             const type = this.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
             const scripts = this.py_scripts.map(v => `-P ${v}`)
-            return `${type} ${this.blend} ${this.all_frames?'':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
+            return `${type} "${this.blend}" ${this.all_frames?'all all':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
         },
         uploadFiles() {
             var el = document.getElementById('uploader')
