@@ -14,6 +14,9 @@ server.listen(process.env.WEBPORT||8080,() => {
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(express.static("public"))
+app.get('/socket.io-file-client.js', (req, res, next) => {
+    return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
+});
 
 app.get('*',(req,res) => {
     res.status(404).send("<h1>404</h1>")

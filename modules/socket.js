@@ -1,6 +1,8 @@
 const {execShellCommand,spawnCommand} = require('../modules/utils.js');
+const SocketIOFile = require('socket.io-file');
 const csv = require('csvtojson')
 const si = require('systeminformation');
+const fs = require('fs')
 
 const UPDATE_INTERVAL = process.env.STAT_UPDATE_INTERVAL_SECONDS?1000*process.env.STAT_UPDATE_INTERVAL_SECONDS:30000
 
@@ -16,12 +18,43 @@ module.exports = (server) => {
 }
 function main(io) {
     io.on('connection',socket => {
+        const uploader = new SocketIOFile(socket, {
+            uploadDir: '/home/ezra/blends',							// simple directory
+            accepts: ['application/blender'],		// chrome and some of browsers checking mp3 as 'audio/mp3', not 'audio/mpeg'
+            chunkSize: 10240,							// default is 10240(1KB)
+            transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
+            overwrite: true 							// overwrite file if exists, default is true.
+        });
+        uploader.on('start', (fileInfo) => {
+            console.log('Start uploading');
+            console.log(fileInfo);
+        });
+        uploader.on('stream', (fileInfo) => {
+            console.log(`${fileInfo.wrote} / ${fileInfo.size} byte(s)`);
+        });
+        uploader.on('complete', (fileInfo) => {
+            console.log('Upload Complete.');
+            console.log(fileInfo);
+        });
+        uploader.on('error', (err) => {
+            console.log('Error!', err);
+        });
+        uploader.on('abort', (fileInfo) => {
+            console.log('Aborted: ', fileInfo);
+        });
         console.log("socket connected")
         if(last_stat) socket.emit('stat',last_stat)
-
+        socket.on('blends',async(data,callback) => {
+            return callback({files:[{name:'test.blend'}]})
+            try {
+                const files = await fs.readdir('/home/ezra/blends');
+                callback({files})
+            }catch(err) {
+                callback({error:true})
+            }
+        })
         socket.on('start',async(data,callback) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
-            const frame_option = data.frames?`${data.frames[0]} ${data.frames[1]}`:'* *';
             const py_scripts = data.scripts.map(v => `-P ${v}`);
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`

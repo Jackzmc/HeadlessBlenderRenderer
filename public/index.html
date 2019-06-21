@@ -15,15 +15,13 @@
         <div class="columns">
             <div class="column is-6">
                 <span v-if="!render_active">
-                <b-field class="file">
-                    <b-upload v-model="blend" accept=".blend">
-                        <a class="button is-primary">
-                            <b-icon icon="upload"></b-icon>
-                            <span>Click to upload a .blend file</span>
-                        </a>
-                    </b-upload>
-                    <span class="file-name  is-centered" v-if="blend">
-                        {{ blend.name }}
+                <b-field class=file">
+                    <a @click="openBlendChooser()" class="button is-primary">
+                        <b-icon icon="file"></b-icon>
+                        <span>Choose a blend file</span>
+                    </a>
+                    <span class="file-name" v-if="blend">
+                        {{ blend }}
                     </span>
                 </b-field>
                 <b-field label="Render Options">
@@ -150,18 +148,99 @@
         </div>
         <br>
     </div>
-</div>
+    <b-modal :active.sync="blend_chooser.active">
+        <div class="box">
+            <h3 class='title is-3'>Blend File Chooser</h3>
+            <b-loading :is-full-page="false" :active.sync="blend_chooser.blends == null" :can-cancel="true"></b-loading>
+            <p v-if="blend_chooser.blends == null">Loading blends...</p>
+            <h5 class="title is-5">Existing Blend Files</h5>
+            <b-table
+            :data="blend_chooser.blends||[]"
+            :striped="true"
+            :hoverable="true"
+            :loading="blend_chooser.blends == null">
 
+            <template slot-scope="props">
+                <b-table-column field="name" label="Name" width="40">
+                    {{ props.row.name }}
+                </b-table-column>
+
+                <b-table-column label="Action">
+                    <a @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                </b-table-column>
+
+            </template>
+
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>Nothing here.</p>
+                    </div>
+                </section>
+            </template>
+            </b-table>
+            <hr>
+            <h5 class="title is-5">Upload Blend Files</h5>
+            <b-field>
+                <b-upload id="uploader" v-model="blend_chooser.uploads"
+                    multiple
+                    accept=".blend"
+                    drag-drop>
+                    <section class="section">
+                        <div class="content has-text-centered">
+                            <p>
+                                <b-icon
+                                    icon="upload"
+                                    size="is-large">
+                                </b-icon>
+                            </p>
+                            <p>Drop your files here or click to upload</p>
+                        </div>
+                    </section>
+                </b-upload>
+            </b-field>
+    
+            <div class="tags">
+                <span v-for="(file, index) in blend_chooser.uploads"
+                    :key="index"
+                    class="tag is-primary" >
+                    {{file.name}}
+                    <button class="delete is-small"
+                        type="button"
+                        @click="deleteDropFile(index)">
+                    </button>
+                </span>
+            </div>
+
+            <b-field>
+                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0" type="button is-success">Upload Files</button>
+            </b-field>
+        </div>
+    </b-modal>
+</div>
 <script src="https://unpkg.com/vue"></script>
 <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io-file-client.js"></script>
 <script>
+    
 const params = new Map(location.search.slice(1).split('&').map(kv => kv.split('=')))
-let socket;
+let socket, uploader;
 var app = new Vue({
     el: '#app',
     data:{
+        blend_chooser:{
+            active:false,
+            blends:null,
+            uploads:[]
+        },
         render_logs:'',
         render_active:false,
         extra_args:"",
@@ -193,7 +272,24 @@ var app = new Vue({
     mounted:function() {
         //this.fetchStats();
         let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
-        socket = io.connect(`http://${domain}:8095`);
+        let port = params.has('sk_port') ? params.get('sk_port') : '8095'
+        socket = io.connect(`//${domain}:${port}`);
+        uploader = new SocketIOFileClient(socket);
+        uploader.on('start', function(fileInfo) {
+            console.log('Start uploading', fileInfo);
+        });
+        uploader.on('stream', function(fileInfo) {
+            console.log('Streaming... sent ' + fileInfo.sent + ' bytes.');
+        });
+        uploader.on('complete', function(fileInfo) {
+            console.log('Upload Complete', fileInfo);
+        });
+        uploader.on('error', function(err) {
+            console.log('Error!', err);
+        });
+        uploader.on('abort', function(fileInfo) {
+            console.log('Aborted: ', fileInfo);
+        });
         socket.on('connect', () => console.info("Connected to socket"));
         socket.on('stat', (data) => {
             this.stats = data;
@@ -214,11 +310,44 @@ var app = new Vue({
         socket.on('disconnect', () => console.error("Disconnected from socket"));
     },
     methods:{
+        deleteDropFile(index) {
+            this.dropFiles.splice(index, 1)
+        },
         generateCommand: function() {
             if(!this.blend) return "[No file selected]"
             const type = this.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
             const scripts = this.py_scripts.map(v => `-P ${v}`)
-            return `${type} ${this.blend.name} ${this.all_frames?'':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
+            return `${type} ${this.blend} ${this.all_frames?'':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
+        },
+        uploadFiles() {
+            var el = document.getElementById('native')
+            var uploadIds = uploader.upload(el, {
+                data: { /* Arbitrary data... */ }
+            });
+            console.log(uploadIds)
+        },
+        chooseBlend(name) {
+            this.blend = name;
+            this.blend_chooser.active = false;
+        },
+        openBlendChooser: function() {
+            this.blend_chooser.active = true;
+            if(this.blend_chooser.blends == null) {
+                socket.emit('blends',null,res => {
+                    if(res.error) {
+                        this.blend_chooser.active = false;
+                        this.$dialog.alert({
+                            title: 'Failure',
+                            message: 'Could not get a list of blend files',
+                            type: 'is-danger',
+                            hasIcon: true,
+                            icon: 'alert-circle'
+                        })
+                        return;
+                    }
+                    this.blend_chooser.blends = res.files;
+                })
+            }
         },
         startRender: function() {
             if(!this.blend) {
@@ -232,7 +361,7 @@ var app = new Vue({
             }
             this.render_logs = "";
             socket.emit('start',{
-                blend:this.blend.name, //need to upload it but sush
+                blend:this.blend, //need to upload it but sush
                 mode:this.gpu_render?'cpu':'gpu',
                 frames:(this.all_frames)?null:[this.frame_start,this.frame_stop],
                 scripts:this.py_scripts,
