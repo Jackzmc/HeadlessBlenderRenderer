@@ -96,7 +96,7 @@ function main(io) {
         })
         socket.on('cancel',(data,callback) => {
             if(running_proc) {
-                running_proc.kill();
+                running_proc.kill('SIGTERM');
                 callback({success:true})
             }else{
                 callback({render:false})
