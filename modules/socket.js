@@ -48,7 +48,7 @@ function main(io) {
             proc.stderr.on('data',data => {
                 const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
-                if(frame_match.length > 0) {
+                if(frame_match && frame_match.length > 0) {
                     const frame = parseInt(frame_match[0].replace('.png',''));
                     console.log(frame)
                     socket.emit('frame',frame)
@@ -66,8 +66,13 @@ function main(io) {
                 callback({success:true});
             })
         })
-        socket.on('cancel',() => {
-            running_proc.kill();
+        socket.on('cancel',(data,callback) => {
+            if(running_proc) {
+                running_proc.kill();
+                callback({success:true})
+            }else{
+                callback({render:false})
+            }
         })
     })
     setInterval(async() => {

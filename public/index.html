@@ -255,11 +255,20 @@ var app = new Vue({
             this.render_active = true;
         },
         cancelRender: function() {
-            socket.emit('cancel')
-            this.$toast.open({
-                type:'is-warning',
-                message:'Render has been cancelled'
+            socket.emit('cancel',null,res => {
+                if(!res.render) {
+                    this.$toast.open({
+                        type:'is-danger',
+                        message:'There is no active renders'
+                    })
+                }else{
+                    this.$toast.open({
+                        type:'is-warning',
+                        message:'Render has been cancelled'
+                    })
+                }
             })
+            
             this.render_active = false;
         },
         cm_temp: function(val) {
