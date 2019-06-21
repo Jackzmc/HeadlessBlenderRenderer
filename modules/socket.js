@@ -49,7 +49,7 @@ function main(io) {
                 const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
                 if(frame_match) {
-                    const frame = parseInt(frame.replace('.png',''));
+                    const frame = parseInt(frame_match.replace('.png',''));
                     console.log(frame)
                     socket.emit('frame',frame)
                     //get frame #
