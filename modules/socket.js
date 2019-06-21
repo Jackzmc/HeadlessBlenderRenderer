@@ -48,8 +48,8 @@ function main(io) {
             proc.stderr.on('data',data => {
                 const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
-                if(frame_match) {
-                    const frame = parseInt(frame_match.replace('.png',''));
+                if(frame_match.length > 0) {
+                    const frame = parseInt(frame_match[0].replace('.png',''));
                     console.log(frame)
                     socket.emit('frame',frame)
                     //get frame #
