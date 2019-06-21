@@ -1,4 +1,5 @@
 const {execShellCommand,spawnCommand} = require('../modules/utils.js');
+const spawn = require('child_process')
 const SocketIOFile = require('socket.io-file');
 const csv = require('csvtojson')
 const si = require('systeminformation');
@@ -57,7 +58,7 @@ function main(io) {
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
-            running_proc = spawnCommand(render_prefix,[
+            running_proc = spawn(render_prefix,[
                 `"${data.blend}"`,
                 data.frames?data.frames[0]:'all',
                 data.frames?data.frames[1]:'all'

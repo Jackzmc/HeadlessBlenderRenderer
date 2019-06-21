@@ -1,4 +1,4 @@
-const {exec,spawn} = require('child_process')
+const {exec} = require('child_process')
 exports.execShellCommand = (cmd) => {
     return new Promise((resolve, reject) => {
         exec(cmd, (error, stdout, stderr) => {
@@ -6,7 +6,4 @@ exports.execShellCommand = (cmd) => {
             return resolve(stdout?stdout:stderr)
         });
     });
-}
-exports.spawnCommand = (cmd,array = [],options = {}) => {
-    return spawn(cmd,array,options)
 }
