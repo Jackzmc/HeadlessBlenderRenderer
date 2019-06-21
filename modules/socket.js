@@ -29,8 +29,8 @@ function main(io) {
 
             const proc = spawnCommand(render_prefix,[
                 data.blend,
-                data.frames?data.frames[0]:'*',
-                data.frames?data.frames[1]:'*',
+                data.frames?data.frames[0]:'all',
+                data.frames?data.frames[1]:'all',
                 py_scripts
                 //data.extra_args
             ],{

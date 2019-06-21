@@ -78,7 +78,7 @@
             </div>
             <div class="column is-6">
                 <b-field label="Console Output">
-                    <b-input type="textarea" v-model="render_logs" readonly rows=10></b-input>
+                    <b-input id="el_renderlog" type="textarea" v-model="render_logs" readonly rows=10></b-input>
                 </b-field>
                 <div class="notification is-warning">
                     <strong>Note: </strong> Stats are not fully implemented, data may be inaccurate.
@@ -206,7 +206,7 @@ var app = new Vue({
             if(data.clear) this.render_logs = "";
             if(data.message) this.render_logs+= data.message;
             if(data.messages) data.messages.forEach(v => this.render_logs += v)
-            
+            document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
         })
         socket.on('run_error',(data) => {
             this.$toast.open({
