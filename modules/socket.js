@@ -95,6 +95,7 @@ function main(io) {
             })
         })
         socket.on('cancel',(data = {},callback) => {
+            if(!data) data = {}
             if(running_proc) {
                 console.log('SENDING',data.type||'SIGTERM','to process')
                 running_proc.kill(data.type||'SIGTERM');
