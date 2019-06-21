@@ -20,7 +20,7 @@ function main(io) {
         if(last_stat) socket.emit('stat',last_stat)
 
         socket.on('start',async(data,callback) => {
-            const render_prefix = (data.mode === "cpu") ? "~/renderCPU.sh" : "~/renderGPU.sh";
+            const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const frame_option = data.frames?`${data.frames[0]} ${data.frames[1]}`:'* *';
             const py_scripts = data.scripts.map(v => `-P ${v}`);
 
@@ -34,8 +34,7 @@ function main(io) {
                 py_scripts
                 //data.extra_args
             ],{
-                cwd:'/home/ezra',
-                shell:'/bin/bash'
+                cwd:'/home/ezra'
             });
             running_proc = proc;
             proc.stdout.on('data',(data) => {
