@@ -33,7 +33,10 @@ function main(io) {
                 data.frames?data.frames[1]:'*',
                 py_scripts
                 //data.extra_args
-            ]);
+            ],{
+                cwd:'/home/ezra',
+                shell:true
+            });
             running_proc = proc;
             proc.stdout.on('data',(data) => {
                 console.log('[stdout]',data.toString())

@@ -7,6 +7,6 @@ exports.execShellCommand = (cmd) => {
         });
     });
 }
-exports.spawnCommand = (cmd,options) => {
-    return spawn(cmd,options)
+exports.spawnCommand = (cmd,array,options) => {
+    return spawn(cmd,array,options)
 }
