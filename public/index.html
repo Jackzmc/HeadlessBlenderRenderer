@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
     <title>Blender Render (& Cycles)</title>
-    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="//cdn.materialdesignicons.com/3.6.95/css/materialdesignicons.min.css">
 </head>
 
 <body>
@@ -247,6 +247,7 @@
 
                 <b-table-column label="Action">
                     <a @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
+                    <a @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
                 </b-table-column>
 
             </template>
@@ -370,7 +371,7 @@ var app = new Vue({
     },
     methods:{
         downloadZip(name) {
-            axios.get('/download/' + name).then((data) => {
+            axios.get(`/zip/${name}/download`).then((data) => {
                 download(data, name, "application/blender");
             }).catch(err => {
                 this.$toast.open({
@@ -378,6 +379,39 @@ var app = new Vue({
                     message:'Failed to download zIP'
                 })
             })
+        },
+        deleteZip(name) {
+            axios.get(`/zip/${name}/delete`).then(r => {
+                if(r.data.success) {
+                    this.$toast.open({
+                        type:'is-success',
+                        message:'Deleted zip ' + name
+                    })
+                    if(r.data.zips) {
+                        this.zips.list = r.data.zips;
+                    }else{
+                        this.refreshZIPs();
+                    }
+                }else{
+                    this.$dialog.alert({
+                        title: 'Delete Failed',
+                        message: '<b>Server returned:</b> ' + JSON.stringify(r.data),
+                        type: 'is-warning',
+                        hasIcon: true,
+                        icon: 'alert-circle'
+                    })
+                }
+            }).catch(err => {
+                console.log(err.data)
+                this.$dialog.alert({
+                    title: 'Delete Failed',
+                    message: '<b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
+                    type: 'is-danger',
+                    hasIcon: true,
+                    icon: 'alert-circle'
+                })
+            })
+            
         },
         deleteDropFile(index) {
             this.blend_chooser.uploads.splice(index, 1)
