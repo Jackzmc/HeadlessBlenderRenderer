@@ -57,9 +57,8 @@ function main(io) {
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             //console.log("run",command);
-
             const proc = spawnCommand(render_prefix,[
-                `"data.blend"`,
+                `"${data.blend}"`,
                 data.frames?data.frames[0]:'all',
                 data.frames?data.frames[1]:'all',
                 py_scripts
@@ -105,13 +104,14 @@ function main(io) {
             }
         })
     })
-    setInterval(async() => {
-        const stats = await getStats();
-        last_stat = stats;
-        io.emit('stat',stats)
-    },UPDATE_INTERVAL)
-    
+    setInterval(() => doStat(io),UPDATE_INTERVAL)
+    doStat(io);
 }   
+async function doStat(io) {
+    const stats = await getStats();
+    last_stat = stats;
+    io.emit('stat',stats)
+}
 
 function getStats() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
