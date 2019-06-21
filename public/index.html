@@ -369,7 +369,7 @@ var app = new Vue({
             this.render_logs = "";
             socket.emit('start',{
                 blend:this.blend, //need to upload it but sush
-                mode:this.gpu_render?'cpu':'gpu',
+                mode:this.gpu_render?'gpu':'cpu',
                 frames:(this.all_frames)?null:[this.frame_start,this.frame_stop],
                 scripts:this.py_scripts,
                 extra_args:this.extra_args
