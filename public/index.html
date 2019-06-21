@@ -160,6 +160,7 @@
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+const params = new Map(location.search.slice(1).split('&').map(kv => kv.split('=')))
 let socket;
 var app = new Vue({
     el: '#app',
@@ -194,7 +195,8 @@ var app = new Vue({
     },
     mounted:function() {
         //this.fetchStats();
-        socket = io.connect('http://localhost:8095');
+        let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
+        socket = io.connect(`http://${domain}:8095`);
         socket.on('connect', () => console.info("Connected to socket"));
         socket.on('stat', (data) => {
             this.stats = data;
