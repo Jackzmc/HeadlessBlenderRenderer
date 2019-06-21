@@ -70,7 +70,7 @@ function main(io) {
             proc.stdout.on('data',(data) => {
                 const msg = data.toString();
                 
-                socket.emit('log',{
+                io.emit('log',{
                     message:msg
                 })
             })
@@ -82,7 +82,7 @@ function main(io) {
                     socket.emit('frame',frame)
                     //get frame #
                 }
-                socket.emit('log',{
+                io.emit('log',{
                     message:data.toString()
                 })
             })
@@ -94,9 +94,10 @@ function main(io) {
                 callback({success:true});
             })
         })
-        socket.on('cancel',(data,callback) => {
+        socket.on('cancel',(data = {},callback) => {
             if(running_proc) {
-                running_proc.kill('SIGTERM');
+                console.log('SENDING',data.type||'SIGTERM','to process')
+                running_proc.kill(data.type||'SIGTERM');
                 callback({success:true})
             }else{
                 callback({render:false})
