@@ -40,6 +40,13 @@ function main(io) {
             running_proc = proc;
             proc.stdout.on('data',(data) => {
                 const msg = data.toString();
+                
+                socket.emit('log',{
+                    message:msg
+                })
+            })
+            proc.stderr.on('data',data => {
+                const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
                 if(frame_match) {
                     const frame = parseInt(frame.replace('.png',''));
@@ -47,11 +54,6 @@ function main(io) {
                     socket.emit('frame',frame)
                     //get frame #
                 }
-                socket.emit('log',{
-                    message:msg
-                })
-            })
-            proc.stderr.on('data',data => {
                 socket.emit('log',{
                     message:data.toString()
                 })
@@ -65,7 +67,7 @@ function main(io) {
             })
         })
         socket.on('cancel',() => {
-            running_proc.kill('SIGINT');
+            running_proc.kill();
         })
     })
     setInterval(async() => {
