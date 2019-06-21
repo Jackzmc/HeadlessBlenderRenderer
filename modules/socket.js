@@ -57,7 +57,7 @@ function main(io) {
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
-            const proc = spawnCommand(render_prefix,[
+            running_proc = spawnCommand(render_prefix,[
                 `"${data.blend}"`,
                 data.frames?data.frames[0]:'all',
                 data.frames?data.frames[1]:'all'
@@ -66,15 +66,14 @@ function main(io) {
                 cwd:'/home/ezra',
                 stdio:['ignore','pipe','pipe']
             });
-            running_proc = proc;
-            proc.stdout.on('data',(data) => {
+            running_proc.stdout.on('data',(data) => {
                 const msg = data.toString();
                 
                 io.emit('log',{
                     message:msg
                 })
             })
-            proc.stderr.on('data',data => {
+            running_proc.stderr.on('data',data => {
                 const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
                 if(frame_match && frame_match.length > 0) {
@@ -86,10 +85,10 @@ function main(io) {
                     message:data.toString()
                 })
             })
-            proc.on('error',data => {
+            running_proc.on('error',data => {
                 callback({error:data.toString()})
             })
-            proc.on('exit',(code,signal) => {
+            running_proc.on('exit',(code,signal) => {
                 console.log("EXIT. CODE:",code,"SIGNAL:",signal)
                 callback({success:true});
             })
