@@ -1,6 +1,7 @@
 const {execShellCommand,spawnCommand} = require('../modules/utils.js');
 const csv = require('csvtojson')
 const si = require('systeminformation');
+const os = require('os')
 
 const UPDATE_INTERVAL = process.env.STAT_UPDATE_INTERVAL_SECONDS?1000*process.env.STAT_UPDATE_INTERVAL_SECONDS:30000
 
@@ -68,6 +69,7 @@ function main(io) {
 }   
 
 function getStats() {
+    const SMI = os.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
     return new Promise(async(resolve,reject) => {
          try {
              const [si_cpu,si_gpu,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
@@ -76,7 +78,7 @@ function getStats() {
                  si.cpuCurrentspeed(),
                  si.currentLoad(),
                  si.cpuTemperature(),
-                 execShellCommand("\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\" --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader")
+                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader")
              ])
              const gpus = [];
              gpu_smi = [];
