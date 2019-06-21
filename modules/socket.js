@@ -40,7 +40,7 @@ function main(io) {
             running_proc = proc;
             proc.stdout.on('data',(data) => {
                 const msg = data.toString();
-                const frame_match = msg.match(/\d\d\d\d\.png/);
+                const frame_match = msg.match(/\d\d\d\d\.png/g);
                 if(frame_match) {
                     const frame = parseInt(frame.replace('.png',''));
                     console.log(frame)
@@ -65,7 +65,7 @@ function main(io) {
             })
         })
         socket.on('cancel',() => {
-            running_proc.kill('SIGTERM');
+            running_proc.kill('SIGINT');
         })
     })
     setInterval(async() => {
