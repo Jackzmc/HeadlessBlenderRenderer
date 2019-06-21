@@ -199,7 +199,6 @@ var app = new Vue({
             this.stats = data;
         });
         socket.on('log',data => {
-            console.log(data)
             if(data.clear) this.render_logs = "";
             if(data.message) this.render_logs+= data.message;
             if(data.messages) data.messages.forEach(v => this.render_logs += v)
