@@ -85,9 +85,15 @@ function main(io) {
                     message:data.toString()
                 })
             })
+            runninc_proc.stderr.on('end', function () {
+                console.log('Finished collecting data chunks.');
+              });
             running_proc.on('error',data => {
                 callback({error:data.toString()})
             })
+            running_proc.on('close', function (code) {
+                console.log('Child process exited with code ' + code);
+              });
             running_proc.on('exit',(code,signal) => {
                 console.log("EXIT. CODE:",code,"SIGNAL:",signal)
                 callback({success:true});
