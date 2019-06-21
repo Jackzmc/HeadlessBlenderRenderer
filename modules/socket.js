@@ -56,14 +56,13 @@ function main(io) {
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
 
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
-            //console.log("run",command);
+            console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
             const proc = spawnCommand(render_prefix,[
                 `"${data.blend}"`,
                 data.frames?data.frames[0]:'all',
-                data.frames?data.frames[1]:'all',
-                py_scripts
+                data.frames?data.frames[1]:'all'
                 //data.extra_args
-            ],{
+            ].concat(py_scripts),{
                 cwd:'/home/ezra',
                 stdio:['ignore','pipe','pipe']
             });
