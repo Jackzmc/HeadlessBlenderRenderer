@@ -34,7 +34,8 @@ function main(io) {
                 py_scripts
                 //data.extra_args
             ],{
-                cwd:'/home/ezra'
+                cwd:'/home/ezra',
+                stdio:['ignore','pipe','pipe']
             });
             running_proc = proc;
             proc.stdout.on('data',(data) => {
@@ -42,16 +43,15 @@ function main(io) {
                 if(msg.startsWith("Saved:")) {
                     const frame = msg.match(/\d\d\d\d\.png/).replace('.png','');
                     const frame_number = parseInt(frame);
+                    console.log(frame_number)
                     socket.emit('frame',frame_number)
                     //get frame #
                 }
-                console.log('[stdout]',msg)
                 socket.emit('log',{
                     message:msg
                 })
             })
             proc.stderr.on('data',data => {
-                console.error('[stderr]',data.toString())
                 socket.emit('log',{
                     message:data.toString()
                 })
