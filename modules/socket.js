@@ -40,11 +40,11 @@ function main(io) {
             running_proc = proc;
             proc.stdout.on('data',(data) => {
                 const msg = data.toString();
-                if(msg.startsWith("Saved:")) {
-                    const frame = msg.match(/\d\d\d\d\.png/).replace('.png','');
-                    const frame_number = parseInt(frame);
-                    console.log(frame_number)
-                    socket.emit('frame',frame_number)
+                const frame_match = msg.match(/\d\d\d\d\.png/);
+                if(frame_match) {
+                    const frame = parseInt(frame.replace('.png',''));
+                    console.log(frame)
+                    socket.emit('frame',frame)
                     //get frame #
                 }
                 socket.emit('log',{
