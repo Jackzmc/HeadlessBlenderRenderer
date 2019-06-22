@@ -3,6 +3,7 @@ const {spawn} = require('child_process')
 const SocketIOFile = require('socket.io-file');
 const csv = require('csvtojson')
 const si = require('systeminformation');
+const { resolve } = require('path');
 const fs = require('fs').promises
 
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
@@ -44,11 +45,12 @@ function main(io) {
         socket.on('blends',async(data,callback) => {
             //return callback({files:[{name:'test.blend'}]})
             try {
-                const files = await fs.readdir('/home/ezra/blends');
-                callback({files:files.map(v => {return {name:v}})})
+                const files_raw = await fs.readdir('/home/ezra/blends');
+                const files = files_raw.filter(v => v.endsWith(".blend")).map(v => {return {name:v}});
+                callback({files})
             }catch(err) {
                 console.log(err)
-                callback({error:true})
+                callback({error:err.message})
             }
         })
         socket.on('zips',async(data,callback) => {

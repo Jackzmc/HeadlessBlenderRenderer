@@ -17,7 +17,7 @@
             <div class="column is-6">
                 <span v-if="!render_active">
                 <b-field class=file">
-                    <a @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
+                    <a :disabled="!socket_status" @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
                         <b-icon icon="file"></b-icon>
                         <span>Choose a blend file</span>
                     </a>
@@ -79,7 +79,7 @@
                     </div>
                 </div>
                 <b-field>
-                    <a @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
+                    <a :disabled="!socket_status" @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
                         <b-icon icon="download"></b-icon>
                         <span>Download ZIPs</span>
                     </a>
@@ -482,7 +482,7 @@ var app = new Vue({
                         this.blend_chooser.active = false;
                         this.$dialog.alert({
                             title: 'Failure',
-                            message: 'Could not get a list of blend files',
+                            message: 'Could not get a list of blend files<br><strong>Server returned: </strong>' + res.error,
                             type: 'is-danger',
                             hasIcon: true,
                             icon: 'alert-circle'
