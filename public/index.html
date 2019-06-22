@@ -11,7 +11,8 @@
 <body>
 <div id="app">
     <div class="container ">
-        <h1 class="title is-1">Blender Rendering</h1>
+        <p class="title is-1">Blender Rendering</p>
+        <p class="subtitle is-4">Socket <span v-html="getSocketStatus"></span></p>
         <div class="columns">
             <div class="column is-6">
                 <span v-if="!render_active">
@@ -66,15 +67,15 @@
                         <strong class="is-white">A render is currently in progress</strong>
                         <br><br>
                     </div>
-                    <b-button :disabled="render_active" type="is-success" @click="startRender()">
+                    <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
                         Render
                     </b-button>
-                    <b-button :disabled="!render_active" type="is-danger" outlined @click="cancelRender()">
+                    <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
                         Stop
                     </b-button>
                 </div>
                 <b-field>
-                    <a @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth">
+                    <a @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
                         <b-icon icon="download"></b-icon>
                         <span>Download ZIPs</span>
                     </a>
@@ -157,9 +158,9 @@
     <b-modal :active.sync="blend_chooser.active">
         <div class="box">
             <h3 class='title is-3'>Blend File Chooser</h3>
-            <b-loading :is-full-page="false" :active.sync="blend_chooser.blends == null"></b-loading>
+            <b-loading :is-full-page="false" :active.sync="blend_chooser.loading"></b-loading>
             <p v-if="blend_chooser.blends == null">Loading blends...</p>
-            <h5 class="title is-5">Existing Blend Files</h5>
+            <h5 class="title is-5">Existing Blend Files <a @click='refreshBlendChooser' class="button is-info is-small"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h5>
             <b-table
             :data="blend_chooser.blends||[]"
             :striped="true"
@@ -223,7 +224,10 @@
                     </button>
                 </span>
             </div>
-
+            <span v-if="blend_chooser.uploading">
+                <progress v-for="upload in blend_chooser.uploads" class="progress" :value="upload.progress" max="100"></progress>
+            </span>
+            
             <b-field>
                 <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0" type="button is-success">Upload Files</button>
             </b-field>
@@ -231,8 +235,8 @@
     </b-modal>
     <b-modal :active.sync="zips.active">
         <div class="box">
-            <h3 class='title is-3'>Download ZIPs</h3>
-            <b-loading :is-full-page="false" :active.sync="zips.list == null"></b-loading>
+            <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
+            <b-loading :is-full-page="false" :active.sync="zips.loading"></b-loading>
             <p v-if="zips.list == null">Loading zips...</p>
             <b-table
             :data="zips.list||[]"
@@ -282,12 +286,17 @@ let socket, uploader;
 var app = new Vue({
     el: '#app',
     data:{
+        socket_status:false,
         blend_chooser:{
+            progress:0,
+            uploading:false,
             active:false,
+            loading:true,
             blends:null,
             uploads:[]
         },
         zips:{
+            loading:true,
             active:false,
             list:null
         },
@@ -320,6 +329,13 @@ var app = new Vue({
         }
     },
     computed:{
+        getSocketStatus() {
+            if(this.socket_status) {
+                return `<span class='has-text-success'>Connected</span>`
+            }else{
+                return `<span class='has-text-danger'>Disconnected</span>`
+            }
+        }
     },
     created:function() {
         let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
@@ -327,15 +343,20 @@ var app = new Vue({
         socket = io.connect(`//${domain}:${port}`);
         uploader = new SocketIOFileClient(socket);
     },
-    mounted:function() {
+    mounted() {
         //this.fetchStats();
-        uploader.on('start', function(fileInfo) {
-            console.log('Start uploading', fileInfo);
+        uploader.on('start', fileInfo => {
+            this.blend_chooser.uploading = true;
+            this.blend_chooser.progress = 0;
+            console.log('Uploading file',fileInfo.name);
         });
         uploader.on('stream', (fileInfo) => {
-            console.log('Streaming... sent ' + fileInfo.sent + ' bytes.');
+            const percent = Math.round(fileInfo.sent/fileInfo.size*100)
+            if(this.blend_chooser.progress != percent) this.blend_chooser.progress = percent;
         });
-        uploader.on('complete', (fileInfo) => {
+        uploader.on('complete', fileInfo => {
+            this.blend_chooser.uploading = false;
+            this.blend_chooser.progress = 0;
             this.blend_chooser.uploads = [];
             this.blend_chooser.blends = null;
             this.$toast.open({
@@ -347,10 +368,16 @@ var app = new Vue({
         uploader.on('error', function(err) {
             console.log('Error!', err);
         });
-        uploader.on('abort', function(fileInfo) {
+        uploader.on('abort', fileInfo => {
+            this.blend_chooser.uploading = false;
             console.log('Aborted: ', fileInfo);
         });
-        socket.on('connect', () => console.info("Connected to socket"));
+
+
+        socket.on('connect', () => {
+            this.socket_status = true;
+            console.info("Connected to socket")
+        });
         socket.on('stat', (data) => {
             this.stats = data;
         });
@@ -367,7 +394,10 @@ var app = new Vue({
                 message:data
             })
         })
-        socket.on('disconnect', () => console.error("Disconnected from socket"));
+        socket.on('disconnect', () => {
+            this.socket_status = false;
+            console.error("Disconnected from socket")
+        });
     },
     methods:{
         downloadZip(name) {
@@ -423,8 +453,7 @@ var app = new Vue({
             return `${type} "${this.blend}" ${this.all_frames?'all all':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
         },
         uploadFiles() {
-            var el = document.getElementById('uploader')
-            var uploadIds = uploader.upload(el, {
+            var uploadIds = uploader.upload(this.blend_chooser.uploads, {
                 data: { /* Arbitrary data... */ }
             });
             console.log(uploadIds)
@@ -434,8 +463,10 @@ var app = new Vue({
             this.blend_chooser.active = false;
         },
         refreshBlendChooser: function() {
-            if(this.blend_chooser.blends == null) {
+            this.blend_chooser.loading = true;
+           // if(this.blend_chooser.blends == null) {
                 socket.emit('blends',null,res => {
+                    this.blend_chooser.loading = false;
                     if(res.error) {
                         this.blend_chooser.active = false;
                         this.$dialog.alert({
@@ -449,11 +480,13 @@ var app = new Vue({
                     }
                     this.blend_chooser.blends = res.files;
                 })
-            }
+            //}
         },
         refreshZIPs() {
-            if(this.zips.list == null) {
-                socket.emit('zips',null,res => {
+            //if(this.zips.list == null) {
+            this.zips.loading = true;
+            socket.emit('zips',null,res => {
+                this.zips.loading = false;
                 if(res.error) {
                     this.zips.active = false;
                     this.$dialog.alert({
@@ -467,7 +500,7 @@ var app = new Vue({
                 }
                 this.zips.list = res.files;
             })
-            }
+            //}
         },
         startRender: function() {
             if(!this.blend) {
