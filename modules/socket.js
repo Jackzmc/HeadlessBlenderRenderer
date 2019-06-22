@@ -40,7 +40,6 @@ function main(io) {
         uploader.on('abort', (fileInfo) => {
             console.log('Aborted: ', fileInfo);
         });
-        console.log("socket connected")
         if(last_stat) socket.emit('stat',last_stat)
         socket.on('blends',async(data,callback) => {
             //return callback({files:[{name:'test.blend'}]})
@@ -65,7 +64,7 @@ function main(io) {
         socket.on('start',async(data,callback) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
-
+            io.emit('render_start');
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
             running_proc = spawn(render_prefix,[
@@ -103,6 +102,7 @@ function main(io) {
                 callback({error:data.toString()})
             })
             running_proc.on('close', function (code) {
+                io.emit('render_stop')
                 console.log('Child process exited with code ' + code);
               });
             running_proc.on('exit',(code,signal) => {

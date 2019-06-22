@@ -64,15 +64,19 @@
                 </span>
                 <div class="notification is-dark">
                     <div v-if="render_active">
-                        <strong class="is-white">A render is currently in progress</strong>
-                        <br><br>
+                        <div><strong class="is-white">A render is currently in progress</strong></div>
+                        <br>
+                        <progress class="progress" max="100"></progress>
+                        <br>
                     </div>
-                    <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
-                        Render
-                    </b-button>
-                    <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
-                        Stop
-                    </b-button>
+                    <div class="buttons">
+                        <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
+                            Render
+                        </b-button>
+                        <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
+                            Stop
+                        </b-button>
+                    </div>
                 </div>
                 <b-field>
                     <a @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
@@ -398,6 +402,13 @@ var app = new Vue({
             this.socket_status = false;
             console.error("Disconnected from socket")
         });
+
+        socket.on('render_start',() => {
+            this.render_active = true;
+        })
+        socket.on('render_stop',() => {
+            this.render_active = false;
+        })
     },
     methods:{
         downloadZip(name) {
@@ -534,7 +545,7 @@ var app = new Vue({
                 type:'is-success',
                 message:'Render has been started.'
             })
-            this.render_active = true;
+            //this.render_active = true;
         },
         cancelRender: function() {
             socket.emit('cancel',null,res => {
@@ -551,7 +562,7 @@ var app = new Vue({
                 }
             })
             
-            this.render_active = false;
+            //this.render_active = false;
         },
         cm_temp: function(val) {
             if(val===-1) return "n/a";
