@@ -11,6 +11,7 @@ const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 let last_stat = null;
 let running_proc = null;
 let render_active = false;
+let max_frames = 0;
 
 module.exports = (server) => {
     if(!server) alert("SERVER NULL")
@@ -62,7 +63,6 @@ function main(io) {
         socket.on('start',async(data) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
-            let max_frames = 0;
             if(!data.frames) {
                 const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
                     cwd:'/home/ezra'
