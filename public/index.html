@@ -351,7 +351,7 @@ var app = new Vue({
     },
     computed:{
         framePercent() {
-            return Math.round(this.render.current/this.render.max)
+            return Math.round(this.render.current/this.render.max*100) + "%";
         },
         getSocketStatus() {
             if(this.socket_status) {
