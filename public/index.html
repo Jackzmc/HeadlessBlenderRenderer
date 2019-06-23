@@ -436,10 +436,6 @@ var app = new Vue({
             this.render.current = data;
             console.log('FRAME:',data)
         })
-        socket.on('max_frames',d => {
-            console.log('MAX FRAME:',d)
-            this.render.max = d
-        })
         socket.on('run_error',(data) => {
             this.$toast.open({
                 type:'is-danger',
@@ -451,8 +447,10 @@ var app = new Vue({
             console.error("Disconnected from socket")
         });
 
-        socket.on('render_start',() => {
+        socket.on('render_start',(d) => {
             this.render.active = true;
+            this.render.current = 0;
+            this.render.max = d.max_frames;
         })
         socket.on('render_stop',() => {
             this.render.active = false;

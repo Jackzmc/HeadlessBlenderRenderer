@@ -10,6 +10,7 @@ const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 
 let last_stat = null;
 let running_proc = null;
+let render_active = false;
 
 module.exports = (server) => {
     if(!server) alert("SERVER NULL")
@@ -27,6 +28,11 @@ function main(io) {
             transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
             overwrite: true 							// overwrite file if exists, default is true.
         });
+        if(render_active) {
+            socket.emit('render_start',{
+                max_frames
+            });
+        }
         uploader.on('complete', (fileInfo) => {
             console.log(fileInfo);
         });
@@ -55,6 +61,7 @@ function main(io) {
         socket.on('start',async(data) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
+            let max_frames = 0;
             if(!data.frames) {
                 const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
                     cwd:'/home/ezra'
@@ -64,12 +71,15 @@ function main(io) {
                 })
                 if(all_frames_max) {
                     const csv = all_frames_max.trim().split(" ");
-                    socket.emit('max_frames',parseInt(csv[1]));
+                    max_frames = parseInt(csv[1]);
                 }
             }else{
-                socket.emit('max_frames',data.frames[1])
+                max_frames = data.frames[1]
             }
-            io.emit('render_start');
+            io.emit('render_start',{
+                max_frames
+            });
+            render_active = true;
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
             running_proc = spawn(render_prefix,[
@@ -108,6 +118,7 @@ function main(io) {
             })
             running_proc.on('close', function (code) {
                 io.emit('render_stop')
+                render_active = false;
                 console.log('Blender Child exited with code: ' + code);
               });
         })
