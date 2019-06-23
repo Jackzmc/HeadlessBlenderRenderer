@@ -64,7 +64,7 @@
                 </span>
                 <div class="notification is-dark">
                     <div v-if="render.active">
-                        <div><strong class="is-white">A render is currently in progress</strong></div>
+                        <div><strong class="is-white">A render is currently in progress ({{render.current}}/{{render.max}}) - {{framePercent}}</strong></div>
                         <br>
                         <progress class="progress" :value='render.current' :max='render.max'></progress>
                         <br>
@@ -350,6 +350,9 @@ var app = new Vue({
         }
     },
     computed:{
+        framePercent() {
+            return Math.round(this.render.current/this.render.max)
+        },
         getSocketStatus() {
             if(this.socket_status) {
                 return `<span class='has-text-success'>Connected</span>`
