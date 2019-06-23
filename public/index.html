@@ -16,7 +16,7 @@
         <div class="columns">
             <div class="column is-6">
                 <span v-if="!render_active">
-                <b-field class=file">
+                <b-field class="file">
                     <a :disabled="!socket_status" @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
                         <b-icon icon="file"></b-icon>
                         <span>Choose a blend file</span>
@@ -26,33 +26,33 @@
                     </span>
                 </b-field>
                 <b-field label="Render Options">
-                    <b-checkbox v-model="gpu_render">
-                        Render with {{gpu_render?"GPU":"CPU"}}
+                    <b-checkbox v-model="opts.blend.gpu_render">
+                        Render with {{opts.blend.gpu_render?"GPU":"CPU"}}
                     </b-checkbox>
                 </b-field>
                 <b-field label="Frame Options">
-                    <b-checkbox v-model="all_frames">
+                    <b-checkbox v-model="opts.blend.all_frames">
                         Render all frames
                     </b-checkbox>
                 </b-field>
-                <span v-if="!all_frames">
+                <span v-if="!opts.blend.all_frames">
                     <b-field label="Starting Frame">
-                            <b-numberinput :min="0" :max="frame_stop" :disabled="all_frames" v-model="frame_start"></b-numberinput>
+                            <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
                     </b-field>
                     <b-field label="Ending Frame">
-                        <b-numberinput :min="frame_start>0?frame_start:0" :disabled="all_frames" v-model="frame_stop"></b-numberinput>
+                        <b-numberinput :min="opts.blend.frame_start>0?opts.blend.frame_start:0" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_stop"></b-numberinput>
                     </b-field>
                     <br>
                 </span>
                 <b-field label="Python Scripts (Optional)">
                     <b-taginput
-                        v-model="py_scripts"
+                        v-model="opts.blend.py_scripts"
                         type="is-dark">
                     </b-taginput>
                 </b-field>
                 <b-field label="Extra Command Arguments (Optional)">
                     <b-input
-                        v-model="extra_args">
+                        v-model="opts.blend.extra_args">
                     </b-input>
                 </b-field>
                 <span v-if="blend != null">
@@ -69,14 +69,27 @@
                         <progress class="progress" max="100"></progress>
                         <br>
                     </div>
-                    <div class="buttons">
-                        <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
-                            Render
-                        </b-button>
-                        <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
-                            Stop
-                        </b-button>
-                    </div>
+                    <nav class="navbar is-dark">
+                        <div class="navbar-menu">
+                            <div class="navbar-start">
+                                <div class="buttons">
+                                    <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
+                                        Render
+                                    </b-button>
+                                    <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
+                                        Stop
+                                    </b-button>
+                                </div>
+                            </div>
+                            <div class="navbar-end">
+                                <div class="buttons">
+                                    <b-button @click="saveDefaults">
+                                        <b-icon icon="content-save"></b-icon><span>Save Defaults</span>
+                                    </b-button>
+                                </div>
+                            </div>
+                        </div>    
+                    </nav>
                 </div>
                 <b-field>
                     <a :disabled="!socket_status" @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
@@ -283,8 +296,8 @@
 <script src="socket.io/socket.io.js"></script>
 <script src="socket.io-file-client.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js" integrity="sha256-k77iqKeo6Og1Lf5mawux2rTxjaV9zUtyOWKVX3VttKE=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 <script>
-    
 const params = new Map(location.search.slice(1).split('&').map(kv => kv.split('=')))
 let socket, uploader;
 var app = new Vue({
@@ -306,12 +319,6 @@ var app = new Vue({
         },
         render_logs:'',
         render_active:false,
-        extra_args:"",
-        py_scripts:[],
-        gpu_render:true,
-        all_frames:true,
-        frame_start:0,
-        frame_stop:0,
         blend:null,
         stats:{
             initial:true,
@@ -321,11 +328,17 @@ var app = new Vue({
                 temp:0,
                 fan_speed:0,
             },
-            gpu:[
-                
-            ]
+            gpu:[]
         },
         opts:{
+            blend:{
+                gpu_render:true,
+                all_frames:true,
+                frame_start:0,
+                frame_stop:0,
+                py_scripts:[],
+                extra_args:""
+            },
             stat:{
                 update_interval:30,
                 celsius:false
@@ -346,6 +359,14 @@ var app = new Vue({
         let port = params.has('sk_port') ? params.get('sk_port') : '8095'
         socket = io.connect(`//${domain}:${port}`);
         uploader = new SocketIOFileClient(socket);
+        if(window.localStorage) {
+            const opts = window.localStorage.getItem('blender_opts');
+            if(opts) {
+                this.opts = JSON.parse(opts);
+            }
+        }else{
+            console.warn('Browser does not support localStorage, defaults wont be loaded.')
+        }
     },
     mounted() {
         //this.fetchStats();
@@ -411,6 +432,22 @@ var app = new Vue({
         })
     },
     methods:{
+        saveDefaults() {
+            console.log(this.opts)
+            if(window.localStorage) {
+                window.localStorage.setItem('blender_opts',JSON.stringify(this.opts))
+                this.$toast.open({
+                    type:'is-success',
+                    message:'Saved defaults'
+                })
+            }else{
+                this.$toast.open({
+                    type:'is-danger',
+                    message:'Your browser doesn\'t support local storage'
+                })
+            }
+            
+        },
         downloadZip(name) {
             axios.get(`zip/${name}/download`).then((data) => {
                 download(data, name, "application/blender");
@@ -459,9 +496,9 @@ var app = new Vue({
         },
         generateCommand: function() {
             if(!this.blend) return "[No file selected]"
-            const type = this.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
-            const scripts = this.py_scripts.map(v => `-P ${v}`)
-            return `${type} "${this.blend}" ${this.all_frames?'all all':`${this.frame_start} ${this.frame_stop}`} ${scripts.join(" ")} ${this.extra_args}`
+            const type = this.opts.blend.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
+            const scripts = this.opts.blend.py_scripts.map(v => `-P ${v}`)
+            return `${type} "${this.blend}" ${this.opts.blend.all_frames?'all all':`${this.opts.blend.frame_start} ${this.opts.blend.frame_stop}`} ${scripts.join(" ")} ${this.opts.blend.extra_args}`
         },
         uploadFiles() {
             var uploadIds = uploader.upload(this.blend_chooser.uploads, {
@@ -526,10 +563,10 @@ var app = new Vue({
             this.render_logs = "";
             socket.emit('start',{
                 blend:this.blend, //need to upload it but sush
-                mode:this.gpu_render?'gpu':'cpu',
-                frames:(this.all_frames)?null:[this.frame_start,this.frame_stop],
-                scripts:this.py_scripts,
-                extra_args:this.extra_args
+                mode:this.opts.blend.gpu_render?'gpu':'cpu',
+                frames:(this.opts.blend.all_frames)?null:[this.opts.blend.frame_start,this.opts.blend.frame_stop],
+                scripts:this.opts.blend.py_scripts,
+                extra_args:this.opts.blend.extra_args
             },response => {
                 console.debug(response)
                 if(response.success) {
