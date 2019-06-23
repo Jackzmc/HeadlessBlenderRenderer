@@ -56,7 +56,7 @@ function main(io) {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
             if(!data.frames) {
-                const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py blends/${data.blend}`,{
+                const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
                     cwd:'/home/ezra'
                 })
                 .catch(err => {
