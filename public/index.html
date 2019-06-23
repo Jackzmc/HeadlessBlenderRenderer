@@ -100,7 +100,7 @@
             </div>
             <div class="column is-6">
                 <b-field label="Console Output">
-                    <b-input id="el_renderlog" type="textarea" v-model="render_logs" readonly rows=10></b-input>
+                    <b-input id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
                 </b-field>
                 <hr>
                 <h5 class="title is-5">Options</h5>
@@ -318,11 +318,11 @@ var app = new Vue({
             list:null
         },
         render:{
+            logs:"",
             active:false,
             current:0,
             max:0
         },
-        render_logs:'',
         blend:null,
         stats:{
             initial:true,
@@ -414,9 +414,9 @@ var app = new Vue({
             this.stats = data;
         });
         socket.on('log',data => {
-            if(data.clear) this.render_logs = "";
-            if(data.message) this.render_logs+= data.message;
-            if(data.messages) data.messages.forEach(v => this.render_logs += v)
+            if(data.clear) this.render.logs = "";
+            if(data.message) this.render.logs += (data.error?'[ERROR] ':'') + data.message;
+            if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
         })
         socket.on('frame',data => {
@@ -574,7 +574,7 @@ var app = new Vue({
                     icon: 'alert-circle'
                 })
             }
-            this.render_logs = "";
+            this.render.logs = "";
             socket.emit('start',{
                 blend:this.blend, //need to upload it but sush
                 mode:this.opts.blend.gpu_render?'gpu':'cpu',
