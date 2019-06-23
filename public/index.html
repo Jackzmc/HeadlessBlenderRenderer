@@ -100,7 +100,7 @@
             </div>
             <div class="column is-6">
                 <b-field label="Console Output">
-                    <b-input id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
+                    <b-input :disabled="!socket_status" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
                 </b-field>
                 <hr>
                 <h5 class="title is-5">Options</h5>
@@ -118,6 +118,12 @@
                     </b-checkbox>
                 </b-field>
                 <hr>
+                <span v-if="!socket_status">
+                    <div v-if="!socket_status" class="notification is-danger">
+                        Lost Connection to the Socket Server.
+                    </div>
+                </span>
+                <span v-else>
                 <b-field :label="'CPU Stats - ' + (stats.cpu.name?stats.cpu.name:'Unknown')">
                     
                     <nav :loading="stats.initial" class="level">
@@ -168,6 +174,7 @@
                         </div>
                     </nav>
                 </b-field>
+                </span>
             </div>
         </div>
         <br>
@@ -175,8 +182,11 @@
     <b-modal :active.sync="blend_chooser.active">
         <div class="box">
             <h3 class='title is-3'>Blend File Chooser</h3>
-            <b-loading :is-full-page="false" :active.sync="blend_chooser.loading"></b-loading>
+            <b-loading :is-full-page="false" :active.sync="blend_chooser.loading||!socket_status"></b-loading>
             <p v-if="blend_chooser.blends == null">Loading blends...</p>
+            <div v-if="!socket_status" class="notification is-danger">
+               Lost Connection to the Socket Server.
+            </div>
             <h5 class="title is-5">Existing Blend Files <a @click='refreshBlendChooser' class="button is-info is-small"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h5>
             <b-table
             :data="blend_chooser.blends||[]"
@@ -190,7 +200,7 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <a @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                    <a :disabled="!socket_status" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
                 </b-table-column>
 
             </template>
@@ -212,7 +222,7 @@
             <hr>
             <h5 class="title is-5">Upload Blend Files</h5>
             <b-field>
-                <b-upload id="uploader" v-model="blend_chooser.uploads"
+                <b-upload :disabled="!socket_status" id="uploader" v-model="blend_chooser.uploads"
                     multiple
                     accept=".blend"
                     drag-drop>
@@ -246,15 +256,18 @@
             </span>
             
             <b-field>
-                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0" type="button is-success">Upload Files</button>
+                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0||!socket_status" type="button is-success">Upload Files</button>
             </b-field>
         </div>
     </b-modal>
     <b-modal :active.sync="zips.active">
         <div class="box">
             <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
-            <b-loading :is-full-page="false" :active.sync="zips.loading"></b-loading>
+            <b-loading :is-full-page="false" :active.sync="zips.loading||!socket_status"></b-loading>
             <p v-if="zips.list == null">Loading zips...</p>
+            <div v-if="!socket_status" class="notification is-danger">
+                Lost Connection to the Socket Server.
+             </div>
             <b-table
             :data="zips.list||[]"
             :striped="true"
@@ -267,8 +280,8 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <a @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
-                    <a @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
+                    <a :disabled="!socket_status" @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
+                    <a :disabled="!socket_status" @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
                 </b-table-column>
 
             </template>
