@@ -64,9 +64,11 @@
                 </span>
                 <div class="notification is-dark">
                     <div v-if="render.active">
-                        <div><strong class="is-white">A render is currently in progress ({{render.current}}/{{render.max}}) - {{framePercent}}</strong></div>
+                        <div><strong class="is-white">A render is currently in progress {{frameValue}}{{framePercent}}</strong></div>
                         <br>
-                        <progress class="progress" :value='render.current' :max='render.max'></progress>
+                        <span v-if="render.max != null">
+                            <progress v-if="render.max != null" class="progress" :value='render.current' :max='render.max'></progress>
+                        </span>
                         <br>
                     </div>
                     <nav class="navbar is-dark">
@@ -334,7 +336,7 @@ var app = new Vue({
             logs:"",
             active:false,
             current:0,
-            max:0
+            max:null
         },
         blend:null,
         stats:{
@@ -363,8 +365,13 @@ var app = new Vue({
         }
     },
     computed:{
+        frameValue() {
+            if(this.render.max == null) return "- Frame #" + this.render.current;
+            return `(${this.render.current}/${this.render.max})`;
+        },
         framePercent() {
-            return (this.render.max == 0) ? "0%" : Math.round(this.render.current/this.render.max*100) + "%";
+            if(this.render.max == null) return "";
+            return " - " + (this.render.max == 0 ? "0%" : Math.round(this.render.current/this.render.max*100)) + "%";
         },
         getSocketStatus() {
             if(this.socket_status) {

@@ -9,9 +9,8 @@ const fs = require('fs').promises
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
-let last_stat, running_proc, io = null;
+let last_stat, running_proc, io, max_frames = null;
 let render_active = false;
-let max_frames = 0;
 
 module.exports = (server) => {
     if(!server) alert("SERVER NULL")
@@ -98,6 +97,8 @@ async function startRender(data,callback) {
         if(all_frames_max) {
             const csv = all_frames_max.trim().split(" ");
             max_frames = parseInt(csv[1]);
+        }else{
+            max_frames = null;
         }
     }else{
         max_frames = data.frames[1]
