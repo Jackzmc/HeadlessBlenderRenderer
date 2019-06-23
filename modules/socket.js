@@ -63,72 +63,7 @@ function main(io) {
             }
         })
         socket.on('start',async(data,callback) => {
-            if(running_proc||render_active) {
-                return callback({error:"A render is already started"})
-            }
-            const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
-            const py_scripts = data.scripts.map(v => `-P "${v}"`);
-            if(!data.frames) {
-                const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
-                    cwd:process.env.HOME_DIR
-                })
-                .catch(err => {
-                    console.warn('[renderStart] Finding frame count of blend file failed:',err.message)
-                })
-                if(all_frames_max) {
-                    const csv = all_frames_max.trim().split(" ");
-                    max_frames = parseInt(csv[1]);
-                }
-            }else{
-                max_frames = data.frames[1]
-            }
-            io.emit('render_start',{
-                max_frames
-            });
-            render_active = true;
-           // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
-            console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
-            running_proc = spawn(render_prefix,[
-                `"${data.blend}"`,
-                data.frames?data.frames[0]:'all',
-                data.frames?data.frames[1]:'all'
-                //data.extra_args
-            ].concat(py_scripts),{
-                cwd:process.env.HOME_DIR,
-                stdio:['ignore','pipe','pipe']
-            });
-            //tell it started successfully
-            callback({success:true})
-            running_proc.stdout.on('data',(data) => {
-                const msg = data.toString();
-                const frame_match = msg.match(/\d\d\d\d\.png/g);
-                if(frame_match && frame_match.length > 0) {
-                    const frame = parseInt(frame_match[0].replace('.png',''));
-                    io.emit('frame',frame)
-                    //get frame #
-                }
-                io.emit('log',{
-                    message:msg
-                })
-            })
-            running_proc.stderr.on('data',data => {
-                const msg = data.toString();
-                io.emit('log',{
-                    error:true,
-                    message:data.toString()
-                })
-            })
-            running_proc.on('error',data => {
-                io.emit('log',{
-                    error:true,
-                    message:data.toString()
-                })
-            })
-            running_proc.on('close', function (code) {
-                io.emit('render_stop')
-                render_active = false;
-                console.log('Blender Child exited with code: ' + code);
-              });
+            await startRender(data,callback);
         })
         socket.on('cancel',(data = {},callback) => {
             if(!data) data = {}
@@ -148,7 +83,75 @@ async function doStat(io) {
     last_stat = stats;
     io.emit('stat',stats)
 }
+async function startRender(data,callback) {
+    if(running_proc||render_active) {
+        return callback({error:"A render is already started"})
+    }
+    const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
+    const py_scripts = data.scripts.map(v => `-P "${v}"`);
+    if(!data.frames) {
+        const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
+            cwd:process.env.HOME_DIR
+        }).catch(err => {
+            console.warn('[renderStart] Finding frame count of blend file failed:',err.message)
+        })
 
+        if(all_frames_max) {
+            const csv = all_frames_max.trim().split(" ");
+            max_frames = parseInt(csv[1]);
+        }
+    }else{
+        max_frames = data.frames[1]
+    }
+    console.log(`Frames to render for ${data.blend}: ${max_frames}`)
+    io.emit('render_start',{
+        max_frames
+    });
+    render_active = true;
+   // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
+    console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
+    running_proc = spawn(render_prefix,[
+        `"${data.blend}"`,
+        data.frames?data.frames[0]:'all',
+        data.frames?data.frames[1]:'all'
+        //data.extra_args
+    ].concat(py_scripts),{
+        cwd:process.env.HOME_DIR,
+        stdio:['ignore','pipe','pipe']
+    });
+    //tell it started successfully
+    callback({success:true})
+    running_proc.stdout.on('data',(data) => {
+        const msg = data.toString();
+        const frame_match = msg.match(/\d\d\d\d\.png/g);
+        if(frame_match && frame_match.length > 0) {
+            const frame = parseInt(frame_match[0].replace('.png',''));
+            io.emit('frame',frame)
+            //get frame #
+        }
+        io.emit('log',{
+            message:msg
+        })
+    })
+    running_proc.stderr.on('data',data => {
+        const msg = data.toString();
+        io.emit('log',{
+            error:true,
+            message:data.toString()
+        })
+    })
+    running_proc.on('error',data => {
+        io.emit('log',{
+            error:true,
+            message:data.toString()
+        })
+    })
+    running_proc.on('close', function (code) {
+        io.emit('render_stop')
+        render_active = false;
+        console.log('Blender Child exited with code: ' + code);
+      });
+}
 function getStats() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
     return new Promise(async(resolve,reject) => {
