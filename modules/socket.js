@@ -23,7 +23,7 @@ module.exports = (server) => {
 function main(io) {
     io.on('connection',socket => {
         const uploader = new SocketIOFile(socket, {
-            uploadDir: '/home/ezra/blends',							// simple directory
+            uploadDir: process.env.UPLOAD_DIR||`${process.env.HOME_DIR}/blends`,							// simple directory
             //broke: accepts: ['application/octet-stream'],		// chrome and some of browsers checking mp3 as 'audio/mp3', not 'audio/mpeg'
             chunkSize: 10240,							// default is 10240(1KB)
             transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
@@ -42,7 +42,7 @@ function main(io) {
         socket.on('blends',async(data,callback) => {
             //return callback({files:[{name:'test.blend'}]})
             try {
-                const files_raw = await fs.readdir('/home/ezra/blends');
+                const files_raw = await fs.readdir(`${process.env.HOME_DIR}/blends`);
                 const files = files_raw.filter(v => v.endsWith(".blend")).map(v => {return {name:v}});
                 callback({files})
             }catch(err) {
@@ -53,7 +53,7 @@ function main(io) {
         socket.on('zips',async(data,callback) => {
             //return callback({files:[{name:'test.blend'}]})
             try {
-                const files = await fs.readdir('/home/ezra/zips');
+                const files = await fs.readdir(`${process.env.HOME_DIR}`);
                 callback({files:files.map(v => {return {name:v}})})
             }catch(err) {
                 console.log(err)
@@ -65,7 +65,7 @@ function main(io) {
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
             if(!data.frames) {
                 const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py "blends/${data.blend}"`,{
-                    cwd:'/home/ezra'
+                    cwd:process.env.HOME_DIR
                 })
                 .catch(err => {
                     console.warn('[renderStart] Finding frame count of blend file failed:',err.message)
@@ -89,7 +89,7 @@ function main(io) {
                 data.frames?data.frames[1]:'all'
                 //data.extra_args
             ].concat(py_scripts),{
-                cwd:'/home/ezra',
+                cwd:process.env.HOME_DIR,
                 stdio:['ignore','pipe','pipe']
             });
             running_proc.stdout.on('data',(data) => {

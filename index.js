@@ -8,6 +8,12 @@ const fs = require('fs').promises;
 const bodyParser = require('body-parser')
 const {execShellCommand} = require('./modules/utils.js');
 
+if(!process.env.HOME_DIR) {
+    console.error('[ERROR] Missing environmental variable: HOME_DIR')
+    process.exit(1);
+}
+
+const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
 server.listen(process.env.WEBPORT||8080,() => {
     console.info(`Listening on :${process.env.WEBPORT||8080}`)
@@ -20,13 +26,14 @@ app.get('/socket.io-file-client.js', (req, res, next) => {
     return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
 });
 app.get('/zip/:name/download',(req,res) => {
-    res.sendFile('/home/ezra/zips/' + req.params.name,(err) => {
+    
+    res.sendFile(`${ZIP_DIR}/${req.params.name}`,(err) => {
         if(err) res.status(404).send("File Not Found")
     });
 })
 app.get('/zip/:name/delete',(req,res) => {
-    fs.unlink('/home/ezra/zips/' + req.params.name).then(() => {
-        fs.readdir('/home/ezra/zips')
+    fs.unlink(`${ZIP_DIR}/${req.params.name}`).then(() => {
+        fs.readdir(ZIP_DIR)
         .then(r => {
             res.json({
                 success:true,
