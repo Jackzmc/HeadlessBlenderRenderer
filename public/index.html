@@ -138,7 +138,7 @@
                         <div class="level-item has-text-centered">
                             <div>
                             <p class="heading">CPU Temp</p>
-                            <p class="title">{{cm_temp(stats.cpu.temp)}}</p>
+                            <p class="title"><span v-html="cm_temp(stats.cpu.temp)"></p>
                             </div>
                         </div>
                         <div class="level-item has-text-centered">
@@ -165,7 +165,7 @@
                         <div class="level-item has-text-centered">
                             <div>
                             <p class="heading">GPU Temp</p>
-                            <p class="title">{{cm_temp(gpu.temp)}}</p>
+                            <p class="title"><span v-html="cm_temp(gpu.temp)"></span></p>
                             </div>
                         </div>
                         <div class="level-item has-text-centered">
@@ -640,11 +640,18 @@ var app = new Vue({
         },
         cm_temp: function(val) {
             if(val===-1) return "n/a";
+            let color = "";
+            if(val >= 104 && val < 203) {
+                color = "has-text-warning"
+            }else if(val >= 203 ) {
+                color = "has-text-danger"
+            }
+
             if(this.opts.stat.celsius) {
                 const c = Math.round((5/9) * (val-32))
-                return c+"°C";
+                return `<span class='${color}'>${c}°C</span>`;
             }else{
-                return val+"°F";
+                return `<span class='${color}'>${val}°F</span>`;
             }
         },
         cm_vram: function humanFileSize(B,i){var e=i?1e3:1024;if(Math.abs(B)<e)return B+" B";var a=i?["kB","MB","GB","TB","PB","EB","ZB","YB"]:["KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"],t=-1;do B/=e,++t;while(Math.abs(B)>=e&&t<a.length-1);return B.toFixed(1)+" "+a[t]}
