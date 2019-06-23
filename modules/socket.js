@@ -27,19 +27,8 @@ function main(io) {
             transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
             overwrite: true 							// overwrite file if exists, default is true.
         });
-        uploader.on('start', (fileInfo) => {
-            console.log('Start uploading');
-            console.log(fileInfo);
-        });
         uploader.on('complete', (fileInfo) => {
-            console.log('Upload Complete.');
             console.log(fileInfo);
-        });
-        uploader.on('error', (err) => {
-            console.log('Error!', err);
-        });
-        uploader.on('abort', (fileInfo) => {
-            console.log('Aborted: ', fileInfo);
         });
         if(last_stat) socket.emit('stat',last_stat)
         socket.on('blends',async(data,callback) => {
@@ -66,6 +55,20 @@ function main(io) {
         socket.on('start',async(data,callback) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
+            if(!data.frames) {
+                const all_frames_max = await execShellCommand(`python python_scripts/blend_render_info.py blends/${data.blend}`,{
+                    cwd:'/home/ezra'
+                })
+                .catch(err => {
+                    console.warn('[renderStart] Finding frame count of blend file failed:',err.message)
+                })
+                if(all_frames_max) {
+                    const csv = all_frames_max.trim().split(" ");
+                    socket.emit('max_frames',parseInt(csv[1]));
+                }
+            }else{
+                socket.emit('max_frames',data.frames[1])
+            }
             io.emit('render_start');
            // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
             console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);

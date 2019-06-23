@@ -15,7 +15,7 @@
         <p class="subtitle is-4">Socket <span v-html="getSocketStatus"></span></p>
         <div class="columns">
             <div class="column is-6">
-                <span v-if="!render_active">
+                <span v-if="!render.active">
                 <b-field class="file">
                     <a :disabled="!socket_status" @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
                         <b-icon icon="file"></b-icon>
@@ -63,17 +63,17 @@
                 <br>
                 </span>
                 <div class="notification is-dark">
-                    <div v-if="render_active">
+                    <div v-if="render.active">
                         <div><strong class="is-white">A render is currently in progress</strong></div>
                         <br>
-                        <progress class="progress" max="100"></progress>
+                        <progress class="progress" :value='render.current' :max='render.max'></progress>
                         <br>
                     </div>
                     <nav class="navbar is-dark">
                         <div class="navbar-menu">
                             <div class="navbar-start">
                                 <div class="buttons">
-                                    <b-button :disabled="render_active||blend==null||!socket_status" type="is-success" @click="startRender()">
+                                    <b-button :disabled="render.active||blend==null||!socket_status" type="is-success" @click="startRender()">
                                         Render
                                     </b-button>
                                     <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
@@ -317,8 +317,12 @@ var app = new Vue({
             active:false,
             list:null
         },
+        render:{
+            active:false,
+            current:0,
+            max:0
+        },
         render_logs:'',
-        render_active:false,
         blend:null,
         stats:{
             initial:true,
@@ -412,7 +416,14 @@ var app = new Vue({
             if(data.messages) data.messages.forEach(v => this.render_logs += v)
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
         })
-        socket.on('frame',data => console.log('FRAME:',data))
+        socket.on('frame',data => {
+            this.render.current = data;
+            console.log('FRAME:',data)
+        })
+        socket.on('max_frames',d => {
+            console.log('MAX FRAME:',d)
+            this.render.max = d
+        })
         socket.on('run_error',(data) => {
             this.$toast.open({
                 type:'is-danger',
@@ -425,10 +436,10 @@ var app = new Vue({
         });
 
         socket.on('render_start',() => {
-            this.render_active = true;
+            this.render.active = true;
         })
         socket.on('render_stop',() => {
-            this.render_active = false;
+            this.render.active = false;
         })
     },
     methods:{
@@ -582,7 +593,7 @@ var app = new Vue({
                 type:'is-success',
                 message:'Render has been started.'
             })
-            //this.render_active = true;
+            //this.render.active = true;
         },
         cancelRender: function() {
             socket.emit('cancel',null,res => {
@@ -599,7 +610,7 @@ var app = new Vue({
                 }
             })
             
-            //this.render_active = false;
+            //this.render.active = false;
         },
         cm_temp: function(val) {
             if(val===-1) return "n/a";
