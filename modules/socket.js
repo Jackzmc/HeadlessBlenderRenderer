@@ -52,7 +52,7 @@ function main(io) {
                 callback({error:true})
             }
         })
-        socket.on('start',async(data,callback) => {
+        socket.on('start',async(data) => {
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
             if(!data.frames) {
@@ -100,20 +100,16 @@ function main(io) {
                     message:data.toString()
                 })
             })
-            running_proc.stderr.on('end', function () {
-                console.log('Finished collecting data chunks.');
-              });
             running_proc.on('error',data => {
-                callback({error:data.toString()})
+                io.emit('log',{
+                    error:true,
+                    message:data.toString()
+                })
             })
             running_proc.on('close', function (code) {
                 io.emit('render_stop')
-                console.log('Child process exited with code ' + code);
+                console.log('Blender Child exited with code: ' + code);
               });
-            running_proc.on('exit',(code,signal) => {
-                console.log("EXIT. CODE:",code,"SIGNAL:",signal)
-                callback({success:true});
-            })
         })
         socket.on('cancel',(data = {},callback) => {
             if(!data) data = {}
@@ -204,3 +200,11 @@ function getStats() {
          }
      })
  }
+ async function getFiles(dir) {
+    const dirents = await fs.readdir(dir, { withFileTypes: true });
+    const files = dirents.map((dirent) => {
+      const res = resolve(dir, dirent.name);
+      return dirent.isDirectory() ? getFiles(res) : res;
+    });
+    return Array.prototype.concat(...files);
+}

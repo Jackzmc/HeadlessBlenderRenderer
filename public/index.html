@@ -581,16 +581,6 @@ var app = new Vue({
                 frames:(this.opts.blend.all_frames)?null:[this.opts.blend.frame_start,this.opts.blend.frame_stop],
                 scripts:this.opts.blend.py_scripts,
                 extra_args:this.opts.blend.extra_args
-            },response => {
-                console.debug(response)
-                if(response.success) {
-                    //render completed
-                }else if(response.error) {
-                    this.$toast.open({
-                        type:'is-danger',
-                        message:response.error
-                    })
-                }
             })
             this.$toast.open({
                 type:'is-success',
