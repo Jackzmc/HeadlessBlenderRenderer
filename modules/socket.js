@@ -9,19 +9,18 @@ const fs = require('fs').promises
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
-let last_stat = null;
-let running_proc = null;
+let last_stat, running_proc, io = null;
 let render_active = false;
 let max_frames = 0;
 
 module.exports = (server) => {
     if(!server) alert("SERVER NULL")
-    const io = require('socket.io')(server);
-    main(io)
+    io = require('socket.io')(server);
+    main()
 
     return io;
 }
-function main(io) {
+function main() {
     io.on('connection',socket => {
         const uploader = new SocketIOFile(socket, {
             uploadDir: process.env.UPLOAD_DIR||`${process.env.HOME_DIR}/blends`,							// simple directory
@@ -75,10 +74,10 @@ function main(io) {
             }
         })
     })
-    setInterval(() => doStat(io),UPDATE_INTERVAL)
-    doStat(io);
+    setInterval(() => doStat(),UPDATE_INTERVAL)
+    doStat();
 }   
-async function doStat(io) {
+async function doStat() {
     const stats = await getStats();
     last_stat = stats;
     io.emit('stat',stats)
