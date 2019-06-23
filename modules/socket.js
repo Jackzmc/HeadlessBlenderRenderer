@@ -7,6 +7,7 @@ const { resolve } = require('path');
 const fs = require('fs').promises
 
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
+const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
 let last_stat = null;
 let running_proc = null;
@@ -53,8 +54,9 @@ function main(io) {
         socket.on('zips',async(data,callback) => {
             //return callback({files:[{name:'test.blend'}]})
             try {
-                const files = await fs.readdir(`${process.env.HOME_DIR}`);
-                callback({files:files.map(v => {return {name:v}})})
+                const files_raw = await fs.readdir(ZIP_DIR);
+                const files = files_raw.filter(v => v.endsWith(".zip")).map(v => {return {name:v}})
+                callback({files})
             }catch(err) {
                 console.log(err)
                 callback({error:true})
