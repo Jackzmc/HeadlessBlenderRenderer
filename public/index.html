@@ -415,6 +415,13 @@ var app = new Vue({
         });
         uploader.on('abort', fileInfo => {
             this.blend_chooser.uploading = false;
+            this.$dialog.alert({
+                title: 'Uploaded has been aborted',
+                message: `<b>File Info:</b><br>${JSON.stringify(fileInfo)}`,
+                type: 'is-warning',
+                hasIcon: true,
+                icon: 'alert-circle'
+            })
             console.log('Aborted: ', fileInfo);
         });
 
@@ -435,12 +442,6 @@ var app = new Vue({
         socket.on('frame',data => {
             this.render.current = data;
             console.log('FRAME:',data)
-        })
-        socket.on('run_error',(data) => {
-            this.$toast.open({
-                type:'is-danger',
-                message:data
-            })
         })
         socket.on('disconnect', () => {
             this.socket_status = false;
@@ -592,11 +593,25 @@ var app = new Vue({
                 frames:(this.opts.blend.all_frames)?null:[this.opts.blend.frame_start,this.opts.blend.frame_stop],
                 scripts:this.opts.blend.py_scripts,
                 extra_args:this.opts.blend.extra_args
+            },res => {
+                if(!res) return;
+                if(res.error) {
+                    return this.$dialog.alert({
+                        title: 'Render Failed',
+                        message: res.error,
+                        type: 'is-danger',
+                        hasIcon: true,
+                        icon: 'alert-circle'
+                    })
+                }else{
+                    this.$toast.open({
+                        type:'is-success',
+                        message:'Render has been started.'
+                    })
+                    console.log("Server Responded: " + JSON.stringify(res))
+                }
             })
-            this.$toast.open({
-                type:'is-success',
-                message:'Render has been started.'
-            })
+            
             //this.render.active = true;
         },
         cancelRender: function() {

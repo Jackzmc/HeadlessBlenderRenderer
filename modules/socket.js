@@ -60,7 +60,10 @@ function main(io) {
                 callback({error:true})
             }
         })
-        socket.on('start',async(data) => {
+        socket.on('start',async(data,callback) => {
+            if(running_proc||render_active) {
+                return callback({error:"A render is already started"})
+            }
             const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
             const py_scripts = data.scripts.map(v => `-P "${v}"`);
             if(!data.frames) {
@@ -92,6 +95,8 @@ function main(io) {
                 cwd:process.env.HOME_DIR,
                 stdio:['ignore','pipe','pipe']
             });
+            //tell it started successfully
+            callback({success:true})
             running_proc.stdout.on('data',(data) => {
                 const msg = data.toString();
                 const frame_match = msg.match(/\d\d\d\d\.png/g);
