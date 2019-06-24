@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <title>Blender Render (& Cycles)</title>
+    <link rel="stylesheet" href="//cdn.materialdesignicons.com/3.6.95/css/materialdesignicons.min.css">
+</head>
+
+<body>
+<div id="app">
+    <div class="container ">
+        <p class="title is-1">Blender Rendering</p>
+        <p class="subtitle is-4">Socket <span v-html="getSocketStatus"></span></p>
+        <div class="columns">
+            <div class="column is-6">
+                <span v-if="!render.active">
+                <b-field class="file">
+                    <a :disabled="!socket_status" @click="blend_chooser.active = true;refreshBlendChooser()" class="button is-primary">
+                        <b-icon icon="file"></b-icon>
+                        <span>Choose a blend file</span>
+                    </a>
+                    <span class="file-name" v-if="blend">
+                        {{ blend }}
+                    </span>
+                </b-field>
+                <b-field label="Render Options">
+                    <b-checkbox v-model="opts.blend.gpu_render">
+                        Render with {{opts.blend.gpu_render?"GPU":"CPU"}}
+                    </b-checkbox>
+                </b-field>
+                <b-field label="Frame Options">
+                    <b-checkbox v-model="opts.blend.all_frames">
+                        Render all frames
+                    </b-checkbox>
+                </b-field>
+                <span v-if="!opts.blend.all_frames">
+                    <b-field label="Starting Frame">
+                            <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
+                    </b-field>
+                    <b-field label="Ending Frame">
+                        <b-numberinput :min="opts.blend.frame_start>0?opts.blend.frame_start:0" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_stop"></b-numberinput>
+                    </b-field>
+                    <br>
+                </span>
+                <b-field label="Python Scripts (Optional)">
+                    <b-taginput
+                        v-model="opts.blend.py_scripts"
+                        type="is-dark">
+                    </b-taginput>
+                </b-field>
+                <b-field label="Extra Command Arguments (Optional) (Disabled for now)">
+                    <b-input
+                        v-model="opts.blend.extra_args" disabled>
+                    </b-input>
+                </b-field>
+                <span v-if="blend != null">
+                <br>
+                <b>Command:</b> {{generateCommand()}}
+                <br>
+                </span>
+                <br>
+                </span>
+                <div class="notification is-dark">
+                    <div v-if="render.active">
+                        <div><strong class="is-white">A render is currently in progress {{frameValue}}{{framePercent}}</strong></div>
+                        <br>
+                        <span v-if="render.max != null">
+                            <progress v-if="render.max != null" class="progress" :value='render.current' :max='render.max'></progress>
+                        </span>
+                        <br>
+                    </div>
+                    <nav class="navbar is-dark">
+                        <div class="navbar-menu">
+                            <div class="navbar-start">
+                                <div class="buttons">
+                                    <b-button :disabled="render.active||blend==null||!socket_status" type="is-success" @click="startRender()">
+                                        Render
+                                    </b-button>
+                                    <b-button :disabled="!socket_status" type="is-danger" outlined @click="cancelRender()">
+                                        Stop
+                                    </b-button>
+                                </div>
+                            </div>
+                            <div class="navbar-end">
+                                <div class="buttons">
+                                    <b-button @click="saveDefaults">
+                                        <b-icon icon="content-save"></b-icon><span>Save Defaults</span>
+                                    </b-button>
+                                </div>
+                            </div>
+                        </div>    
+                    </nav>
+                </div>
+                <b-field>
+                    <a :disabled="!socket_status" @click="zips.active = true;refreshZIPs()" class="button is-large is-fullwidth is-info">
+                        <b-icon icon="download"></b-icon>
+                        <span>Download ZIPs</span>
+                    </a>
+                </b-field>
+            </div>
+            <div class="column is-6">
+                <b-field label="Console Output">
+                    <b-input :disabled="!socket_status" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
+                </b-field>
+                <hr>
+                <!-- <b-field expanded>
+                    <b-select placeholder="Update Interval" v-model="opts.stat.update_interval" label="Update Interval">
+                        <option value=15>Update every 15 seconds</option>
+                        <option value=30>Update every 30 seconds</option>
+                        <option value=45>Update every 45 seconds</option>
+                        <option value=60>Update every 60 seconds</option>
+                    </b-select>
+                </b-field> -->
+                <b-field expanded>
+                    <b-checkbox v-model="opts.stat.celsius">
+                        Use Celsius
+                    </b-checkbox>
+                </b-field>
+                <span v-if="!socket_status">
+                    <div v-if="!socket_status" class="notification is-danger">
+                        Lost Connection to the Socket Server.
+                    </div>
+                </span>
+                <span v-else>
+                <b-field :label="'CPU Stats - ' + (stats.cpu.name?stats.cpu.name:'Unknown')">
+                    
+                    <nav :loading="stats.initial" class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU %</p>
+                            <p class="title">{{stats.cpu.usage}}%</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU Temp</p>
+                            <p class="title"><span v-html="cm_temp(stats.cpu.temp)"></p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">CPU Speed</p>
+                            <p class="title">{{stats.cpu.speed}} GHz</p>
+                            </div>
+                        </div>
+                    </nav>
+                </b-field>
+                <b-field label="Memory Stats">
+                    <nav :loading="stats.initial" class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">Used</p>
+                            <p class="title">{{humanize(stats.mem.used)}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">Free</p>
+                            <p class="title">{{humanize(stats.mem.free)}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">Total</p>
+                            <p class="title">{{humanize(stats.mem.total)}}</p>
+                            </div>
+                        </div>
+                    </nav>
+                </b-field>
+                <b-field label="GPU Stats" v-if="stats.gpu.length == 0">
+                    No GPU found.
+                </b-field>
+                <b-field v-for="(gpu,index) in stats.gpu" :key="index" :label="'GPU #' + ++index + ' Stats - ' + gpu.name">
+                    
+                    <nav class="level">
+                        <b-loading :is-full-page="false" :active="stats.initial"></b-loading>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU %</p>
+                            <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'n/a'}}</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU Temp</p>
+                            <p class="title"><span v-html="cm_temp(gpu.temp)"></span></p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                            <p class="heading">GPU MEM</p>
+                            <p class="title">{{gpu.vram.current>-1?`${humanize(gpu.vram.current,true)}/${humanize(gpu.vram.max,true)}`:'n/a'}}</p>
+                            </div>
+                        </div>
+                    </nav>
+                </b-field>
+                </span>
+            </div>
+        </div>
+        <br>
+    </div>
+    <b-modal :active.sync="blend_chooser.active">
+        <div class="box">
+            <h3 class='title is-3'>Blend File Chooser</h3>
+            <b-loading :is-full-page="false" :active.sync="blend_chooser.loading||!socket_status"></b-loading>
+            <p v-if="blend_chooser.blends == null">Loading blends...</p>
+            <div v-if="!socket_status" class="notification is-danger">
+               Lost Connection to the Socket Server.
+            </div>
+            <h5 class="title is-5">Existing Blend Files <a @click='refreshBlendChooser' class="button is-info is-small"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h5>
+            <b-table
+            :data="blend_chooser.blends||[]"
+            :striped="true"
+            :hoverable="true"
+            :loading="blend_chooser.blends == null">
+
+            <template slot-scope="props">
+                <b-table-column field="name" label="Name">
+                    {{ props.row.name }}
+                </b-table-column>
+
+                <b-table-column label="Action">
+                    <a :disabled="!socket_status" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                </b-table-column>
+
+            </template>
+
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>Nothing here.</p>
+                    </div>
+                </section>
+            </template>
+            </b-table>
+            <hr>
+            <h5 class="title is-5">Upload Blend Files</h5>
+            <b-field>
+                <b-upload :disabled="!socket_status" id="uploader" v-model="blend_chooser.uploads"
+                    multiple
+                    accept=".blend"
+                    drag-drop>
+                    <section class="section">
+                        <div class="content has-text-centered">
+                            <p>
+                                <b-icon
+                                    icon="upload"
+                                    size="is-large">
+                                </b-icon>
+                            </p>
+                            <p>Drop your files here or click to upload</p>
+                        </div>
+                    </section>
+                </b-upload>
+            </b-field>
+    
+            <div class="tags">
+                <span v-for="(file, index) in blend_chooser.uploads"
+                    :key="index"
+                    class="tag is-primary" >
+                    {{file.name}}
+                    <button class="delete is-small"
+                        type="button"
+                        @click="deleteDropFile(index)">
+                    </button>
+                </span>
+            </div>
+            <span v-if="blend_chooser.uploading">
+                <progress v-for="upload in blend_chooser.uploads" class="progress" :value="upload.progress" max="100"></progress>
+            </span>
+            
+            <b-field>
+                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0||!socket_status" type="button is-success">Upload Files</button>
+            </b-field>
+        </div>
+    </b-modal>
+    <b-modal :active.sync="zips.active">
+        <div class="box">
+            <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
+            <b-loading :is-full-page="false" :active.sync="zips.loading||!socket_status"></b-loading>
+            <p v-if="zips.list == null">Loading zips...</p>
+            <div v-if="!socket_status" class="notification is-danger">
+                Lost Connection to the Socket Server.
+             </div>
+            <b-table
+            :data="zips.list||[]"
+            :striped="true"
+            :hoverable="true"
+            :loading="zips.list == null">
+
+            <template slot-scope="props">
+                <b-table-column field="name" label="Name">
+                    {{ props.row.name }}
+                </b-table-column>
+
+                <b-table-column label="Action">
+                    <a :disabled="!socket_status" @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
+                    <a :disabled="!socket_status" @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
+                </b-table-column>
+
+            </template>
+
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>Nothing here.</p>
+                    </div>
+                </section>
+            </template>
+            </b-table>
+        </div>
+    </b-modal>
+</div>
+</body>
+</html>
+

@@ -1,6 +1,14 @@
-const params = new Map(location.search.slice(1).split('&').map(kv => kv.split('=')))
+import Vue from 'vue/dist/vue.js'
+import Buefy from 'buefy';
+import axios from 'axios';
+import download from 'downloadjs';
+import io from 'socket.io-client';
+import SocketIOFileClient from 'socket.io-file-client';
+import 'buefy/dist/buefy.css'
+Vue.use(Buefy);
+
 let socket, uploader;
-var app = new Vue({
+new Vue({
     el: '#app',
     data:{
         socket_status:false,
