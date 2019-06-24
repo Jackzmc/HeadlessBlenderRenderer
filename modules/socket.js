@@ -156,13 +156,13 @@ function getStats() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
     return new Promise(async(resolve,reject) => {
          try {
-             const [si_cpu,si_gpu,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
+             const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
                  si.cpu(),
-                 si.graphics(),
+                 si.mem(),
                  si.cpuCurrentspeed(),
                  si.currentLoad(),
                  si.cpuTemperature(),
-                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader")
+                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name --format=csv,noheader")
              ])
              const gpus = [];
              gpu_smi = [];
@@ -173,38 +173,18 @@ function getStats() {
                  })
                  .fromString(nvidia_smi_result)
                  arr.forEach(g => {
-                     gpu_smi.push({
+                     gpus.push({
                          usage:parseInt(g[0]),
                          temp:parseInt(g[1]),
                          vram:{
-                             current: parseInt(g[2]),
-                             total: parseInt(g[3])
-                         }
+                             current: parseInt(g[2])*1.049e+6,
+                             total: parseInt(g[3])*1.049e+6
+                         },
+                         name:g[4]
                      })
                  })
              }catch(err) {
                  console.warn("[/stats:WARN] Could not get nvidia gpu information")
-             }
-             for(let i=0;i<si_gpu.controllers.length;i++) {
-                 const gpu = si_gpu.controllers[i];
-                 let smi = gpu_smi[i] ? gpu_smi[i] : {
-                     usage:-1,
-                     temp:-1,
-                     vram:{
-                         current:-1,
-                         total:-1
-                     }
-                 };
-                 
-                 gpus.push({
-                     name:gpu.model,
-                     usage:smi.usage,
-                     temp:smi.temp,
-                     vram:{
-                         current:smi.vram.current*1.049e+6,
-                         max:smi.vram.total*1.049e+6
-                     },
-                 })
              }
  
              return resolve({
@@ -213,6 +193,11 @@ function getStats() {
                      usage:Math.round(cpu_load.currentload  * 1e1) / 1e1,
                      speed:cpu_speed.avg,
                      temp:cpu_temp.main,
+                 },
+                 mem:{
+                    used:si_mem.used,
+                    total:si_mem.total,
+                    free:si_mem.free
                  },
                  gpu:gpus
              })

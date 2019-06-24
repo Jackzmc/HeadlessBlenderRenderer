@@ -3,6 +3,9 @@
 
 A UI for a headless blender setup, with CPU &amp; GPU monitoring, and more
 
+Note: Statistics only support NVIDIA gpus at this time. No support for AMD or Intel Integrated (but why?)
+But if you know a way to get AMD information (like nvidia's 'nvidia-smi' command, tell me!)
+
 ## Environmental Variables
 
 Required:
