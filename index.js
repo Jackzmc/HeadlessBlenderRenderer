@@ -2,11 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
-const io = require('./modules/socket.js')(server);
 const fs = require('fs').promises;
 
 const bodyParser = require('body-parser')
-const {execShellCommand} = require('./modules/utils.js');
 
 if(!process.env.HOME_DIR) {
     console.error('[ERROR] Missing environmental variable: HOME_DIR')
@@ -21,7 +19,7 @@ server.listen(process.env.WEBPORT||8080,() => {
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(require('cors')())
-app.use(express.static("public"))
+app.use('/',express.static("public"))
 app.get('/socket.io-file-client.js', (req, res, next) => {
     return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
 });
