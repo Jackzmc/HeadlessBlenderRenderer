@@ -21,6 +21,9 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(require('cors')())
 app.use(express.static(__dirname+"/public"))
+app.get('/js/main.js',(req,res) => {
+    res.sendFile(__dirname+"/public/js/main.js")
+})
 app.get('/socket.io-file-client.js', (req, res, next) => {
     return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
 });
