@@ -4,20 +4,20 @@
     <nav class="level">
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">CPU %</p>
-            <p class="title">{{cpu_text(cpu.usage,"%")}}</p>
+            <p class="heading">Usage %</p>
+            <p class="title">{{text(cpu.usage,"%")}}</p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">CPU Temp</p>
+            <p class="heading">Temp</p>
             <p class="title"><span v-html="cm_temp(cpu.temp)"></span></p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">CPU Speed</p>
-            <p class="title">{{cpu_text(cpu.speed,"GHz")}}</p>
+            <p class="heading">Speed</p>
+            <p class="title">{{text(cpu.speed,"GHz")}}</p>
             </div>
         </div>
     </nav>
@@ -52,19 +52,25 @@
     <nav class="level">
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">GPU %</p>
+            <p class="heading">Usage %</p>
             <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'n/a'}}</p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">GPU Temp</p>
+            <p class="heading">Temp</p>
             <p class="title"><span v-html="cm_temp(gpu.temp)"></span></p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-            <p class="heading">GPU MEM</p>
+            <p class="heading">Fan %</p>
+            <p class="title">{{text(gpu.fan_speed,"%")}}</p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+            <p class="heading">Memory</p>
             <p class="title">{{gpu.vram.current>-1?`${humanize(gpu.vram.current,true)}/${humanize(gpu.vram.total,true)}`:'n/a'}}</p>
             </div>
         </div>
@@ -93,7 +99,7 @@ export default {
         }
     },
     methods:{
-        cpu_text(val,suffix) {
+        text(val,suffix) {
             if(val===-1) return "n/a";
             return val + " " + suffix;
         },

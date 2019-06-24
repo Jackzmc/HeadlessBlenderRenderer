@@ -162,7 +162,7 @@ new Vue({
 
         socket.on('render_start',(d) => {
             this.render.active = true;
-            this.render.current = 0;
+            this.render.current = d.frame||0;
             this.render.max = d.max_frames;
         })
         socket.on('render_stop',() => {

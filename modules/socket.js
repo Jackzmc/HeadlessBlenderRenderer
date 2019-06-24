@@ -9,7 +9,7 @@ const fs = require('fs').promises
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
-let last_stat, running_proc, io, max_frames = null;
+let last_stat, running_proc, io, max_frames = null, current_frame = 0;
 let render_active = false;
 
 module.exports = (server) => {
@@ -31,7 +31,8 @@ function main() {
         if(render_active) {
             console.log('sending render_start to new socket')
             socket.emit('render_start',{
-                max_frames
+                max_frames,
+                frame:current_frame
             });
         }
         uploader.on('complete', (fileInfo) => {
@@ -105,7 +106,8 @@ async function startRender(data,callback) {
     }
     console.log(`Frames to render for ${data.blend}: ${max_frames}`)
     io.emit('render_start',{
-        max_frames
+        max_frames,
+        frame:0
     });
     render_active = true;
    // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
@@ -127,6 +129,7 @@ async function startRender(data,callback) {
         if(frame_match && frame_match.length > 0) {
             const frame = parseInt(frame_match[0].replace('.png',''));
             io.emit('frame',frame)
+            current_frame = frame;
             //get frame #
         }
         io.emit('log',{
@@ -162,7 +165,7 @@ function getStats() {
                  si.cpuCurrentspeed(),
                  si.currentLoad(),
                  si.cpuTemperature(),
-                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name --format=csv,noheader")
+                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
              ])
              const gpus = [];
              gpu_smi = [];
@@ -180,7 +183,8 @@ function getStats() {
                         current: parseInt(g[2])*1.049e+6,
                         total:  parseInt(g[3])*1.049e+6
                         },
-                        name:g[4]
+                        name:g[4],
+                        fan_speed:parseInt(g[5])
                     })
                  })
              }catch(err) {

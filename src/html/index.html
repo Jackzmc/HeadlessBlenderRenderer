@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Blender Render (& Cycles)</title>
+    <title>Blender Render UI</title>
     <link rel="stylesheet" href="//cdn.materialdesignicons.com/3.6.95/css/materialdesignicons.min.css">
 </head>
 
@@ -123,7 +123,7 @@
                     </div>
                 </span>
                 <span v-else>
-                    <stats :cpu="stats.cpu" :mem="stats.mem" :gpu="stats.gpu"></stats>
+                    <stats :cpu="stats.cpu" :mem="stats.mem" :gpu="stats.gpu" :celsius="opts.stat.celsius"></stats>
                 </span>
             </div>
         </div>
