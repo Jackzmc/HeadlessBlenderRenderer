@@ -173,15 +173,15 @@ function getStats() {
                  })
                  .fromString(nvidia_smi_result)
                  arr.forEach(g => {
-                     gpus.push({
-                         usage:parseInt(g[0]),
-                         temp:parseInt(g[1]),
-                         vram:{
-                             current: parseInt(g[2])*1.049e+6,
-                             total: parseInt(g[3])*1.049e+6
-                         },
-                         name:g[4]
-                     })
+                    gpus.push({
+                        usage: parseInt(g[0]),
+                        temp:  parseInt(g[1]),
+                        vram:{
+                        current: parseInt(g[2])*1.049e+6,
+                        total:  parseInt(g[3])*1.049e+6
+                        },
+                        name:g[4]
+                    })
                  })
              }catch(err) {
                  console.warn("[/stats:WARN] Could not get nvidia gpu information")
