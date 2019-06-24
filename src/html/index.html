@@ -84,7 +84,7 @@
                             </div>
                             <div class="navbar-end">
                                 <div class="buttons">
-                                    <b-button @click="saveDefaults">
+                                    <b-button v-if="!render.active" @click="saveDefaults">
                                         <b-icon icon="content-save"></b-icon><span>Save Defaults</span>
                                     </b-button>
                                 </div>
