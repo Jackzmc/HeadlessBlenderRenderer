@@ -382,9 +382,9 @@ var app = new Vue({
         }
     },
     created:function() {
-        let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
-        let port = params.has('sk_port') ? params.get('sk_port') : '8095'
-        socket = io.connect(`//${domain}:${port}`);
+        //let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
+        //let port = params.has('sk_port') ? params.get('sk_port') : '8095'
+        socket = io.connect();
         uploader = new SocketIOFileClient(socket);
         if(window.localStorage) {
             const opts = window.localStorage.getItem('blender_opts');
