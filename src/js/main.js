@@ -6,6 +6,7 @@ import axios from 'axios';
 import download from 'downloadjs';
 import io from 'socket.io-client';
 import SocketIOFileClient from 'socket.io-file-client';
+
 import 'buefy/dist/buefy.css'
 Vue.use(Buefy);
 Vue.component('stats',Statistics);
