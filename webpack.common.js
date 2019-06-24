@@ -1,5 +1,7 @@
 const path = require('path');
 const HtmlWebPackPlugin = require("html-webpack-plugin")
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
   entry: './src/js/main.js',
@@ -30,6 +32,10 @@ module.exports = {
     {
         test: /\.html$/,
         use: [{loader: "html-loader"}]
+    },
+    {
+        test: /\.vue$/,
+        loader: 'vue-loader'
     }]
   },
   plugins: [
@@ -37,6 +43,8 @@ module.exports = {
       template: "./src/html/index.html",
       filename: "./index.html",
       excludeChunks: [ 'server' ]
-    })
+    }),
+    new VueLoaderPlugin(),
+    new CleanWebpackPlugin()
   ]
 };

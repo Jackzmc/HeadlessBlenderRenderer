@@ -124,6 +124,7 @@
                     </div>
                 </span>
                 <span v-else>
+                <stats :cpu="stats.cpu" :mem="stats.mem" :gpu="stats.gpu"></stats>
                 <b-field :label="'CPU Stats - ' + (stats.cpu.name?stats.cpu.name:'Unknown')">
                     
                     <nav :loading="stats.initial" class="level">

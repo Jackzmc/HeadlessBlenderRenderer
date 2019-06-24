@@ -124,78 +124,7 @@
                     </div>
                 </span>
                 <span v-else>
-                <b-field :label="'CPU Stats - ' + (stats.cpu.name?stats.cpu.name:'Unknown')">
-                    
-                    <nav :loading="stats.initial" class="level">
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">CPU %</p>
-                            <p class="title">{{stats.cpu.usage}}%</p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">CPU Temp</p>
-                            <p class="title"><span v-html="cm_temp(stats.cpu.temp)"></p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">CPU Speed</p>
-                            <p class="title">{{stats.cpu.speed}} GHz</p>
-                            </div>
-                        </div>
-                    </nav>
-                </b-field>
-                <b-field label="Memory Stats">
-                    <nav :loading="stats.initial" class="level">
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">Used</p>
-                            <p class="title">{{humanize(stats.mem.used)}}</p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">Free</p>
-                            <p class="title">{{humanize(stats.mem.free)}}</p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">Total</p>
-                            <p class="title">{{humanize(stats.mem.total)}}</p>
-                            </div>
-                        </div>
-                    </nav>
-                </b-field>
-                <b-field label="GPU Stats" v-if="stats.gpu.length == 0">
-                    No GPU found.
-                </b-field>
-                <b-field v-for="(gpu,index) in stats.gpu" :key="index" :label="'GPU #' + ++index + ' Stats - ' + gpu.name">
-                    
-                    <nav class="level">
-                        <b-loading :is-full-page="false" :active="stats.initial"></b-loading>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">GPU %</p>
-                            <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'n/a'}}</p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">GPU Temp</p>
-                            <p class="title"><span v-html="cm_temp(gpu.temp)"></span></p>
-                            </div>
-                        </div>
-                        <div class="level-item has-text-centered">
-                            <div>
-                            <p class="heading">GPU MEM</p>
-                            <p class="title">{{gpu.vram.current>-1?`${humanize(gpu.vram.current,true)}/${humanize(gpu.vram.total,true)}`:'n/a'}}</p>
-                            </div>
-                        </div>
-                    </nav>
-                </b-field>
+                    <stats :cpu="stats.cpu" :mem="stats.mem" :gpu="stats.gpu"></stats>
                 </span>
             </div>
         </div>
