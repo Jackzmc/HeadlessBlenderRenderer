@@ -150,13 +150,15 @@ new Vue({
             if(data.message) this.render.logs += (data.error?'[ERROR] ':'') + data.message;
             if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
+            
+        })
+        socket.on('frame',data => {
+            this.render.current = data;
+            //clean up logs, keep only last 200. only on frame
             const arr = this.render.logs.split("/n");
             if(arr.length >= 200) {
                 this.render.logs = arr.slice(-200).join("\n");
             }
-        })
-        socket.on('frame',data => {
-            this.render.current = data;
             console.log('FRAME:',data)
         })
         socket.on('disconnect', () => {
