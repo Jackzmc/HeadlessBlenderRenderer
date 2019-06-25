@@ -386,10 +386,10 @@ new Vue({
         },
         cancelRender() {
             this.$dialog.confirm({
-                title: 'Stop Render',
+                title: 'Stop Render Confirmation',
                 message: 'Are you sure you want to cancel this render? It is currently <b>' + this.framePercent + '</b> complete.',
                 confirmText: 'Stop Render',
-                type: 'is-danger',
+                type: 'is-warning',
                 hasIcon: true,
                 onConfirm() {
                     socket.emit('cancel',null,res => {
