@@ -36,7 +36,7 @@
                 </b-field>
                 <span v-if="!opts.blend.all_frames">
                     <b-field label="Starting Frame">
-                            <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
+                        <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
                     </b-field>
                     <b-field label="Ending Frame">
                         <b-numberinput :min="opts.blend.frame_start>0?opts.blend.frame_start:0" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_stop"></b-numberinput>
@@ -100,23 +100,15 @@
                 </b-field>
             </div>
             <div class="column is-6">
-                <b-field label="Console Output">
-                    <b-input :disabled="!socket_status" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
+                <b-field label="Console Output" >
+                    <b-input v-if="opts.console.enabled" :disabled="!socket_status" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
+                    <p v-else>Console is disabled in options</p>
                 </b-field>
+                <div class="buttons">
+                    <b-button type="is-warning">Clear Logs</b-button>
+                    <b-button @click="settings.open = true" type="is-info">Options</b-button>
+                </div>
                 <hr>
-                <!-- <b-field expanded>
-                    <b-select placeholder="Update Interval" v-model="opts.stat.update_interval" label="Update Interval">
-                        <option value=15>Update every 15 seconds</option>
-                        <option value=30>Update every 30 seconds</option>
-                        <option value=45>Update every 45 seconds</option>
-                        <option value=60>Update every 60 seconds</option>
-                    </b-select>
-                </b-field> -->
-                <b-field expanded>
-                    <b-checkbox v-model="opts.stat.celsius">
-                        Use Celsius
-                    </b-checkbox>
-                </b-field>
                 <span v-if="!socket_status">
                     <div v-if="!socket_status" class="notification is-danger">
                         Lost Connection to the Socket Server.
@@ -129,6 +121,25 @@
         </div>
         <br>
     </div>
+    <b-modal :active.sync="settings.open">
+        <div class="box">
+            <h3 class='title is-3'>Settings</h3>
+            <hr>
+            <b-field label="Temperature">
+                <b-checkbox v-model="opts.stat.celsius">
+                    {{opts.stat.celsius?"Celsius":"Fahrenheit"}}
+                </b-checkbox>
+            </b-field>
+            <b-field label="Console">
+                <b-checkbox v-model="opts.console.enabled">
+                    {{opts.console.enabled?"Enabled":"Disabled"}}
+                </b-checkbox>
+            </b-field>
+            <b-field label="Console Lines To Keep" :type="(opts.console_lines>200)?'is-danger':''" :message="(opts.console_lines>200)?'Over 200 lines can cause lag':''">
+                <b-numberinput min="50" max="1000" step="25" v-model="opts.console.lines"></b-numberinput>
+            </b-field>
+        </div>
+    </b-modal>
     <b-modal :active.sync="blend_chooser.active">
         <div class="box">
             <h3 class='title is-3'>Blend File Chooser</h3>
@@ -213,6 +224,7 @@
     <b-modal :active.sync="zips.active">
         <div class="box">
             <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
+            <hr>
             <b-loading :is-full-page="false" :active.sync="zips.loading||!socket_status"></b-loading>
             <p v-if="zips.list == null">Loading zips...</p>
             <div v-if="!socket_status" class="notification is-danger">

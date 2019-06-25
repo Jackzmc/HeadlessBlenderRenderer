@@ -18,6 +18,7 @@ new Vue({
         Statistics
     },
     data:{
+        settings: { open: false},
         socket_status:false,
         blend_chooser:{
             progress:0,
@@ -55,6 +56,11 @@ new Vue({
             gpu:[]
         },
         opts:{
+            version:"1.0",
+            console:{
+                lines:200,
+                enabled:true
+            },
             blend:{
                 gpu_render:true,
                 all_frames:true,
@@ -76,7 +82,7 @@ new Vue({
         },
         framePercent() {
             if(this.render.max == null) return "";
-            return " - " + (this.render.max == 0 ? "0%" : Math.round(this.render.current/this.render.max*100)) + "%";
+            return " - " + (this.render.max == 0 ? "0%" : (this.render.current/this.render.max*100).toFixed(1) + "%");
         },
         getSocketStatus() {
             if(this.socket_status) {
@@ -86,7 +92,7 @@ new Vue({
             }
         }
     },
-    created:function() {
+    created() {
         //let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
         //let port = params.has('sk_port') ? params.get('sk_port') : '8095'
         socket = io.connect();
@@ -94,7 +100,13 @@ new Vue({
         if(window.localStorage) {
             const opts = window.localStorage.getItem('blender_opts');
             if(opts) {
-                this.opts = JSON.parse(opts);
+                const json = JSON.parse(opts);
+                if(!json.version || json.version != this.opts.version) {
+                    console.warn('Stored options are for a different version and have been reset')
+                    window.localStorage.removeItem("blender_opts");
+                }else{
+                    this.opts = json;
+                }
             }
         }else{
             console.warn('Browser does not support localStorage, defaults wont be loaded.')
@@ -122,7 +134,7 @@ new Vue({
             })
             this.refreshBlendChooser();
         });
-        uploader.on('error', function(err) {
+        uploader.on('error', (err) => {
             console.log('Error!', err);
         });
         uploader.on('abort', fileInfo => {
@@ -146,6 +158,7 @@ new Vue({
             this.stats = data;
         });
         socket.on('log',data => {
+            if(!this.opts.console.enabled) return;
             if(data.clear) this.render.logs = "";
             if(data.message) this.render.logs += (data.error?'[ERROR] ':'') + data.message;
             if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
@@ -157,7 +170,7 @@ new Vue({
             //clean up logs, keep only last 200. only on frame
             const arr = this.render.logs.split("/n");
             if(arr.length >= 200) {
-                this.render.logs = arr.slice(-200).join("\n");
+                this.render.logs = arr.slice(-1 * this.opts.console.lines).join("\n");
             }
             console.log('FRAME:',data)
         })
@@ -238,7 +251,7 @@ new Vue({
         deleteDropFile(index) {
             this.blend_chooser.uploads.splice(index, 1)
         },
-        generateCommand: function() {
+        generateCommand() {
             if(!this.blend) return "[No file selected]"
             const type = this.opts.blend.gpu_render?"~/renderGPU.sh":"~/renderCPU.sh";
             const scripts = this.opts.blend.py_scripts.map(v => `-P ${v}`)
@@ -254,7 +267,7 @@ new Vue({
             this.blend = name;
             this.blend_chooser.active = false;
         },
-        refreshBlendChooser: function() {
+        refreshBlendChooser() {
             this.blend_chooser.loading = true;
            // if(this.blend_chooser.blends == null) {
                 socket.emit('blends',null,res => {
@@ -294,7 +307,7 @@ new Vue({
             })
             //}
         },
-        startRender: function() {
+        startRender() {
             if(!this.blend) {
                 return this.$dialog.alert({
                     title: 'Render Failed',
@@ -332,7 +345,7 @@ new Vue({
             
             //this.render.active = true;
         },
-        cancelRender: function() {
+        cancelRender() {
             this.$dialog.confirm({
                 title: 'Stop Render',
                 message: 'Are you sure you want to cancel this render? It is currently <b>' + this.framePercent + '</b> complete.',
@@ -356,25 +369,6 @@ new Vue({
                 }
             })
             //this.render.active = false;
-        },
-        cm_temp: function(val) {
-            if(val===-1) return "n/a";
-            let color = "";
-            if(val >= 104 && val < 203) {
-                color = "has-text-warning"
-            }else if(val >= 203 ) {
-                color = "has-text-danger"
-            }
-
-            if(this.opts.stat.celsius) {
-                const c = Math.round((5/9) * (val-32))
-                return `<span class='${color}'>${c}°C</span>`;
-            }else{
-                return `<span class='${color}'>${val}°F</span>`;
-            }
-        },
-        humanize(B,i) {
-            var e=i?1e3:1024;if(Math.abs(B)<e)return B+" B";var a=i?["kB","MB","GB","TB","PB","EB","ZB","YB"]:["KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"],t=-1;do B/=e,++t;while(Math.abs(B)>=e&&t<a.length-1);return B.toFixed(1)+" "+a[t]
         }
     }
 })
