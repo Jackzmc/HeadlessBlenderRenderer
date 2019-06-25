@@ -5,12 +5,21 @@ const csv = require('csvtojson')
 const si = require('systeminformation');
 const { resolve } = require('path');
 const fs = require('fs').promises
+const prettyMilliseconds = require('pretty-ms');
 
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
-let last_stat, running_proc, io, max_frames = null, current_frame = 0;
-let render_active = false;
+let render = {
+    active:false,
+    proc:null,
+    frame:{
+        current:0,
+        total:null,
+    },
+    started:null
+}
+let last_stat, io = null;
 
 module.exports = (server) => {
     if(!server) alert("SERVER NULL")
@@ -28,11 +37,12 @@ function main() {
             transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
             overwrite: true 							// overwrite file if exists, default is true.
         });
-        if(render_active) {
+        if(render.active) {
             console.log('sending render_start to new socket')
             socket.emit('render_start',{
-                max_frames,
-                frame:current_frame
+                max_frames:render.frame.total,
+                frame:render.frame.current,
+                started:render.started
             });
         }
         uploader.on('complete', (fileInfo) => {
@@ -66,8 +76,8 @@ function main() {
         })
         socket.on('cancel',(data = {},callback) => {
             if(!data) data = {}
-            if(running_proc) {
-                running_proc.kill(data.type||'SIGTERM');
+            if(render.proc) {
+                render.proc.kill(data.type||'SIGTERM');
                 callback({success:true})
             }else{
                 callback({render:false})
@@ -83,9 +93,10 @@ async function doStat() {
     io.emit('stat',stats)
 }
 async function startRender(data,callback) {
-    if(running_proc||render_active) {
+    if(render.proc||render.active) {
         return callback({error:"A render is already started"})
     }
+    render.started = null;
     const render_prefix = (data.mode === "cpu") ? "./renderCPU.sh" : "./renderGPU.sh";
     const py_scripts = data.scripts.map(v => `-P "${v}"`);
     if(!data.frames) {
@@ -97,22 +108,23 @@ async function startRender(data,callback) {
 
         if(all_frames_max) {
             const csv = all_frames_max.trim().split(" ");
-            max_frames = parseInt(csv[1]);
+            render.frame.total = parseInt(csv[1]);
         }else{
-            max_frames = null;
+            render.frame.total = null;
         }
     }else{
-        max_frames = data.frames[1]
+        render.frame.total = data.frames[1]
     }
-    console.log(`Frames to render for ${data.blend}: ${max_frames}`)
+    console.log(`Frames to render for ${data.blend}: ${render.frame.total}`)
     io.emit('render_start',{
-        max_frames,
-        frame:0
+        max_frames:render.frame.total,
+        frame:render.frame.current,
+        started:render.started
     });
-    render_active = true;
+    render.active = true;
    // const command = `${render_prefix} ${data.blend} ${frame_option} ${py_scripts.join(" ")} ${data.extra_args}`
     console.log(`[renderStart] ${render_prefix} "${data.blend}" ${data.frames?data.frames[0]:'all'} ${data.frames?data.frames[1]:'all'} ${py_scripts.join(" ")}`);
-    running_proc = spawn(render_prefix,[
+    render.proc = spawn(render_prefix,[
         `"${data.blend}"`,
         data.frames?data.frames[0]:'all',
         data.frames?data.frames[1]:'all'
@@ -121,9 +133,10 @@ async function startRender(data,callback) {
         cwd:process.env.HOME_DIR,
         stdio:['ignore','pipe','pipe']
     });
+    render.started = Date.now();
     //tell it started successfully
     callback({success:true})
-    running_proc.stdout.on('data',(data) => {
+    render.proc.stdout.on('data',(data) => {
         const msg = data.toString();
         const frame_match = msg.match(/\d\d\d\d\.png/g);
         if(frame_match && frame_match.length > 0) {
@@ -136,22 +149,25 @@ async function startRender(data,callback) {
             message:msg
         })
     })
-    running_proc.stderr.on('data',data => {
+    render.proc.stderr.on('data',data => {
         const msg = data.toString();
         io.emit('log',{
             error:true,
             message:data.toString()
         })
     })
-    running_proc.on('error',data => {
+    render.proc.on('error',data => {
         io.emit('log',{
             error:true,
             message:data.toString()
         })
     })
-    running_proc.on('close', function (code) {
+    render.proc.on('close', function (code) {
         io.emit('render_stop')
-        render_active = false;
+        io.emit('log',{
+            message:'Render finished, took ' + prettyMilliseconds(Date.now() - render.started)
+        })
+        render.active = false;
         console.log('Blender Child exited with code: ' + code);
       });
 }

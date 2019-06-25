@@ -22,6 +22,7 @@
     "dotenv": "^8.0.0",
     "downloadjs": "^1.4.7",
     "express": "^4.17.1",
+    "pretty-ms": "^5.0.0",
     "socket.io": "^2.2.0",
     "socket.io-file": "^2.0.31",
     "socket.io-file-client": "^2.0.2",
