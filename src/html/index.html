@@ -135,7 +135,7 @@
                     {{opts.console.enabled?"Enabled":"Disabled"}}
                 </b-checkbox>
             </b-field>
-            <b-field label="Console Lines To Keep" :type="(opts.console_lines>200)?'is-danger':''" :message="(opts.console_lines>200)?'Over 200 lines can cause lag':''">
+            <b-field label="Console Lines To Keep" :type="(opts.console.lines>200)?'is-danger':''" :message="(opts.console.lines>200)?'Over 200 lines can cause lag':''">
                 <b-numberinput min="50" max="1000" step="25" v-model="opts.console.lines"></b-numberinput>
             </b-field>
         </div>
