@@ -333,20 +333,28 @@ new Vue({
             //this.render.active = true;
         },
         cancelRender: function() {
-            socket.emit('cancel',null,res => {
-                if(!res.render) {
-                    this.$toast.open({
-                        type:'is-danger',
-                        message:'There is no active renders'
-                    })
-                }else{
-                    this.$toast.open({
-                        type:'is-warning',
-                        message:'Render has been cancelled'
+            this.$dialog.confirm({
+                title: 'Stop Render',
+                message: 'Are you sure you want to cancel this render? It is currently <b>' + this.framePercent + '</b> complete.',
+                confirmText: 'Stop Render',
+                type: 'is-danger',
+                hasIcon: true,
+                onConfirm() {
+                    socket.emit('cancel',null,res => {
+                        if(!res.render) {
+                            this.$toast.open({
+                                type:'is-danger',
+                                message:'There is no active renders'
+                            })
+                        }else{
+                            this.$toast.open({
+                                type:'is-warning',
+                                message:'Render has been cancelled'
+                            })
+                        }
                     })
                 }
             })
-            
             //this.render.active = false;
         },
         cm_temp: function(val) {
