@@ -35,7 +35,9 @@ new Vue({
             list:null
         },
         render:{
+            logs_paused:false,
             logs:"",
+            backlog:[],
             active:false,
             current:0,
             max:null
@@ -172,11 +174,17 @@ new Vue({
         });
         socket.on('log',data => {
             if(!this.opts.console.enabled) return;
-            if(data.clear) this.render.logs = "";
-            if(data.message) this.render.logs += (data.error?'\n[ERROR] ':'') + data.message;
-            if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
-            document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
-            
+            if(this.render.logs_paused) {
+                if(data.message) {
+                    this.render.backlog.push((data.error?'\n[ERROR] ':'') + data.message);
+                }else if(data.messages) {
+                    data.messages.forEach(v =>  this.render.backlog.push((data.error?'[ERROR] ':'') + v))
+                }
+            }else{
+                if(data.message) this.render.logs += (data.error?'\n[ERROR] ':'') + data.message;
+                if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
+                document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
+            }
         })
         socket.on('frame',data => {
             this.render.current = data;
@@ -209,6 +217,16 @@ new Vue({
         })
     },
     methods:{
+        togglePause() {
+            //if currently paused, to be resumed, fill backlog
+            if(this.render.logs_paused) {
+                this.render.logs += "\nConsole unpaused, filling with backlog\n"
+                this.render.logs += this.render.backlog.join(" ");
+                this.render.backlog = [];
+                document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
+            }
+            this.render.logs_paused = !this.render.logs_paused
+        },
         saveDefaults() {
             console.log(this.opts)
             if(window.localStorage) {

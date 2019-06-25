@@ -102,12 +102,13 @@
             </div>
             <div class="column is-6">
                 <b-field label="Console Output" >
-                    <b-input v-if="opts.console.enabled" :disabled="!socket_status" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
+                    <b-input v-if="opts.console.enabled" :disabled="!socket_status||render.logs_paused" id="el_renderlog" type="textarea" v-model="render.logs" readonly rows=10></b-input>
                     <p v-else>Console is disabled in options</p>
                 </b-field>
                 <div class="buttons">
-                    <b-button type="is-warning">Clear Logs</b-button>
-                    <b-button @click="settings.open = true" type="is-info">Options</b-button>
+                    <b-button @click='render.logs = ""' type="is-warning">Clear Logs</b-button>
+                    <b-button @click='togglePause' type='is-info'><b-icon :icon="render.logs_paused?'play':'pause'"></b-icon></b-button>
+                    <b-button @click="settings.open = true" type="is-info"><b-icon icon="settings"></b-icon></b-button>
                 </div>
                 <hr>
                 <span v-if="!socket_status">
