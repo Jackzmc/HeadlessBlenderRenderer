@@ -42,7 +42,8 @@ module.exports = {
     new HtmlWebPackPlugin({
       template: "./src/html/index.html",
       filename: "./index.html",
-      excludeChunks: [ 'server' ]
+      excludeChunks: [ 'server' ],
+      hash: true
     }),
     new VueLoaderPlugin(),
     new CleanWebpackPlugin()

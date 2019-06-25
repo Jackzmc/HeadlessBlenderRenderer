@@ -10,6 +10,7 @@ const prettyMilliseconds = require('pretty-ms');
 const UPDATE_INTERVAL = 1000*(process.env.STAT_UPDATE_INTERVAL_SECONDS||30);
 const ZIP_DIR = process.env.ZIP_DIR||`${process.env.HOME_DIR}/zips`
 
+const {version} = require('../package.json')
 let render = {
     active:false,
     proc:null,
@@ -212,6 +213,7 @@ function getStats() {
              }
  
              return resolve({
+                 version,
                  cpu:{
                      name:si_cpu.brand,
                      usage:Math.round(cpu_load.currentload  * 1e1) / 1e1,

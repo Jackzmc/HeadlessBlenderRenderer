@@ -98,6 +98,7 @@
                         <span>Download ZIPs</span>
                     </a>
                 </b-field>
+                <span><b>HeadlessBlenderWebUI</b> Version {{stats.version}}</span>
             </div>
             <div class="column is-6">
                 <b-field label="Console Output" >
@@ -217,7 +218,7 @@
             </span>
             
             <b-field>
-                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0||!socket_status" type="button is-success">Upload Files</button>
+                <b-button @click='uploadFiles' :disabled="blend_chooser.uploads.length == 0||!socket_status" type="button is-success">Upload Blends</button>
             </b-field>
         </div>
     </b-modal>

@@ -19,6 +19,7 @@ new Vue({
     },
     data:{
         settings: { open: false},
+        initial:true,
         socket_status:false,
         blend_chooser:{
             progress:0,
@@ -155,12 +156,24 @@ new Vue({
             console.info("Connected to socket")
         });
         socket.on('stat', (data) => {
+            if(!this.initial && data.version != this.stats.version) {
+                this.$snackbar.open({
+                    message: 'Detected new version of Web UI',
+                    type: 'is-warning',
+                    position: 'is-top',
+                    actionText: 'Reload',
+                    onAction: () => {
+                       window.location.reload();
+                    }
+                })
+            }
+            if(this.initial) this.initial = false;
             this.stats = data;
         });
         socket.on('log',data => {
             if(!this.opts.console.enabled) return;
             if(data.clear) this.render.logs = "";
-            if(data.message) this.render.logs += (data.error?'[ERROR] ':'') + data.message;
+            if(data.message) this.render.logs += (data.error?'\n[ERROR] ':'') + data.message;
             if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
             
