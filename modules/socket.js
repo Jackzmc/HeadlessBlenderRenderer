@@ -38,9 +38,6 @@ function main() {
             transmissionDelay: 0,						// delay of each transmission, higher value saves more cpu resources, lower upload speed. default is 0(no delay)
             overwrite: true 							// overwrite file if exists, default is true.
         });
-        setInterval(() => {
-            socket.emit('log',{message:'testing 123\n'})
-        },2500)
         if(render.active) {
             console.log('sending render_start to new socket')
             socket.emit('render_start',{
