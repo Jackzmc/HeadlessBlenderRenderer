@@ -163,9 +163,13 @@ async function startRender(data,callback) {
         })
     })
     render.proc.on('close', function (code) {
-        io.emit('render_stop')
+        const time_taken = prettyMilliseconds(Date.now() - render.started);
+        io.emit('render_stop',{
+            started:render.started,
+            time_taken
+        })
         io.emit('log',{
-            message:'Render finished, took ' + prettyMilliseconds(Date.now() - render.started)
+            message:'Render finished, took ' + time_taken
         })
         render.active = false;
         console.log('Blender Child exited with code: ' + code);

@@ -184,8 +184,15 @@ new Vue({
             this.render.current = d.frame||0;
             this.render.max = d.max_frames;
         })
-        socket.on('render_stop',() => {
+        socket.on('render_stop',(d) => {
             this.render.active = false;
+            this.$dialog.alert({
+                title: 'Render Complete',
+                message: `<b>${this.blend}</b> has been successfully rendered. Took <b>${d.time_taken}</b>`,
+                type: 'is-success',
+                hasIcon: true,
+                icon: 'alert-circle'
+            })
         })
     },
     methods:{
