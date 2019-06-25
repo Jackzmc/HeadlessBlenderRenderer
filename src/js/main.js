@@ -162,6 +162,7 @@ new Vue({
                 this.$snackbar.open({
                     message: 'Detected new version of Web UI',
                     type: 'is-warning',
+                    duration:"5000",
                     position: 'is-top',
                     actionText: 'Reload',
                     onAction: () => {
