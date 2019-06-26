@@ -161,6 +161,14 @@
                     {{ props.row.name }}
                 </b-table-column>
 
+                <b-table-column field="size" label="Size">
+                    {{ humanize(props.row.size) }}
+                </b-table-column>
+
+                <b-table-column field="date" label="Last Modified">
+                    {{ props.row.date }}
+                </b-table-column>
+
                 <b-table-column label="Action">
                     <a :disabled="!socket_status" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
                 </b-table-column>
