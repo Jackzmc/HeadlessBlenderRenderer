@@ -18,6 +18,7 @@ new Vue({
         Statistics
     },
     data:{
+        downloading:false,
         settings: { open: false},
         initial:true,
         socket_status:false,
@@ -245,12 +246,14 @@ new Vue({
             
         },
         downloadZip(name) {
+            this.downloading = true;
             axios.get(`zip/${name}/download`).then((data) => {
                 download(data, name, "application/blender");
+                this.downloading = false;
             }).catch(err => {
                 this.$toast.open({
                     type:'is-danger',
-                    message:'Failed to download zIP'
+                    message:'Failed to download zip'
                 })
             })
         },
@@ -342,7 +345,6 @@ new Vue({
                     })
                     return;
                 }
-                console.log(res.files)
                 this.zips.list = res.files;
             })
             //}

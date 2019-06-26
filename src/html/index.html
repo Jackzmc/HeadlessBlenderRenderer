@@ -238,11 +238,13 @@
             <p v-if="zips.list == null">Loading zips...</p>
             <div v-if="!socket_status" class="notification is-danger">
                 Lost Connection to the Socket Server.
-             </div>
+            </div>
+            <progress v-if="downloading" class="progress" max="100"></progress>
             <b-table
             :data="zips.list||[]"
             :striped="true"
             :hoverable="true"
+            :loading="downloading"
             :loading="zips.list == null">
 
             <template slot-scope="props">
@@ -259,11 +261,12 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <a :disabled="!socket_status" @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
-                    <a :disabled="!socket_status" @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
+                    <a :disabled="!socket_status||downloading" @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
+                    <a :disabled="!socket_status||downloading" @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
                 </b-table-column>
 
             </template>
+            
 
             <template slot="empty">
                 <section class="section">
