@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin")
 const VueLoaderPlugin = require('vue-loader/lib/plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -6,7 +7,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
   entry: './src/js/main.js',
   output: {
-    filename: 'js/bundle.js',
+    filename: 'js/[name].[contenthash].js',
     publicPath: '/',
     path: path.resolve(__dirname, 'dist')
   },
@@ -46,6 +47,7 @@ module.exports = {
       hash: true
     }),
     new VueLoaderPlugin(),
-    new CleanWebpackPlugin()
+    new CleanWebpackPlugin(),
+    new webpack.HashedModuleIdsPlugin()
   ]
 };

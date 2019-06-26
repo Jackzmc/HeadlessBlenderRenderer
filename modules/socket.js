@@ -65,8 +65,28 @@ function main() {
             //return callback({files:[{name:'test.blend'}]})
             try {
                 const files_raw = await fs.readdir(ZIP_DIR);
-                const files = files_raw.filter(v => v.endsWith(".zip")).map(v => {return {name:v}})
-                callback({files})
+                const promises = [];
+                files_raw.forEach(v => {
+                    if(!v.endsWith(".zip")) return;
+                    const promise = new Promise((resolve,reject) => {
+                        fs.stat(`${ZIP_DIR}/${v}`)
+                        .then(stat => {
+                            resolve({
+                                name:v,
+                                size:stat.size,
+                                date:prettyMilliseconds(stat.mtimeMs)
+                            })
+                        }).catch(err => reject(err));
+                    })
+                    promises.push(promise);
+                })
+                Promise.all(promises)
+                .then(files => {
+                    callback({files})
+                }).catch((err) => {
+                    callback({error:err.message})
+                    console.error('[Error]',err.message)
+                })
             }catch(err) {
                 console.log(err)
                 callback({error:true})

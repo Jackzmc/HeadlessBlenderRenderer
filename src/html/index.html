@@ -11,7 +11,7 @@
 <div id="app">
     <div class="container ">
         <p class="title is-1">Blender Rendering</p>
-        <p class="subtitle is-4">Socket <span v-html="getSocketStatus"></span></p>
+        <p class="subtitle is-4">Server <span v-html="getSocketStatus"></span></p>
         <div class="columns">
             <div class="column is-6">
                 <span v-if="!render.active">
@@ -106,11 +106,10 @@
                     <p v-else>Console is disabled in options</p>
                 </b-field>
                 <div class="buttons">
-                    <b-button @click='render.logs = ""' type="is-warning">Clear Logs</b-button>
+                    <b-button @click='render.logs = ""' type="is-warning"><b-icon icon='eraser'></b-icon></b-button>
                     <b-button @click='togglePause' type='is-info'><b-icon :icon="render.logs_paused?'play':'pause'"></b-icon></b-button>
                     <b-button @click="settings.open = true" type="is-info"><b-icon icon="settings"></b-icon></b-button>
                 </div>
-                <hr>
                 <span v-if="!socket_status">
                     <div v-if="!socket_status" class="notification is-danger">
                         Lost Connection to the Socket Server.
@@ -241,6 +240,14 @@
             <template slot-scope="props">
                 <b-table-column field="name" label="Name">
                     {{ props.row.name }}
+                </b-table-column>
+
+                <b-table-column field="size" label="Size">
+                    {{ humanize(props.row.size) }}
+                </b-table-column>
+
+                <b-table-column field="date" label="Last Modified">
+                    {{ props.row.date }}
                 </b-table-column>
 
                 <b-table-column label="Action">
