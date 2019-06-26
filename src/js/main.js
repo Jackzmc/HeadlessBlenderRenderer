@@ -222,7 +222,8 @@ new Vue({
         togglePause() {
             //if currently paused, to be resumed, fill backlog
             if(this.render.logs_paused) {
-                this.render.logs += "\nConsole unpaused, filling with backlog\n"
+                if(this.render.backlog.length == 0) return;
+                this.render.logs += "Console unpaused, filling with backlog\n"
                 this.render.logs += this.render.backlog.join(" ");
                 this.render.backlog = [];
                 document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
