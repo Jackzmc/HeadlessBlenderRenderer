@@ -64,7 +64,7 @@ function main() {
                             resolve({
                                 name:v,
                                 size:stat.size,
-                                date:prettyMilliseconds(stat.mtimeMs)
+                                date:prettyMilliseconds(Date.now() - new Date(stat.mtime))
                             })
                         }).catch(err => reject(err));
                     })
@@ -96,7 +96,7 @@ function main() {
                             resolve({
                                 name:v,
                                 size:stat.size,
-                                date:prettyMilliseconds(stat.mtimeMs)
+                                date:prettyMilliseconds(Date.now() - new Date(stat.mtime))
                             })
                         }).catch(err => reject(err));
                     })
