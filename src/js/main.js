@@ -160,10 +160,11 @@ new Vue({
         });
         socket.on('stat', (data) => {
             if(!this.initial && data.version != this.stats.version) {
+                console.info('Current Version: ',data.version,'- Latest Version:',this.stats.version)
                 this.$snackbar.open({
                     message: 'Detected new version of Web UI',
                     type: 'is-warning',
-                    indefinite,
+                    indefinite:true,
                     position: 'is-top',
                     actionText: 'Reload',
                     onAction: () => {
