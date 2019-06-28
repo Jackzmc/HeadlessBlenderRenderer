@@ -44,7 +44,7 @@ module.exports = {
       template: "./src/html/index.html",
       filename: "./index.html",
       excludeChunks: [ 'server' ],
-      hash: true
+      inject:'body'
     }),
     new VueLoaderPlugin(),
     new CleanWebpackPlugin(),
