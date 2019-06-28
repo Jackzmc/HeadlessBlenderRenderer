@@ -24,8 +24,11 @@ let render = {
 let last_stat, io = null;
 
 module.exports = (server) => {
-    if(!server) alert("SERVER NULL")
-    io = require('socket.io')(server);
+    if(!server) return alert("SERVER NULL")
+    io = require('socket.io')({});
+    io.attach(server,{
+        cookie: false
+    })
     main()
 
     return io;
