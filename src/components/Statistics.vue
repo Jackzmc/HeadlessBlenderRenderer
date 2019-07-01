@@ -36,6 +36,12 @@
             <p class="title">{{humanize(mem.free)}}</p>
             </div>
         </div>
+        <div v-if="platform != 'win32'" class="level-item has-text-centered">
+            <div>
+            <p class="heading">Available</p>
+            <p class="title">{{humanize(mem.available)}}</p>
+            </div>
+        </div>
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Total</p>
@@ -85,6 +91,7 @@ import 'buefy/dist/buefy.css'
 export default {
     name:"stats",
     props:{
+        platform:null,
         cpu:{
             type: Object,
             temp:-1,

@@ -224,60 +224,62 @@ async function startRender(data,callback) {
 function getStats() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
     return new Promise(async(resolve,reject) => {
-         try {
-             const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
-                 si.cpu(),
-                 si.mem(),
-                 si.cpuCurrentspeed(),
-                 si.currentLoad(),
-                 si.cpuTemperature(),
-                 execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
-             ])
-             const gpus = [];
-             gpu_smi = [];
-             try {
-                 const arr = await csv({
-                     noheader:true,
-                     output: "csv"
-                 })
-                 .fromString(nvidia_smi_result)
-                 arr.forEach(g => {
-                    gpus.push({
-                        usage: parseInt(g[0]),
-                        temp:  parseInt(g[1]),
-                        vram:{
-                        current: parseInt(g[2])*1.049e+6,
-                        total:  parseInt(g[3])*1.049e+6
-                        },
-                        name:g[4],
-                        fan_speed:parseInt(g[5])
-                    })
-                 })
-             }catch(err) {
-                 console.warn("[/stats:WARN] Could not get nvidia gpu information")
-             }
+        try {
+            const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
+                si.cpu(),
+                si.mem(),
+                si.cpuCurrentspeed(),
+                si.currentLoad(),
+                si.cpuTemperature(),
+                execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
+            ])
+            const gpus = [];
+            gpu_smi = [];
+            try {
+                const arr = await csv({
+                    noheader:true,
+                    output: "csv"
+                })
+                .fromString(nvidia_smi_result)
+                arr.forEach(g => {
+                gpus.push({
+                    usage: parseInt(g[0]),
+                    temp:  parseInt(g[1]),
+                    vram:{
+                    current: parseInt(g[2])*1.049e+6,
+                    total:  parseInt(g[3])*1.049e+6
+                    },
+                    name:g[4],
+                    fan_speed:parseInt(g[5])
+                })
+                })
+            }catch(err) {
+                console.warn("[/stats:WARN] Could not get nvidia gpu information")
+            }
  
-             return resolve({
-                 version,
-                 cpu:{
-                     name:si_cpu.brand,
-                     usage:Math.round(cpu_load.currentload  * 1e1) / 1e1,
-                     speed:cpu_speed.avg,
-                     temp:cpu_temp.main,
-                 },
-                 mem:{
-                    used:si_mem.used,
-                    total:si_mem.total,
-                    free:si_mem.free
-                 },
-                 gpu:gpus
-             })
-         }catch(err) {
-             reject(err);
-         }
-     })
- }
- async function getFiles(dir) {
+            return resolve({
+                platform:process.platform,
+                version,
+                cpu:{
+                    name:si_cpu.brand,
+                    usage:Math.round(cpu_load.currentload  * 1e1) / 1e1,
+                    speed:cpu_speed.avg,
+                    temp:cpu_temp.main,
+                },
+                mem:{
+                used:si_mem.used,
+                total:si_mem.total,
+                free:si_mem.free,
+                available:si_mem.available
+                },
+                gpu:gpus
+            })
+        }catch(err) {
+            reject(err);
+        }
+    })
+}
+async function getFiles(dir) {
     const dirents = await fs.readdir(dir, { withFileTypes: true });
     const files = dirents.map((dirent) => {
       const res = resolve(dir, dirent.name);
