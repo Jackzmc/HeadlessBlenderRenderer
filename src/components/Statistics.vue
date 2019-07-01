@@ -104,19 +104,20 @@ export default {
             return val + " " + suffix;
         },
         cm_temp(val) {
+            //val is celsius
             if(val===-1) return "n/a";
             let color = "";
-            if(val >= 104 && val < 203) {
+            if(val >= 40 && val < 95) {
                 color = "has-text-warning"
             }else if(val >= 203 ) {
                 color = "has-text-danger"
             }
 
             if(this.celsius) {
-                const c = Math.round((5/9) * (val-32))
-                return `<span class='${color}'>${c}°C</span>`;
+                return `<span class='${color}'>${val}°C</span>`;
             }else{
-                return `<span class='${color}'>${val}°F</span>`;
+                const f = Math.round(((9/5) * val)+32)
+                return `<span class='${color}'>${f}°F</span>`;
             }
         },
         humanize(B,i) {
