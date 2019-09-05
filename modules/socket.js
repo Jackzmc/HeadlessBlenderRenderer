@@ -67,7 +67,7 @@ function main() {
                             resolve({
                                 name:v,
                                 size:stat.size,
-                                date:prettyMilliseconds(Date.now() - new Date(stat.mtime),{secondsDecimalDigits:0,millisecondsDecimalDigits:0})
+                                date:prettyMilliseconds(Date.now() - stat.mtime,{secondsDecimalDigits:0,millisecondsDecimalDigits:0})
                             })
                         }).catch(err => reject(err));
                     })

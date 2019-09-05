@@ -94,6 +94,15 @@ new Vue({
             }else{
                 return `<span class='has-text-danger'>Disconnected</span>`
             }
+        },
+        consoleLinesSlider() {
+            if(this.opts.console.lines > 500) {
+                return "is-danger";
+            }else if(this.opts.console.lines > 200) {
+                return "is-warning";
+            }else{
+                return "is-success";
+            }
         }
     },
     created() {

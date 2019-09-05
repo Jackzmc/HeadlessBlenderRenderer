@@ -128,7 +128,7 @@
             <hr>
             <b-field label="Temperature">
                 <b-checkbox v-model="opts.stat.celsius">
-                    {{opts.stat.celsius?"Celsius":"Fahrenheit"}}
+                   {{opts.stat.celsius?"Celsius":"Fahrenheit"}}
                 </b-checkbox>
             </b-field>
             <b-field label="Console">
@@ -137,7 +137,8 @@
                 </b-checkbox>
             </b-field>
             <b-field label="Console Lines To Keep" :type="(opts.console.lines>200)?'is-danger':''" :message="(opts.console.lines>200)?'Over 200 lines can cause lag':''">
-                <b-numberinput min="50" max="1000" step="25" v-model="opts.console.lines"></b-numberinput>
+                <!-- <b-numberinput min="50" max="1000" step="25" v-model="opts.console.lines"></b-numberinput> -->
+                <b-slider :disabled="!opts.console.enabled" v-model="opts.console.lines" :min="50" :max="750" ticks :step=25 :tooltip-type="consoleLinesSlider"></b-slider>
             </b-field>
         </div>
     </b-modal>
@@ -149,7 +150,8 @@
             <div v-if="!socket_status" class="notification is-danger">
                Lost Connection to the Socket Server.
             </div>
-            <h5 class="title is-5">Existing Blend Files <a @click='refreshBlendChooser' class="button is-info is-small"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h5>
+            
+            <h5 class="title is-5">Existing Blend Files <b-button @click='refreshBlendChooser' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></h5>
             <b-table
             :data="blend_chooser.blends||[]"
             :striped="true"
@@ -232,7 +234,7 @@
     </b-modal>
     <b-modal :active.sync="zips.active">
         <div class="box">
-            <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
+            <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
             <hr>
             <b-loading :is-full-page="false" :active.sync="zips.loading||!socket_status"></b-loading>
             <p v-if="zips.list == null">Loading zips...</p>
@@ -261,8 +263,11 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <a :disabled="!socket_status||downloading" @click="downloadZip(props.row.name)" class="button is-primary is-small">Download</a>
-                    <a :disabled="!socket_status||downloading" @click="deleteZip(props.row.name)" class="button is-danger is-small"><b-icon icon="delete"></b-icon></a>
+                    <b-button :disabled="!socket_status||downloading" @click="downloadZip(props.row.name)" type="is-primary" size="is-small" >
+                        <b-icon icon="download"></b-icon>
+                    </b-button>
+                    <a :disabled="!socket_status||downloading" @click="deleteZip(props.row.name)" class="button is-danger is-small">
+                        <b-icon icon="delete"></b-icon></a>
                 </b-table-column>
 
             </template>
