@@ -141,7 +141,7 @@ new Vue({
             this.blend_chooser.progress = 0;
             this.blend_chooser.uploads = [];
             this.blend_chooser.blends = null;
-            this.$toast.open({
+            this.$buefy.toast.open({
                 type:'is-success',
                 message:'Uploaded all blend files'
             })
@@ -152,7 +152,7 @@ new Vue({
         });
         uploader.on('abort', fileInfo => {
             this.blend_chooser.uploading = false;
-            this.$dialog.alert({
+            this.$buefy.dialog.alert({
                 title: 'Uploaded has been aborted',
                 message: `<b>File Info:</b><br>${JSON.stringify(fileInfo)}`,
                 type: 'is-warning',
@@ -170,7 +170,7 @@ new Vue({
         socket.on('stat', (data) => {
             if(!this.initial && data.version != this.stats.version) {
                 console.info('Current Version: ',data.version,'- Latest Version:',this.stats.version)
-                this.$snackbar.open({
+                this.$buefy.snackbar.open({
                     message: 'Detected new version of Web UI',
                     type: 'is-warning',
                     indefinite:true,
@@ -219,7 +219,7 @@ new Vue({
         })
         socket.on('render_stop',(d) => {
             this.render.active = false;
-            this.$dialog.alert({
+            this.$buefy.dialog.alert({
                 title: 'Render Complete',
                 message: `<b>${this.blend}</b> has been successfully rendered. Took <b>${d.time_taken}</b>`,
                 type: 'is-success',
@@ -245,12 +245,12 @@ new Vue({
             console.log(this.opts)
             if(window.localStorage) {
                 window.localStorage.setItem('blender_opts',JSON.stringify(this.opts))
-                this.$toast.open({
+                this.$buefy.toast.open({
                     type:'is-success',
                     message:'Saved defaults'
                 })
             }else{
-                this.$toast.open({
+                this.$buefy.toast.open({
                     type:'is-danger',
                     message:'Your browser doesn\'t support local storage'
                 })
@@ -263,7 +263,7 @@ new Vue({
                 download(data, name, "application/blender");
                 this.downloading = false;
             }).catch(err => {
-                this.$toast.open({
+                this.$buefy.toast.open({
                     type:'is-danger',
                     message:'Failed to download zip'
                 })
@@ -272,7 +272,7 @@ new Vue({
         deleteZip(name) {
             axios.get(`zip/${name}/delete`).then(r => {
                 if(r.data.success) {
-                    this.$toast.open({
+                    this.$buefy.toast.open({
                         type:'is-success',
                         message:'Deleted zip ' + name
                     })
@@ -282,7 +282,7 @@ new Vue({
                         this.refreshZIPs();
                     }
                 }else{
-                    this.$dialog.alert({
+                    this.$buefy.dialog.alert({
                         title: 'Delete Failed',
                         message: '<b>Server returned:</b> ' + JSON.stringify(r.data),
                         type: 'is-warning',
@@ -292,7 +292,7 @@ new Vue({
                 }
             }).catch(err => {
                 console.log(err.data)
-                this.$dialog.alert({
+                this.$buefy.dialog.alert({
                     title: 'Delete Failed',
                     message: '<b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
                     type: 'is-danger',
@@ -328,7 +328,7 @@ new Vue({
                     this.blend_chooser.loading = false;
                     if(res.error) {
                         this.blend_chooser.active = false;
-                        this.$dialog.alert({
+                        this.$buefy.dialog.alert({
                             title: 'Failure',
                             message: 'Could not get a list of blend files<br><strong>Server returned: </strong>' + res.error,
                             type: 'is-danger',
@@ -348,7 +348,7 @@ new Vue({
                 this.zips.loading = false;
                 if(res.error) {
                     this.zips.active = false;
-                    this.$dialog.alert({
+                    this.$buefy.dialog.alert({
                         title: 'Failure',
                         message: 'Could not get a list of zips',
                         type: 'is-danger',
@@ -363,7 +363,7 @@ new Vue({
         },
         startRender() {
             if(!this.blend) {
-                return this.$dialog.alert({
+                return this.$buefy.dialog.alert({
                     title: 'Render Failed',
                     message: 'A valid .blend file was not provided',
                     type: 'is-danger',
@@ -381,7 +381,7 @@ new Vue({
             },res => {
                 if(!res) return;
                 if(res.error) {
-                    return this.$dialog.alert({
+                    return this.$buefy.dialog.alert({
                         title: 'Render Failed',
                         message: res.error,
                         type: 'is-danger',
@@ -389,7 +389,7 @@ new Vue({
                         icon: 'alert-circle'
                     })
                 }else{
-                    this.$toast.open({
+                    this.$buefy.toast.open({
                         type:'is-success',
                         message:'Render has been started.'
                     })
@@ -400,7 +400,7 @@ new Vue({
             //this.render.active = true;
         },
         cancelRender() {
-            this.$dialog.confirm({
+            this.$buefy.dialog.confirm({
                 title: 'Stop Render Confirmation',
                 message: 'Are you sure you want to cancel this render? It is currently <b>' + this.framePercent + '</b> complete.',
                 confirmText: 'Stop Render',
@@ -409,12 +409,12 @@ new Vue({
                 onConfirm() {
                     socket.emit('cancel',null,res => {
                         if(!res.render) {
-                            this.$toast.open({
+                            this.$buefy.toast.open({
                                 type:'is-danger',
                                 message:'There is no active renders'
                             })
                         }else{
-                            this.$toast.open({
+                            this.$buefy.toast.open({
                                 type:'is-warning',
                                 message:'Render has been cancelled'
                             })
