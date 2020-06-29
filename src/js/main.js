@@ -205,7 +205,7 @@ new Vue({
             if(arr.length >= 200) {
                 this.render.logs = arr.slice(-1 * this.opts.console.lines).join("\n");
             }
-            console.log('FRAME:',data)
+            //console.log('FRAME:',data)
         })
         socket.on('disconnect', () => {
             this.socket_status = false;
