@@ -188,7 +188,7 @@ async function startRender(data,callback) {
         if(frame_match && frame_match.length == 4) {
             const frame = parseInt(frame_match[3].replace('.png',''));
             io.emit('frame',frame)
-            current_frame = frame;
+            render.frame.current = frame;
             //get frame #
         }
         io.emit('log',{
