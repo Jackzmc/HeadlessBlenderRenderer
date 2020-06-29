@@ -4,6 +4,7 @@ const app = express();
 const server = require('http').Server(app);
 require('./modules/socket.js')(server);
 const fs = require('fs').promises;
+const fs2 = require('fs')
 
 const bodyParser = require('body-parser')
 
@@ -25,9 +26,13 @@ app.get('/socket.io-file-client.js', (req, res, next) => {
     return res.sendFile(__dirname + '/node_modules/socket.io-file-client/socket.io-file-client.js');
 });
 app.get('/zip/:name/download',(req,res) => {
-    res.sendFile(`${ZIP_DIR}/${req.params.name}`,(err) => {
-        if(err) res.status(404).send("File Not Found")
-    });
+    res.set('Content-Type', 'application/zip')
+    res.set('Content-Disposition', `attachment; filename=${req.params.name}`);
+
+    const stream = fs2.createReadStream(`${ZIP_DIR}/${req.params.name}`)
+    stream.on('open',() => {
+        stream.pipe(res)
+    })
 })
 app.get('/zip/:name/delete',(req,res) => {
     fs.unlink(`${ZIP_DIR}/${req.params.name}`).then(() => {

@@ -258,16 +258,8 @@ new Vue({
             
         },
         downloadZip(name) {
-            this.downloading = true;
-            axios.get(`zip/${name}/download`).then((data) => {
-                download(data, name, "application/blender");
-                this.downloading = false;
-            }).catch(err => {
-                this.$buefy.toast.open({
-                    type:'is-danger',
-                    message:'Failed to download zip'
-                })
-            })
+            //this.downloading = true;
+            window.open(`zip/${name}/download`,`Download ${name}`)
         },
         deleteZip(name) {
             axios.get(`zip/${name}/delete`).then(r => {
