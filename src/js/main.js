@@ -3,7 +3,6 @@ import Buefy from 'buefy';
 import Statistics from '../components/Statistics.vue';
 
 import axios from 'axios';
-import download from 'downloadjs';
 import io from 'socket.io-client';
 import SocketIOFileClient from 'socket.io-file-client';
 
