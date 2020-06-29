@@ -184,7 +184,7 @@ async function startRender(data,callback) {
     callback({success:true})
     render.proc.stdout.on('data',(data) => {
         const msg = data.toString();
-        const frame_match = msg.match(/(Saved:)(.*\/)(\d+.png)/)[3]
+        const frame_match = msg.match(/(Saved:)(.*\/)(\d+.png)/)
         if(frame_match && frame_match.length == 4) {
             const frame = parseInt(frame_match[3]);
             io.emit('frame',frame)
