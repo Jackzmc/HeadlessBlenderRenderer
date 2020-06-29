@@ -201,7 +201,7 @@ new Vue({
         socket.on('frame',data => {
             this.render.current = data;
             //clean up logs, keep only last 200. only on frame
-            const arr = this.render.logs.split("/n");
+            const arr = this.render.logs.split("\n");
             if(arr.length >= 200) {
                 this.render.logs = arr.slice(-1 * this.opts.console.lines).join("\n");
             }
