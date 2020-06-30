@@ -402,7 +402,7 @@ new Vue({
                         if(!res.render) {
                             this.$buefy.toast.open({
                                 type:'is-danger',
-                                message:'There is no active renders'
+                                message:'There is no active render'
                             })
                         }else{
                             this.$buefy.toast.open({

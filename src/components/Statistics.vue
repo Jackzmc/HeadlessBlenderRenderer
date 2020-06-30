@@ -59,7 +59,7 @@
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Usage %</p>
-            <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'n/a'}}</p>
+            <p class="title">{{(gpu.usage>-1)?`${gpu.usage}%`:'?'}}</p>
             </div>
         </div>
         <div class="level-item has-text-centered">
@@ -77,7 +77,7 @@
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Memory</p>
-            <p class="title">{{gpu.vram.current>-1?`${humanize(gpu.vram.current,true)}/${humanize(gpu.vram.total,true)}`:'n/a'}}</p>
+            <p class="title">{{gpu.vram.current>-1?`${humanize(gpu.vram.current,true)}/${humanize(gpu.vram.total,true)}`:'?'}}</p>
             </div>
         </div>
     </nav>
@@ -107,12 +107,12 @@ export default {
     },
     methods:{
         text(val,suffix) {
-            if(val===-1) return "n/a";
+            if(val===-1) return "?";
             return val + " " + suffix;
         },
         cm_temp(val) {
             //val is celsius
-            if(val===-1) return "n/a";
+            if(val===-1) return "?";
             let color = "";
             if(val >= 40 && val < 95) {
                 color = "has-text-warning"

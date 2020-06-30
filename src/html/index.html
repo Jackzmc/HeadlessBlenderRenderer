@@ -10,7 +10,7 @@
 <body>
 <div id="app">
     <div class="container ">
-        <p class="title is-1">Blender Rendering</p>
+        <p class="title is-1">Blender Render UI</p>
         <p class="subtitle is-4">Server <span v-html="getSocketStatus"></span></p>
         <div class="columns">
             <div class="column is-6">
@@ -26,7 +26,7 @@
                 </b-field>
                 <b-field label="Render Options">
                     <b-checkbox v-model="opts.blend.gpu_render">
-                        Render with {{opts.blend.gpu_render?"GPU":"CPU"}}
+                        Rendering with {{opts.blend.gpu_render?"GPU":"CPU"}}
                     </b-checkbox>
                 </b-field>
                 <b-field label="Frame Options">
@@ -34,18 +34,23 @@
                         Render all frames
                     </b-checkbox>
                 </b-field>
-                <span v-if="!opts.blend.all_frames">
-                    <b-field label="Starting Frame">
-                        <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
-                    </b-field>
-                    <b-field label="Ending Frame">
-                        <b-numberinput :min="opts.blend.frame_start>0?opts.blend.frame_start:0" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_stop"></b-numberinput>
-                    </b-field>
+                <div v-if="!opts.blend.all_frames" class="columns">
+                    <div class="column">
+                        <b-field label="Starting Frame">
+                            <b-numberinput :min="0" :max="opts.blend.frame_stop" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_start"></b-numberinput>
+                        </b-field>
+                    </div>
+                    <div class="column">
+                        <b-field label="Ending Frame">
+                            <b-numberinput :min="opts.blend.frame_start>0?opts.blend.frame_start:0" :disabled="opts.blend.all_frames" v-model="opts.blend.frame_stop"></b-numberinput>
+                        </b-field>
+                    </div>
                     <br>
-                </span>
+                </div>
                 <b-field label="Python Scripts (Optional)">
                     <b-taginput
                         v-model="opts.blend.py_scripts"
+                        placeholder="Comma-separated"
                         type="is-dark">
                     </b-taginput>
                 </b-field>
