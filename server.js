@@ -27,7 +27,7 @@ app.get('/socket.io-file-client.js', (req, res, next) => {
 });
 app.get('/zip/:name/download',(req,res) => {
     res.set('Content-Type', 'application/zip')
-    res.set('Content-Disposition', `attachment; filename=${req.params.name}`);
+    res.set('Content-Disposition', `attachment; filename='${req.params.name}'`);
 
     const stream = fs2.createReadStream(`${ZIP_DIR}/${req.params.name}`)
     stream.on('open',() => {
