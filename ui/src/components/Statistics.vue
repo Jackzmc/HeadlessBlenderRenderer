@@ -95,9 +95,8 @@ export default {
             type:Boolean,
             default: true
         },
-        socket: {
-            type: Object
-        }
+        socket: Object,
+        version: String
     },
     data() {
         return {
@@ -140,10 +139,10 @@ export default {
     }, 
     mounted() {
         this.socket.on('stat', (data) => {
-            if(!this.initial && semvar(data.version,this.$VERSION) == 1) {
-                console.info(`Current Version: ${this.$VERSION} | Latest: ${data.version}`)
+            if(!this.initial && data.ui_version && semvar(data.ui_version,this.$VERSION) == 1) {
+                console.info(`Current Version: ${this.$VERSION} | Latest: ${data.ui_version}`)
                 this.$buefy.snackbar.open({
-                    message: `Detected new version of Web UI (v${data.version})`,
+                    message: `Detected new version of Web UI (v${data.ui_version})`,
                     type: 'is-warning',
                     indefinite:true,
                     position: 'is-top',
@@ -153,6 +152,7 @@ export default {
                     }
                 })
             }
+            this.$emit('update:version', data.version)
             if(this.initial) this.initial = false;
             this.stats = data;
         })

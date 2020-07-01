@@ -2,42 +2,39 @@
 <b-modal :active.sync="blend_chooser.active">
     <div class="box">
         <h3 class='title is-3'>Blend File Chooser</h3>
-        <b-loading :is-full-page="false" :active.sync="loading||!socket_status"></b-loading>
-        <p v-if="blends == null">Loading blends...</p>
-        <div v-if="!socket_status" class="notification is-danger">
-            Lost Connection to the Socket Server.
-        </div>
+        <b-loading :is-full-page="false" :active.sync="loading"></b-loading>
+        
         <h5 class="title is-5">Existing Blend Files <a @click='refreshBlendChooser' class="button is-info is-small"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h5>
         <b-table
         :data="blends||[]"
         :striped="true"
         :hoverable="true"
-        :loading="blends == null">
+        :loading="blends == null"
+        >
+            <template slot-scope="props">
+                <b-table-column field="name" label="Name">
+                    {{ props.row.name }}
+                </b-table-column>
 
-        <template slot-scope="props">
-            <b-table-column field="name" label="Name">
-                {{ props.row.name }}
-            </b-table-column>
+                <b-table-column label="Action">
+                    <a :disabled="!socket_status" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                </b-table-column>
 
-            <b-table-column label="Action">
-                <a :disabled="!socket_status" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
-            </b-table-column>
+            </template>
 
-        </template>
-
-        <template slot="empty">
-            <section class="section">
-                <div class="content has-text-grey has-text-centered">
-                    <p>
-                        <b-icon
-                            icon="emoticon-sad"
-                            size="is-large">
-                        </b-icon>
-                    </p>
-                    <p>Nothing here.</p>
-                </div>
-            </section>
-        </template>
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>Nothing here.</p>
+                    </div>
+                </section>
+            </template>
         </b-table>
         <hr>
         <div class="columns">
@@ -110,7 +107,7 @@
 import Modal from 'buefy/dist/components/modal'
 export default {
     name:"blend-chooser",
-    props:['socket_status','blends',''],
+    props:['blends'],
     methods:{
         refreshBlendChooser() {
             this.$emit('refresh')
@@ -124,9 +121,9 @@ export default {
     },
     data() {
         return {
-            uploads:[],
-            uploading:false,
-            loading:false
+            uploads: [],
+            uploading: false,
+            loading: false
         }
     },
     components:{

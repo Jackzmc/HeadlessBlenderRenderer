@@ -1,0 +1,44 @@
+<template>
+  <div :class="classname">[{{source.timestamp | timestamp}}] {{ source.text }}</div>
+</template>
+
+<script>
+export default {
+    name: 'item-component',
+    props: {
+        index: { // index of current item
+            type: Number
+        },
+        source: { // here is: {uid: 'unique_1', text: 'abc'}
+            type: Object,
+            default () {
+                return {}
+            }
+        },
+    },
+    computed:{
+        classname() {
+            if(this.source.text.includes("warn")) {
+                return 'warning'
+            }else if(this.source.text.includes("error")) {
+                return 'has-text-danger'
+            }else if(this.source.text.includes("Saved: ")) {
+                return "has-text-success"
+            }else{
+                return ""
+            }
+        }
+    },
+    filters: {
+        timestamp(inp) {
+            return new Date(inp).toLocaleTimeString();
+        }
+    }
+}
+</script>
+
+<style scoped>
+.warning {
+    color: rgb(187, 151, 8) 
+}
+</style>

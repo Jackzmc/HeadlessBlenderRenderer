@@ -1,13 +1,14 @@
 <template>
   <div id="app">
-    <div class="container ">
-        <p class="title is-1">Blender Render UI</p>
-        <p class="subtitle is-4" v-html="socketStatus"></p>
+    <div class="container">
+        
         <div class="columns">
-            <div class="column is-6">
+            <div class="column is-5">
+                <p class="title is-1">Blender Render UI</p>
+                <p class="subtitle is-4" v-html="socketStatus"></p>
                 <span v-if="!render.active">
                 <b-field class="file">
-                    <b-button type="is-primary" :disabled="isSocketOffline" @click="refreshBlendChooser()" icon-left="blender-software">
+                    <b-button type="is-primary" @click="refreshBlendChooser()" icon-left="blender-software">
                         <span>Choose a blend file</span>
                     </b-button>
                     <span class="file-name" v-if="blend_file">
@@ -31,6 +32,7 @@
                             :min="0" 
                             :max="options.blend.frames.start" 
                             :disabled="options.blend.frames.all" 
+                            controls-position="compact"
                             v-model="options.blend.frames.start"
                           />
                         </b-field>
@@ -40,6 +42,7 @@
                             <b-numberinput 
                             :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
                             :disabled="options.blend.frames.all" 
+                            controls-position="compact"
                             v-model="options.blend.frames.end" 
                           />
                         </b-field>
@@ -49,7 +52,7 @@
                 <b-field label="Python Scripts (Optional)">
                     <b-taginput
                         v-model="options.blend.python_scripts"
-                        placeholder="Comma-separated"
+                        placeholder="Comma-separated list of files"
                         type="is-dark">
                     </b-taginput>
                 </b-field>
@@ -79,10 +82,10 @@
                         <div class="navbar-menu">
                             <div class="navbar-start">
                                 <div class="buttons">
-                                    <b-button :disabled="render.active||blend_file==null||isSocketOffline" type="is-success" @click="startRender()">
+                                    <b-button :disabled="render.active||blend_file==null" type="is-success" @click="startRender()">
                                         Render
                                     </b-button>
-                                    <b-button :disabled="isSocketOffline" type="is-danger" outlined @click="cancelRender()">
+                                    <b-button type="is-danger" outlined @click="cancelRender()">
                                         Stop
                                     </b-button>
                                 </div>
@@ -98,17 +101,37 @@
                     </nav>
                 </div>
                 <b-field>
-                    <a :disabled="isSocketOffline" @click="refreshZIPs()" class="button is-large is-fullwidth is-info">
+                    <a @click="refreshZIPs()" class="button is-large is-fullwidth is-info">
                         <b-icon icon="download"></b-icon>
                         <span>Download ZIPs</span>
                     </a>
                 </b-field>
-                <span><a class="has-text-weight-bold" href="https://github.com/Jackzmc/HeadlessBlenderWebUI/">HeadlessBlenderWebUI</a> Version {{$VERSION}}</span>
+                <p>
+                    <a class="has-text-weight-bold" href="https://github.com/Jackzmc/HeadlessBlenderWebUI/">
+                        HeadlessBlenderWebUI
+                    </a> 
+                    <span>UI v{{$VERSION}} </span><span v-if="server_version">| Server v{{server_version}}</span>
+                </p>
             </div>
-            <div class="column is-6">
+            <div class="column is-7">
+                <br>
+                <br>
+                <br>
                 <b-field :label="consoleName" >
-                    <b-input v-if="options.console.enabled" :disabled="isSocketOffline" id="el_renderlog" type="textarea" v-model="logString" readonly rows=10></b-input>
+                  <div :class="['box',{'disconnected': isSocketOffline,}]">
+                    <VirtualList
+                    v-if="options.console.enabled"
+                    
+                    style="height: 200px; overflow-y: auto;"
+                    :data-key="'timestamp'"
+                    :data-sources="render.logs"
+                    :keeps="12"
+                    ref="renderlog"
+                    :data-component="$options.ListComponent"
+                    />
                     <p v-else>Console is disabled in options</p>
+                  </div>
+                    <!--<b-input v-if="options.console.enabled" :disabled="isSocketOffline" id="el_renderlog" type="textarea" v-model="logString" readonly rows=10></b-input>-->
                 </b-field>
                 <div class="buttons">
                     <b-button @click='render.logs = []' type="is-warning" ><b-icon icon='eraser'></b-icon></b-button>
@@ -119,12 +142,12 @@
                 
                 <span v-if="isSocketOffline">
                     <div v-if="isSocketOffline" class="notification is-danger">
-                        Lost Connection to the Socket Server.
+                        Stats are disabled: Disconnected from socket server
                     </div>
                 </span>
                 <span v-else>
                   <!-- component handles the socket event, just needs settings -->
-                  <Statistics :socket="socket" v-bind="options.stats" />
+                  <Statistics :socket="socket" :version.sync="server_version" v-bind="options.stats" />
                 </span>
             </div>
         </div>
@@ -153,18 +176,14 @@
     <b-modal :active.sync="modals.blend_chooser">
         <div class="box">
             <h3 class='title is-3'>Blend File Chooser</h3>
-            <b-loading :is-full-page="false" :active.sync="blend_chooser.loading||isSocketOffline"></b-loading>
-            <p v-if="blend_chooser.blends == null">Loading blends...</p>
-            <div v-if="isSocketOffline" class="notification is-danger">
-               Lost Connection to the Socket Server.
-            </div>
+            <hr>
             
-            <h5 class="title is-5">Existing Blend Files <b-button @click='this.refreshBlendChooser()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></h5>
+            <h5 class="title is-5">Existing Blend Files <b-button @click='refreshBlendChooser()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></h5>
             <b-table
             :data="blend_chooser.blends||[]"
             :striped="true"
             :hoverable="true"
-            :loading="blend_chooser.blends == null">
+            :loading="blend_chooser.loading">
 
             <template slot-scope="props">
                 <b-table-column field="name" label="Name">
@@ -172,7 +191,7 @@
                 </b-table-column>
 
                 <b-table-column field="size" label="Size">
-                    {{ humanize(props.row.size) }}
+                    {{ props.row.size | humanize }}
                 </b-table-column>
 
                 <b-table-column field="date" label="Last Modified">
@@ -180,7 +199,8 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <a :disabled="isSocketOffline" @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                    <span v-if="isSocketOffline">(Socket offline)</span>
+                    <a v-else @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
                 </b-table-column>
 
             </template>
@@ -194,13 +214,16 @@
                                 size="is-large">
                             </b-icon>
                         </p>
-                        <p>Nothing here.</p>
+                        <p>No blend files were found.</p>
                     </div>
                 </section>
             </template>
             </b-table>
             <hr>
             <h5 class="title is-5">Upload Blend Files</h5>
+            <div v-if="isSocketOffline" class="notification is-danger">
+                Lost Connection to the Socket Server.
+            </div>
             <b-field>
                 <b-upload :disabled="isSocketOffline" id="uploader" v-model="blend_chooser.upload.list"
                     multiple
@@ -250,17 +273,12 @@
         <div class="box">
             <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
             <hr>
-            <b-loading :is-full-page="false" :active.sync="zips.loading||isSocketOffline"></b-loading>
-            <p v-if="zips.list == null">Loading zips...</p>
-            <div v-if="isSocketOffline" class="notification is-danger">
-                Lost Connection to the Socket Server.
-            </div>
             <b-table
-            :data="zips.list||[]"
+            :data="zips.list"
             striped
             hoverable
             narrowed
-            :loading="zips.list == null">
+            :loading="zips.loading">
 
             <template slot-scope="props">
                 <b-table-column field="name" label="Name">
@@ -294,7 +312,7 @@
                                 size="is-large">
                             </b-icon>
                         </p>
-                        <p>Nothing here.</p>
+                        <p>No ZIPs were found.</p>
                     </div>
                 </section>
             </template>
@@ -309,21 +327,28 @@ import Statistics from './components/Statistics'
 import Axios from 'axios'
 import io from 'socket.io-client';
 import SocketIOFileClient from 'socket.io-file-client';
+import VirtualList from 'vue-virtual-scroll-list'
+import ListComponent from './components/ListComponent';
+
 export default {
   name: 'App',
+  ListComponent,
   components: {
     Statistics,
+    VirtualList,
   },
   data() {
     return {
       socket: null, //Socket.io connection handle
       uploader: null, //SocketIOFileClient
+      socket_first_inital: false, //if this is the first connection
+      server_version: null,
       //STATES
       blend_file: null, //Choosen blend file
       modals: {
         settings: false,
         blend_chooser: false,
-        zips: false
+        zip: false
       },
       zips:{ 
         loading: true, //Is it loading the list
@@ -371,18 +396,15 @@ export default {
     consoleName() {
       return `Console Output (${this.render.logs.length} lines)`
     },
-    logString() {
-      return this.render.logs.join("\n");
-    },
     isSocketOffline() {
       return this.socket&&this.socket.disconnected;
     },
     command() {
-        if(!this.blend_file) return "[No file selected]"
-        const type = this.optionss.blend.use_gpu? "~/renderGPU.sh":"~/renderCPU.sh";
-        const scripts = this.optionss.blend.python_scripts.map(v => `-P ${v}`)
-        const frame_number = this.opts.blend.frames.all? 'all all' : `${this.opts.blend.frames.start} ${this.opts.blend.frames.stop}`
-        return `${type} "${this.blend_file}" ${frame_number} ${scripts.join(" ")} ${this.opts.blend.extra_arguments}`
+      if(!this.blend_file) return "[No file selected]"
+      const type = this.optionss.blend.use_gpu? "~/renderGPU.sh":"~/renderCPU.sh";
+      const scripts = this.optionss.blend.python_scripts.map(v => `-P ${v}`)
+      const frame_number = this.opts.blend.frames.all? 'all all' : `${this.opts.blend.frames.start} ${this.opts.blend.frames.stop}`
+      return `${type} "${this.blend_file}" ${frame_number} ${scripts.join(" ")} ${this.opts.blend.extra_arguments}`
     },
     socketStatus() {
       return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected from server</span>` : `<span class='has-text-success'>Connected to Server</span>`
@@ -399,13 +421,13 @@ export default {
       return " - " + (this.render.max_frames == 0 ? "0%" : this.framePercentRaw + "%");
     },
     consoleLinesSlider() {
-        if(this.options.console.lines > 500) {
-            return "is-danger";
-        }else if(this.options.console.lines > 200) {
-            return "is-warning";
-        }else{
-            return "is-success";
-        }
+      if(this.options.console.lines > 500) {
+          return "is-danger";
+      }else if(this.options.console.lines > 200) {
+          return "is-warning";
+      }else{
+          return "is-success";
+      }
     },
   },
   methods:{
@@ -443,26 +465,14 @@ export default {
         window.open(`/zip/${encodeURIComponent(name)}/download`,`Download ${name}`)
     },
     deleteZip(name) {
-        Axios.get(`/zip/${name}/delete`).then(r => {
-            if(r.data.success) {
-                this.$buefy.toast.open({
-                    type:'is-success',
-                    message:'Deleted zip ' + name
-                })
-                if(r.data.zips) {
-                    this.zips.list = r.data.zips;
-                }else{
-                    this.refreshZIPs();
-                }
-            }else{
-                this.$buefy.dialog.alert({
-                    title: 'Delete Failed',
-                    message: '<b>Server returned:</b> ' + JSON.stringify(r.data),
-                    type: 'is-warning',
-                    hasIcon: true,
-                    icon: 'alert-circle'
-                })
-            }
+        Axios.get(`/zip/${name}/delete`)
+        .then(() => {
+            this.$buefy.toast.open({
+                type: 'is-success',
+                message: `Deleted zip ${name}`
+            })
+            const index = this.zips.findIndex(v => v.name === name)
+            this.zips.list.splice(index, 1);
         }).catch(err => {
             console.log(err.data)
             this.$buefy.dialog.alert({
@@ -490,7 +500,7 @@ export default {
     },
     refreshBlendChooser() {
         this.blend_chooser.loading = true;
-        Axios.get('/api/zips')
+        Axios.get('/api/blends')
         .then(response => {
           this.blend_chooser.blends = response.data.files;
           if(!this.modals.blend_chooser) this.modals.blend_chooser = true;
@@ -512,7 +522,7 @@ export default {
         this.zips.loading = true;
         Axios.get('/api/zips')
         .then(response => {
-          this.zips.list = response.data;
+          this.zips.list = response.data.files;
           if(!this.modals.zip) this.modals.zip = true;
         })
         .catch(err => {
@@ -595,7 +605,7 @@ export default {
   created() {
       //let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
       //let port = params.has('sk_port') ? params.get('sk_port') : '8095'
-      this.socket = io.connect('https://blender.jackz.me');
+      this.socket = io.connect();
       this.uploader = new SocketIOFileClient(this.socket);
       if(window.localStorage) {
           const opts = window.localStorage.getItem('blender_opts');
@@ -652,7 +662,7 @@ export default {
 
       this.socket
       .on('connect', () => {
-        this.socket_inita
+        if(!this.socket_first_inital) this.socket_first_inital = true;
         console.info("Connected to socket")
       })
       .on('disconnect', console.error("Disconnected from socket"))
@@ -660,15 +670,10 @@ export default {
           if(!this.opts.console.enabled) return;
           
           if(this.options.console.paused) {
-              if(data.message) {
-                  this.render.backlog.push((data.error?'\n[ERROR] ':'') + data.message);
-              }else if(data.messages) {
-                  data.messages.forEach(v =>  this.render.backlog.push((data.error?'[ERROR] ':'') + v))
-              }
+            this.render.backlog.push(data);
           }else{
-              if(data.message) this.render.logs += (data.error?'\n[ERROR] ':'') + data.message;
-              if(data.messages) data.messages.forEach(v =>  this.render.logs += (data.error?'[ERROR] ':'') + v)
-              document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
+            if(data.message) this.render.logs.push(data)
+            if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
           }
       })
       .on('frame',data => {
@@ -676,7 +681,7 @@ export default {
           //clean up logs, keep only last 200. only on frame
           const length = this.render.logs.length ;
           if(length >= 200) {
-            this.render.logs.slice(0,length-200)
+            this.render.logs.splice(0,length-200)
           }
           //console.log('FRAME:',data)
       })
@@ -694,6 +699,12 @@ export default {
               icon: 'alert-circle'
           })
       })
+      /*const arr = ["test","error: blah", "warning. sRGB","frame: blah. ", "Saved: 'file/0035.png'"]
+      setInterval(() => {
+        const element = arr[Math.floor(Math.random() * arr.length)];
+        this.render.logs.push({text: element, timestamp: Date.now()})
+        if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
+      }, 1000)*/
   },
 }
 </script>
@@ -705,5 +716,8 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   margin-top: 20px;
+}
+.disconnected {
+    background-color: lightgray !important;
 }
 </style>
