@@ -2,12 +2,12 @@
   <div id="app">
     <div class="container ">
         <p class="title is-1">Blender Render UI</p>
-        <p class="subtitle is-4">Server <span v-html="socketStatus"></span></p>
+        <p class="subtitle is-4" v-html="socketStatus"></p>
         <div class="columns">
             <div class="column is-6">
                 <span v-if="!render.active">
                 <b-field class="file">
-                    <b-button type="is-primary" :disabled="isSocketOffline" @click="modals.blend_chooser = true; refreshBlendChooser()" icon-left="blender-software">
+                    <b-button type="is-primary" :disabled="isSocketOffline" @click="refreshBlendChooser()" icon-left="blender-software">
                         <span>Choose a blend file</span>
                     </b-button>
                     <span class="file-name" v-if="blend_file">
@@ -98,7 +98,7 @@
                     </nav>
                 </div>
                 <b-field>
-                    <a :disabled="isSocketOffline" @click="modals.zip = true; refreshZIPs()" class="button is-large is-fullwidth is-info">
+                    <a :disabled="isSocketOffline" @click="refreshZIPs()" class="button is-large is-fullwidth is-info">
                         <b-icon icon="download"></b-icon>
                         <span>Download ZIPs</span>
                     </a>
@@ -106,15 +106,17 @@
                 <span><a class="has-text-weight-bold" href="https://github.com/Jackzmc/HeadlessBlenderWebUI/">HeadlessBlenderWebUI</a> Version {{$VERSION}}</span>
             </div>
             <div class="column is-6">
-                <b-field label="Console Output" >
-                    <b-input v-if="options.console.enabled" :disabled="isSocketOffline||render.logs_paused" id="el_renderlog" type="textarea" v-model="logString" readonly rows=10></b-input>
+                <b-field :label="consoleName" >
+                    <b-input v-if="options.console.enabled" :disabled="isSocketOffline" id="el_renderlog" type="textarea" v-model="logString" readonly rows=10></b-input>
                     <p v-else>Console is disabled in options</p>
                 </b-field>
                 <div class="buttons">
-                    <b-button @click='render.logs = ""' type="is-warning"><b-icon icon='eraser'></b-icon></b-button>
-                    <b-button @click='togglePause' type='is-info'><b-icon :icon="render.logs_paused?'play':'pause'"></b-icon></b-button>
+                    <b-button @click='render.logs = []' type="is-warning" ><b-icon icon='eraser'></b-icon></b-button>
+                    <b-button @click='togglePause' type='is-info'><b-icon :icon="options.console.paused?'play':'pause'"></b-icon></b-button>
                     <b-button @click="modals.settings = true" type="is-info"><b-icon icon="cog"></b-icon></b-button>
+                    <b-button v-if="options.console.paused" disabled type="has-no-background">PAUSED</b-button>
                 </div>
+                
                 <span v-if="isSocketOffline">
                     <div v-if="isSocketOffline" class="notification is-danger">
                         Lost Connection to the Socket Server.
@@ -133,8 +135,8 @@
             <h3 class='title is-3'>Settings</h3>
             <hr>
             <b-field label="Temperature">
-                <b-checkbox v-model="options.stats.celsius">
-                   Use Fahrenheit
+                <b-checkbox v-model="options.stats.use_celsius">
+                   Use Celsius
                 </b-checkbox>
             </b-field>
             <b-field label="Console">
@@ -244,7 +246,7 @@
             </b-field>
         </div>
     </b-modal>
-    <b-modal :active.sync="zips.active">
+    <b-modal :active.sync="modals.zip">
         <div class="box">
             <h3 class='title is-3'>Download ZIPs <a @click='refreshZIPs' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
             <hr>
@@ -255,13 +257,14 @@
             </div>
             <b-table
             :data="zips.list||[]"
-            :striped="true"
-            :hoverable="true"
+            striped
+            hoverable
+            narrowed
             :loading="zips.list == null">
 
             <template slot-scope="props">
                 <b-table-column field="name" label="Name">
-                    {{ props.row.name }}
+                  {{ props.row.name }}
                 </b-table-column>
 
                 <b-table-column field="size" label="Size">
@@ -273,11 +276,10 @@
                 </b-table-column>
 
                 <b-table-column label="Action">
-                    <b-button :disabled="isSocketOffline||downloading" @click="downloadZip(props.row.name)" type="is-primary" size="is-small" >
-                        <b-icon icon="download"></b-icon>
-                    </b-button>
-                    <a :disabled="isSocketOffline||downloading" @click="deleteZip(props.row.name)" class="button is-danger is-small">
-                        <b-icon icon="delete"></b-icon></a>
+                  <div class="buttons">
+                    <b-button :disabled="isSocketOffline" @click="downloadZip(props.row.name)" type="is-primary"  icon-left="download" icon-size="large" />
+                    <b-button  :disabled="isSocketOffline" @click="deleteZip(props.row.name)" type="is-danger"  icon-left="delete" />
+                  </div>
                 </b-table-column>
 
             </template>
@@ -366,6 +368,9 @@ export default {
     }
   },
   computed: {
+    consoleName() {
+      return `Console Output (${this.render.logs.length} lines)`
+    },
     logString() {
       return this.render.logs.join("\n");
     },
@@ -380,7 +385,7 @@ export default {
         return `${type} "${this.blend_file}" ${frame_number} ${scripts.join(" ")} ${this.opts.blend.extra_arguments}`
     },
     socketStatus() {
-      return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected</span>` : `<span class='has-text-success'>Connected</span>`
+      return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected from server</span>` : `<span class='has-text-success'>Connected to Server</span>`
     },
     frameValue() {
         if(this.render.max_frames == null) return "- Frame #" + this.render.current_frame;
@@ -406,15 +411,16 @@ export default {
   methods:{
     togglePause() {
         //if currently paused, to be resumed, fill backlog
-        if(this.render.logs_paused) {
-            if(this.render.backlog.length > 0 ) {
-                this.render.logs += "Console unpaused, filling with backlog\n"
-                this.render.logs += this.render.backlog.join(" ");
-            }
+        if(this.options.console.paused) {
+          if(this.render.backlog.length > 0 ) {
+            this.render.logs.push("Console unpaused, filling with backlog")
+            this.render.logs.push("")
+            this.render.logs = this.render.logs.concat(this.render.logs, this.render.backlog);
             this.render.backlog = [];
             document.getElementById("el_renderlog").scrollTop = document.getElementById("el_renderlog").scrollHeight;
+          }
         }
-        this.render.logs_paused = !this.render.logs_paused
+        this.options.console.paused = !this.options.console.paused
     },
     saveDefaults() {
         console.log(this.opts)
@@ -434,10 +440,10 @@ export default {
     },
     downloadZip(name) {
         //this.downloading = true;
-        window.open(`zip/${encodeURIComponent(name)}/download`,`Download ${name}`)
+        window.open(`/zip/${encodeURIComponent(name)}/download`,`Download ${name}`)
     },
     deleteZip(name) {
-        Axios.get(`zip/${name}/delete`).then(r => {
+        Axios.get(`/zip/${name}/delete`).then(r => {
             if(r.data.success) {
                 this.$buefy.toast.open({
                     type:'is-success',
@@ -484,42 +490,42 @@ export default {
     },
     refreshBlendChooser() {
         this.blend_chooser.loading = true;
-        // if(this.blend_chooser.blends == null) {
-        this.socket.emit('blends',null,res => {
-            this.blend_chooser.loading = false;
-            if(res.error) {
-                this.blend_chooser.active = false;
-                this.$buefy.dialog.alert({
-                    title: 'Failure',
-                    message: 'Could not get a list of blend files<br><strong>Server returned: </strong>' + res.error,
-                    type: 'is-danger',
-                    hasIcon: true,
-                    icon: 'alert-circle'
-                })
-                return;
-            }
-            this.blend_chooser.blends = res.files;
+        Axios.get('/api/zips')
+        .then(response => {
+          this.blend_chooser.blends = response.data.files;
+          if(!this.modals.blend_chooser) this.modals.blend_chooser = true;
         })
+        .catch(err => {
+          this.$buefy.snackbar.open({
+              title: 'Failure',
+              message: 'Failed to fetch list of blends: ' + err.response.status,
+              type: 'is-danger',
+              hasIcon: true,
+              icon: 'alert-circle'
+          })
+        })
+        .finally(() =>  this.blend_chooser.loading = false)
     //}
     },
     refreshZIPs() {
         //if(this.zips.list == null) {
         this.zips.loading = true;
-        this.socket.emit('zips',null,res => {
-            this.zips.loading = false;
-            if(res.error) {
-                this.zips.active = false;
-                this.$buefy.dialog.alert({
-                    title: 'Failure',
-                    message: 'Could not get a list of zips',
-                    type: 'is-danger',
-                    hasIcon: true,
-                    icon: 'alert-circle'
-                })
-                return;
-            }
-            this.zips.list = res.files;
+        Axios.get('/api/zips')
+        .then(response => {
+          this.zips.list = response.data;
+          if(!this.modals.zip) this.modals.zip = true;
         })
+        .catch(err => {
+          
+          this.$buefy.snackbar.open({
+              title: 'Failure',
+              message: 'Failed to fetch list of ZIPs: ' + err.response.status,
+              type: 'is-danger',
+              hasIcon: true,
+              icon: 'alert-circle'
+          })
+        })
+        .finally(() => this.zips.loading = false)
         //}
     },
     startRender() {

@@ -17,7 +17,7 @@
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Speed</p>
-            <p class="title">{{stats.cpu.speed | addSuffix("GHz") }}</p>
+            <p class="title">{{stats.cpu.speed | addSuffix(" GHz") }}</p>
             </div>
         </div>
     </nav>
@@ -97,10 +97,6 @@ export default {
         },
         socket: {
             type: Object
-        },
-        version: {
-            type: String,
-            default: "1.0"
         }
     },
     data() {
@@ -134,7 +130,7 @@ export default {
                 color = "has-text-danger"
             }
 
-            if(this.celsius) {
+            if(this.use_celsius) {
                 return `<span class='${color}'>${val}°C</span>`;
             }else{
                 const f = Math.round(((9/5) * val)+32)

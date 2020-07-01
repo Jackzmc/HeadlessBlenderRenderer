@@ -12,7 +12,7 @@ Vue.config.productionTip = false
 Vue.prototype.$VERSION = version;
 
 Vue.filter('humanize', (b) => {
-  if(!b) return '?'
+  if(b === null || b === undefined) return '?'
   const s=1024;
   let u = 0
   while (b >= s || -b >= s) {
