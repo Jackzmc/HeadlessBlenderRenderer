@@ -33,6 +33,13 @@ app.get('/zip/:name/download',(req,res) => {
     stream.on('open',() => {
         stream.pipe(res)
     })
+    stream.on('error', (err) => {
+        res.status(500).send(err)
+        res.end()
+    })
+    stream.on('end', () => {
+        res.end();
+    })
 })
 app.get('/zip/:name/delete',(req,res) => {
     fs.unlink(`${ZIP_DIR}/${req.params.name}`).then(() => {

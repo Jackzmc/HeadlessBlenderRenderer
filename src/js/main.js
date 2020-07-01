@@ -87,6 +87,15 @@ new Vue({
             if(this.render.max == null) return "";
             return " - " + (this.render.max == 0 ? "0%" : (this.render.current/this.render.max*100).toFixed(1) + "%");
         },
+        consoleLinesSlider() {
+            if(this.opts.console.lines > 500) {
+                return "is-danger";
+            }else if(this.opts.console.lines > 200) {
+                return "is-warning";
+            }else{
+                return "is-success";
+            }
+        },
         getSocketStatus() {
             if(this.socket_status) {
                 return `<span class='has-text-success'>Connected</span>`
@@ -258,7 +267,7 @@ new Vue({
         },
         downloadZip(name) {
             //this.downloading = true;
-            window.open(`zip/${name}/download`,`Download ${name}`)
+            window.open(`zip/${encodeURIComponent(name)}/download`,`Download ${name}`)
         },
         deleteZip(name) {
             axios.get(`zip/${name}/delete`).then(r => {
