@@ -422,7 +422,7 @@ export default {
   created() {
       //let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
       //let port = params.has('sk_port') ? params.get('sk_port') : '8095'
-        this.socket = io.connect('http://192.168.1.15:8096');
+        this.socket = io.connect();
         const storedSettings = window.localStorage.getItem('blender_opts')
         if(storedSettings) {
             const json = JSON.parse(storedSettings)
