@@ -27,24 +27,24 @@
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Used</p>
-            <p class="title">{{stats.mem.used | humanize}}</p>
+            <p class="title">{{stats.memory.used | humanize}}</p>
             </div>
         </div>
-        <div v-if="stats.platform != 'win32'" class="level-item has-text-centered">
+        <div class="level-item has-text-centered">
             <div>
             <p class="heading">Available</p>
-            <p class="title">{{stats.mem.available | humanize}}</p>
+            <p class="title">{{stats.memory.available | humanize}}</p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
             <p class="heading">Total</p>
-            <p class="title">{{stats.mem.total | humanize}}</p>
+            <p class="title">{{stats.memory.total | humanize}}</p>
             </div>
         </div>
     </nav>
 </b-field>
-<b-field label="GPU Stats" v-if="stats.gpu.length == 0">
+<b-field label="GPU Stats" v-if="stats.gpus.length == 0">
     <nav class="level">
         <div class="level-item has-text-centered">
             <div>
@@ -53,7 +53,7 @@
         </div>
     </nav>
 </b-field>
-<b-field v-for="(stat, index) in stats.gpu" :key="index" :label="'GPU #' + ++index + ' Stats - ' + stat.name">
+<b-field v-for="(stat, index) in stats.gpus" :key="index" :label="'GPU #' + ++index + ' Stats - ' + stat.name">
     
     <nav class="level">
         <div class="level-item has-text-centered">
@@ -108,8 +108,8 @@ export default {
                     speed: -1,
                     usage: -1
                 },
-                mem: { type: null, used: -1, total: -1 },
-                gpu: []
+                memory: { type: null, used: -1, total: -1 },
+                gpus: []
             },
             initial: true
         }

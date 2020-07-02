@@ -7167,11 +7167,6 @@ socket.io-client@^2.3.0:
     socket.io-parser "~3.3.0"
     to-array "0.1.4"
 
-socket.io-file-client@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/socket.io-file-client/-/socket.io-file-client-2.0.2.tgz#6aec6f544ae0358b600cc9a14dd62034c2a9911b"
-  integrity sha512-IoQUfkJaFAlFvf/CbrZa4HMwMCszWf8xt5fT9okcmhOLyKVV+rjtZr8E+tiOENIiDjnR1Y99ud/+Iv2vtXrUow==
-
 socket.io-parser@~3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/socket.io-parser/-/socket.io-parser-3.3.0.tgz#2b52a96a509fdf31440ba40fed6094c7d4f1262f"

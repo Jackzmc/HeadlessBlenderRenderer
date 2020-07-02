@@ -33,8 +33,8 @@ try {
     //ignore errors
 }
 
-require('./src/socket.js')(server);
-app.use('/api/', require('./src/server.js'))
+const renderController = require('./src/socket.js')(server);
+app.use('/api/', require('./src/server.js')(renderController))
 
 server.listen(process.env.WEBPORT||8080,() => {
     console.info(`Listening on :${process.env.WEBPORT||8080}`)
