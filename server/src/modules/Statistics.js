@@ -3,7 +3,6 @@ const { execShellCommand } = require('./utils.js');
 const csv = require('csvtojson')
 
 const SERVER_VERSION = require('../../package.json').version;
-const UI_VERSION = require('../../../ui/package.json').version;
 
 let antispam_stat_inc = 0;
 
@@ -24,7 +23,6 @@ module.exports = () => {
             return resolve({
                 platform: process.platform,
                 version: SERVER_VERSION,
-                ui_version: UI_VERSION,
                 cpu: {
                     name: si_cpu.brand,
                     usage: Math.round(cpu_load.currentload  * 1e1) / 1e1,

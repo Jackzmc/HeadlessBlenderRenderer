@@ -9,7 +9,7 @@ const path = require('path')
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
 router.use(fileUpload({
-    limits: { fileSize: 15 * 1024 * 1024 }, //MB
+    limits: { fileSize: 500 * 1024 * 1024 }, //MB
     abortOnLimit: true,
 }));
 
@@ -58,6 +58,32 @@ router.get('/',async(req,res) => {
         console.log(err)
         res.status(500).json({error:err.message})
     }
+})
+router.get('/:name',(req,res) => {
+    res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
+
+    const stream = createReadStream(`${BLENDS_DIR}/${req.params.name}`)
+    .on('open',() => {
+        stream.pipe(res)
+    })
+    .on('error', (err) => {
+        res.status(500).send(err)
+    })
+    .on('end', () => {
+        res.end();
+    })
+})
+router.delete('/:name',(req,res) => {
+    fs.unlink(`${BLENDS_DIR}/${req.params.name}`)
+    .then(() => {
+        res.send()
+    })
+    .catch(err => {
+        if(err.code === "ENOENT") {
+            return res.status(500).json({error:"That file does not exist."})
+        }
+        return res.status(500).json({error:err.message})
+    })
 })
 
 router.post('/upload', (req,res) => {

@@ -1,0 +1,35 @@
+const router = require('express').Router();
+let renderController;
+router.post('/start',(req,res) => {
+    if(!req.body.blend) return res.status(400).json({error: 'Missing blend property'})
+    const frames = req.body.frames&&Array.isArray(req.body.frames) || null;
+    if(frames && req.body.frames.length !== 2) return res.status(400).json({error: 'Frames property needs to be an array of two numbers: [start, end]'})
+    const options = {
+        useGPU: req.body.useGPU || req.body.mode === 'gpu',
+        frames,
+        python_scripts: req.body.python_scripts || []
+    }
+    renderController.startRender(req.body.blend, options)
+    .then((response) => {
+        res.json(response)
+    })
+    .catch(err => {
+        res.status(500).json({error: err.message})
+    })
+})
+router.post(['/cancel','/abort'],(req,res) => {
+    renderController.cancelRender()
+    .then(() => res.json({success: true}))
+    .catch(err => res.status(500).json({error: err.message}))
+})
+
+router.get('/logs', (req,res) => {
+    res.json(renderController.getLogs())
+})
+router.get('/status', (req,res) => {
+    res.json(renderController.getSettings()) 
+})
+module.exports = (_controller) => {
+    renderController = _controller;
+    return router;
+}

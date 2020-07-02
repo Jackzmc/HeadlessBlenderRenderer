@@ -1,6 +1,6 @@
 {
   "name": "blenderwebuiv2",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -12,6 +12,7 @@
     "axios": "^0.19.2",
     "buefy": "^0.8.20",
     "date-fns": "^2.14.0",
+    "humanize-duration": "^3.23.1",
     "pretty-ms": "^7.0.0",
     "semver-compare": "^1.0.0",
     "socket.io-client": "^2.3.0",

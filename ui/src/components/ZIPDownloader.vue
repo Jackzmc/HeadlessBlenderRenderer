@@ -79,26 +79,35 @@ export default {
         },
         downloadZip(name) {
             //this.downloading = true;
-            window.open(`/api/zips/${encodeURIComponent(name)}/download`,`Download ${name}`)
+            window.open(`/api/zips/${encodeURIComponent(name)}`,`Download ${name}`)
         },
         deleteZip(name) {
-            Axios.get(`/api/zips/${name}/delete`)
-            .then(() => {
-                this.$buefy.toast.open({
-                    type: 'is-success',
-                    message: `Deleted file ${name}`
-                })
-                const index = this.list.findIndex(v => v.name === name)
-                if(index >= 0) this.list.splice(index, 1);
-            }).catch(err => {
-                console.log(err.data)
-                this.$buefy.dialog.alert({
-                    title: 'Delete Failed',
-                    message: '<b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
-                    type: 'is-danger',
-                    hasIcon: true,
-                    icon: 'alert-circle'
-                })
+            this.$buefy.dialog.confirm({
+                title: 'Deleting ZIP',
+                message: `Are you sure you want to delete <b>${name}</b>?`,
+                confirmText: 'Delete',
+                type: 'is-warning',
+                hasIcon: true,
+                onConfirm: () => {
+                    Axios.delete(`/api/zips/${encodeURIComponent(name)}`)
+                    .then(() => {
+                        this.$buefy.toast.open({
+                            type: 'is-success',
+                            message: `Deleted file ${name}`
+                        })
+                        const index = this.list.findIndex(v => v.name === name)
+                        if(index >= 0) this.list.splice(index, 1);
+                    }).catch(err => {
+                        console.log(err.data)
+                        this.$buefy.dialog.alert({
+                            title: 'Delete Failed',
+                            message: '<b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
+                            type: 'is-danger',
+                            hasIcon: true,
+                            icon: 'alert-circle'
+                        })
+                    })
+                }
             })
             
         },

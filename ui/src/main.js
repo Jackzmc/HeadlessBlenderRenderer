@@ -9,6 +9,7 @@ import {version} from '../package.json'
 
 Vue.use(Buefy)
 Vue.config.productionTip = false
+Vue.config.devtools = true
 Vue.prototype.$VERSION = version;
 
 Vue.filter('humanize', (b,defaultText) => {

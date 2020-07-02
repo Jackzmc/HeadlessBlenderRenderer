@@ -12,17 +12,20 @@
             :loading="loading"
             >
                 <template slot-scope="props">
-                    <b-table-column field="name" label="Name">
+                    <b-table-column field="name" label="Name" sortable>
                         {{ props.row.file }}
                     </b-table-column>
-                    <b-table-column field="size" label="Size">
-                        {{ props.row.size }}
+                    <b-table-column field="size" label="Size" sortable>
+                        {{ props.row.size | humanize}}
                     </b-table-column>
-                    <b-table-column field="date" label="Last Modified">
+                    <b-table-column field="timestamp" label="Last Modified" sortable>
                         {{ props.row.date }}
                     </b-table-column>
                     <b-table-column label="Action" >
-                        <a @click="chooseBlend(props.row.name)" class="button is-primary is-small">Use</a>
+                        <div class="buttons">
+                            <a @click="chooseBlend(props.row.file)" class="button is-primary">Use</a>
+                            <b-button @click="deleteBlend(props.row.file)" type="is-danger"  icon-left="delete" />
+                        </div>
                     </b-table-column>
                 </template>
 
@@ -186,6 +189,7 @@ export default {
         },
         chooseBlend(name) {
             this.$emit('setBlend', name)
+            this.$emit('close')
         },
         uploadBlends() {
             const formdata = new FormData();
@@ -239,6 +243,7 @@ export default {
                 }
             })
             .catch(err => {
+                console.error('Upload failure: ', err)
                 this.$buefy.dialog.alert({
                     title: 'Blend upload has been aborted',
                     message: err.message,
@@ -287,6 +292,35 @@ export default {
                 }
             })
             this.blend.uploads = accepted;
+        },
+        deleteBlend(name) {
+            this.$buefy.dialog.confirm({
+                title: 'Deleting blend',
+                message: `Are you sure you want to delete <b>${name}</b>?`,
+                confirmText: 'Delete',
+                type: 'is-warning',
+                hasIcon: true,
+                onConfirm: () => {
+                    Axios.delete(`/api/blends/${encodeURIComponent(name)}`)
+                    .then(() => {
+                        this.$buefy.toast.open({
+                            type: 'is-success',
+                            message: `Deleted file ${name}`
+                        })
+                        const index = this.blends.findIndex(v => v.name === name)
+                        if(index >= 0) this.blends.splice(index, 1);
+                    }).catch(err => {
+                        console.log(err.data)
+                        this.$buefy.dialog.alert({
+                            title: 'Delete Failed',
+                            message: '<b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
+                            type: 'is-danger',
+                            hasIcon: true,
+                            icon: 'alert-circle'
+                        })
+                    })
+                }
+            })
         }
     },
     mounted() { 

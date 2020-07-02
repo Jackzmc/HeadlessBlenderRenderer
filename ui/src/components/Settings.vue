@@ -2,15 +2,24 @@
 <div class="box">
     <h3 class='title is-3'>Settings</h3>
     <hr>
-    <b-field label="Temperature">
-        <b-checkbox v-model="use_celsius">
-            Use Celsius
-        </b-checkbox>
+    <b-field label="Temperature Type">
+        <b-field>
+            <b-radio-button v-model="temperature" native-value="celsius">
+                <b-icon icon="temperature-celsius"></b-icon>
+                <span>Celsius</span>
+            </b-radio-button>
+            <b-radio-button v-model="temperature" native-value="fahrenheit">
+                <b-icon icon="temperature-fahrenheit"></b-icon>
+                <span>Fahrenheit</span>
+            </b-radio-button>
+        </b-field>
     </b-field>
     <b-field label="Socket" message="Socket is responsibile for showing logs, statistics, current frame information, and uploading files. Only disable to save bandwidth.">
-        <b-checkbox v-model="socket_enabled">
+        <b-tooltip label="Currently not implemented for Web UI." position="is-right">
+        <b-switch disabled v-model="socket_enabled">
             {{socket_enabled?"Enabled":"Disabled"}}
-        </b-checkbox>
+        </b-switch>
+        </b-tooltip>
         
     </b-field>
     <hr>
@@ -26,7 +35,7 @@ export default {
     props: ['default'],
     data() {
         return {
-            use_celsius: true,
+            temperature: 'celsius',
             socket_enabled: true
         }
     },

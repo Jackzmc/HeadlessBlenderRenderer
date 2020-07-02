@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const fileUpload = require('express-fileupload')
 const fs = require('fs').promises;
+const { createReadStream } = require('fs')
 const AdmZip = require('adm-zip');
 const path = require('path')
 
@@ -11,28 +12,27 @@ const ZIP_DIR = process.env.ZIP_DIR || `${process.env.HOME_DIR}/zips`
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
 router.use(fileUpload({
-    limits: { fileSize: 50 * 1024 * 1024 }, //MB
+    limits: { fileSize: 500 * 1024 * 1024 }, //MB
     abortOnLimit: true,
 }));
 
 
-router.get('/:name/download',(req,res) => {
+router.get('/:name',(req,res) => {
     res.set('Content-Type', 'application/zip')
     res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
 
-    const stream = fs2.createReadStream(`${ZIP_DIR}/${req.params.name}`)
-    stream.on('open',() => {
+    const stream = createReadStream(`${ZIP_DIR}/${req.params.name}`)
+    .on('open',() => {
         stream.pipe(res)
     })
-    stream.on('error', (err) => {
+    .on('error', (err) => {
         res.status(500).send(err)
-        res.end()
     })
-    stream.on('end', () => {
+    .on('end', () => {
         res.end();
     })
 })
-router.get('/:name/delete',(req,res) => {
+router.delete('/:name',(req,res) => {
     fs.unlink(`${ZIP_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -56,7 +56,8 @@ router.get('/', async(req,res) => {
                     resolve({
                         name: file,
                         size: stat.size,
-                        date: prettyMilliseconds(Date.now() - new Date(stat.mtime),{ secondsDecimalDigits: 0, millisecondsDecimalDigits: 0 })
+                        date: prettyMilliseconds(Date.now() - new Date(stat.mtime),{ secondsDecimalDigits: 0, millisecondsDecimalDigits: 0 }),
+                        timestamp: stat.mtime
                     })
                 })
                 .catch(err => reject(err));

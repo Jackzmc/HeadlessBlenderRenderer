@@ -1,5 +1,5 @@
 <template>
-<div>
+<div v-if="!initial">
 <b-field :label="cpuName">    
     <nav class="level">
         <div class="level-item has-text-centered">
