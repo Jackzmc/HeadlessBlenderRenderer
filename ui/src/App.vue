@@ -268,7 +268,6 @@ export default {
         return Math.round(sum / this.render.lastFrameDurations.length)
     },
     eta() {
-        if(this.render.current_frame <= AVG_TIME_PER_FRAME_VALUES) return -1;
         return this.averageTimePerFrame * (this.render.max_frames - this.render.current_frame)
     }
   },
@@ -359,7 +358,8 @@ export default {
             })
         })
         .catch(err => {
-            const msg = err.response ? err.response.data.error : err.message;
+            console.error('Render failed: ', err.response)
+            const msg = err.response&&err.response.data.error ? err.response.data.error : err.message;
             this.$buefy.dialog.alert({
                 title: 'Render Failed',
                 message: msg,
@@ -454,19 +454,21 @@ export default {
           }
       })
       .on('frame',data => {
-          this.render.current_frame = data;
-          //clean up logs, keep only last 200. only on frame
-          const length = this.render.logs.length ;
-          if(length >= 200) {
-            this.render.logs.splice(0,length-200)
-          }
-          const lastFrameTime = this.render.last_frame_time || this.render.started;
-          const difference = Date.now() - lastFrameTime;
-          this.render.lastFrameDurations.push(difference)
-          if(this.render.lastFrameDurations.length > AVG_TIME_PER_FRAME_VALUES) {
-            this.render.lastFrameDurations.shift()
-          }
-          this.render.last_frame_time = Date.now()
+        this.render.current_frame = data;
+        //clean up logs, keep only last 200. only on frame
+        const length = this.render.logs.length ;
+        if(length >= 200) {
+        this.render.logs.splice(0,length-200)
+        }
+        const lastFrameTime = this.render.last_frame_time
+        if(lastFrameTime && lastFrameTime > 0) {
+            const difference = Date.now() - lastFrameTime;
+            this.render.lastFrameDurations.push(difference)
+            if(this.render.lastFrameDurations.length > AVG_TIME_PER_FRAME_VALUES) {
+                this.render.lastFrameDurations.shift()
+            }
+        }
+        this.render.last_frame_time = Date.now()
           //console.log('FRAME:',data)
       })
       .on('render_start',({frame, max_frames, blend, duration}) => {
@@ -475,6 +477,8 @@ export default {
           this.render.max_frames = max_frames;
           this.blend_file = blend
           this.render.started = duration.started || Date.now()
+          this.render.lastFrameTime = null;
+          this.render.lastFrameDurations = [];
       })
       .on('render_stop', (data) => {
           this.render.active = false;
