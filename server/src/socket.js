@@ -1,6 +1,3 @@
-const { resolve } = require('path');
-const fs = require('fs').promises
-
 const RenderController = require('./RenderController')
 
 module.exports = (server) => {

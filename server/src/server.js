@@ -1,5 +1,6 @@
 const bodyParser = require('body-parser')
 const router = require('express').Router();
+const Statistics = require('./modules/Statistics')
 
 
 router.use(bodyParser.urlencoded({ extended: false, limit: '500mb'}))
@@ -8,6 +9,11 @@ router.use(require('cors')())
 
 router.use('/zips', require('./routes/zip'))
 router.use('/blends', require('./routes/blends'))
+router.get(['/stats','/statistics'], (req, res) => {
+    Statistics()
+    .then(r => res.json(r))
+    .catch(err => res.status(500).json({error: err.message}))
+})
 
 
 module.exports = (_controller) => {
