@@ -2,7 +2,7 @@
 <div>
     <br>
     <div class="container">
-        <h1 class="title is-1">Blender Render UI - Servers</h1>
+        <h1 class="title is-1">Blender Render UI - Server Dashboard</h1>
         <div class="columns">
             <div class="column is-8">
                 <table class="table is-fullwidth">
@@ -15,13 +15,23 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <tr>
+                            <td>Local Server</td>
+                            <td></td>
+                            <td>{{ localStatus }}</td>
+                            <td>
+                                <b-button type="is-success" tag="router-link" to="/server/local">Connect</b-button>
+                            </td>
+                        </tr>
                         <tr v-for="server in servers" :key="server.id">
                             <td>{{server.name}}</td>
                             <td>{{server.address}}</td>
                             <td>{{server | formatStatus}}</td>
                             <td>
                                 <div class="buttons">
-                                    <b-button :disabled="server.status !== 'online'" type="is-success" tag="router-link" :to="'/server/' + server.id">Connect</b-button>
+                                    <b-button type="is-success" tag="router-link" :to="'/server/' + server.id">
+                                        {{server.loggedin ? 'Connect' : 'Login'}}
+                                    </b-button>
                                     <b-button type="is-danger" @click="deleteServer(server.id)" icon-left="delete"></b-button>
                                 </div>
                             </td>
@@ -49,7 +59,7 @@
 </template>
 
 <script>
-const URL_REGEX = new RegExp(/@(https?|ftp):\/\/(-\.)?([^\s/?.#-]+\.?)+(\/[^\s]*)?$@iS/)
+const URL_REGEX = new RegExp(/(https?):\/\/(-\.)?([^\s/?.#-]+\.?)+(\/[^\s]*)?$/)
 export default {
     data() {
         return {
@@ -57,15 +67,8 @@ export default {
                 name: null,
                 address: null
             },
-            servers: [
-                {
-                    id: "local",
-                    name: "Local Server",
-                    address: "",
-                    status: "loading",
-                    data: {}
-                }
-            ]
+            localServerStatus: null,
+            servers: []
         }
     },
     created() {
@@ -77,6 +80,26 @@ export default {
         this.refreshStatus();
         //update status every 5 min
         setInterval(this.refreshStatus, 1000 * 60 * 5)
+        this.$http.get('/api/render/status')
+        .then(response => {
+            this.localServerStatus = {
+                state: "online",
+                blend: response.data.blend,
+                active: response.data.active
+            }
+        })
+        .catch((err) => {
+            console.warn(`Local server status check failed:`,err.message)
+            if(err.message == "Network Error") {
+                this.localServerStatus = {
+                    state: "error",
+                }
+            }else{
+                this.localServerStatus = {
+                    state: "offline",
+                }
+            }
+        })
     },
     methods: {
         refreshStatus() {
@@ -85,13 +108,8 @@ export default {
             })
         },
         getStatus(server, index) {
-            const auth = server.auth && Array.isArray(server.auth) && server.auth.length == 2 ? `${server.auth[0]}:${server.auth[1]}` : null;
-            const Authorization = auth ? `Basic ${btoa(auth)}` : null
-            this.$http.get(`${server.address}/api/render/status`, {
-                headers: {
-                    Authorization
-                }
-            })
+            if(!server || index === null || index === undefined) return console.warn('[getStatus] Missing/null parameters given.', server, index)
+            this.$http.get(`${server.address}/api/render/status`)
             .then(response => {
                 this.servers[index].status = "online"
                 this.servers[index].data = {
@@ -100,7 +118,7 @@ export default {
                 }
             })
             .catch((err) => {
-                console.warn(`Server ${server.id} status check failed:`,err.message)
+                console.warn(`Server '${server.id}' status check failed:`,err.message)
                 if(err.message == "Network Error") {
                     this.servers[index].status = "error"
                 }else{
@@ -118,7 +136,7 @@ export default {
                         confirmText: 'Delete',
                         type: 'is-warning',
                         hasIcon: true,
-                        onConfirm() {
+                        onConfirm: () => {
                             this.servers.splice(i, 1);
                             this.save();
                         }
@@ -148,7 +166,7 @@ export default {
                 address: this.form_addserver.address.replace(/\/$/,''),
                 status: null,
             })
-            this.getStatus(this.servers[index], index);
+            this.getStatus(this.servers[index-1], index-1);
             this.save();
         },
         save() {
@@ -163,6 +181,12 @@ export default {
         addServerName() {
             if(!this.form_addserver.name) return ""
             return `ID: ${this.safeName}`
+        },
+        localStatus() {
+            if(!this.localServerStatus) return "Loading...";
+            if(this.localServerStatus.active) return `Rendering - ${this.localServerStatus.blend}`
+            if(this.localServerStatus.state === "offline") return "Offline";
+            return "Idle"
         }
     },
     filters: {
