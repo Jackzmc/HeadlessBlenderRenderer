@@ -5,6 +5,7 @@ import 'buefy/dist/buefy.css'
 import '@mdi/font/css/materialdesignicons.css'
 
 import {version} from '../package.json'
+import router from './router'
 
 
 Vue.use(Buefy)
@@ -24,5 +25,6 @@ Vue.filter('humanize', (b,defaultText) => {
 })
 
 new Vue({
-  render: h => h(App),
+  router,
+  render: h => h(App)
 }).$mount('#app')
