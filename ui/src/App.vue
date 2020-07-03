@@ -120,8 +120,8 @@
                     </a>
                 </b-field>
                 <p>
-                    <a class="has-text-weight-bold" href="https://github.com/Jackzmc/HeadlessBlenderWebUI/">
-                        HeadlessBlenderWebUI
+                    <a class="has-text-weight-bold" href="https://github.com/Jackzmc/HeadlessBlenderRenderer">
+                        HeadlessBlenderRenderer
                     </a> 
                     <span>UI v{{$VERSION}} </span><span v-if="server_version">| Server v{{server_version}}</span>
                 </p>
@@ -343,8 +343,7 @@ export default {
         }
         this.render.logs = []
         const frames = this.options.blend.frames.all ? null: [ this.options.blend.frames.start,this.options.blend.frames.stop];
-        Axios.post('/api/render/start', {
-            blend: this.blend_file,
+        Axios.post(`/api/render/${this.blend_file}` , {
             useGPU: this.options.blend.use_gpu,
             frames,
             python_scripts: this.options.blend.python_scripts,
