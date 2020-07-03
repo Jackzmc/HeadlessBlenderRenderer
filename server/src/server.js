@@ -12,7 +12,7 @@ router.use('/blends', require('./routes/blends'))
 
 module.exports = (_controller) => {
     router.use('/render', require('./routes/render')(_controller))
-    router.get('*',(req,res) => {
+    router.all('*',(req,res) => {
         res.status(404).json({error: '404'})
     })
     return router;
