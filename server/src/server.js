@@ -9,6 +9,7 @@ router.use(require('cors')())
 
 router.use('/zips', require('./routes/zip'))
 router.use('/blends', require('./routes/blends'))
+router.use('/auth', require('./routes/auth'))
 router.get(['/stats','/statistics'], (req, res) => {
     Statistics()
     .then(r => res.json(r))

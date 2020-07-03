@@ -7,6 +7,10 @@ if(!process.env.HOME_DIR) {
     console.error('Missing environment variable: \'HOME_DIR\', exiting')
     process.exit(1)
 }
+if(!process.env.JWT_SECRET) {
+    console.error('Missing environment variable: \'JWT_SECRET\', exiting')
+    process.exit(1)
+}
 
 require('./src/modules/SetupDirectory');
 

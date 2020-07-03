@@ -5,14 +5,17 @@
   "main": "index.js",
   "dependencies": {
     "adm-zip": "^0.4.16",
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "csvtojson": "^2.0.10",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.7-alpha.3",
+    "jsonwebtoken": "^8.5.1",
     "pretty-ms": "^7.0.0",
     "socket.io": "^2.3.0",
+    "sqlite3": "^5.0.0",
     "systeminformation": "^4.26.9",
     "treeify": "^1.1.0"
   }
