@@ -143,8 +143,6 @@
 </template>
 
 <script>
-import Axios from 'axios'
-
 export default {
     data() {
         return {
@@ -168,7 +166,7 @@ export default {
     methods:{
         refresh() {
             this.loading = true;
-            Axios.get('/api/blends')
+            this.$http.get('/api/blends')
             .then(response => {
                 this.blends = response.data.blends
                 this.folders = response.data.folders
@@ -201,7 +199,7 @@ export default {
             this.blend.progress = 0;
             this.blend.uploading = true;
             const _this = this;
-            Axios.post('/api/blends/upload', formdata, {
+            this.$http.post('/api/blends/upload', formdata, {
                 headers: {'Content-Type': 'multipart/form-data'},
                 onUploadProgress(event) {
                     _this.blend.progress = event.loaded / event.total * 100
@@ -261,7 +259,7 @@ export default {
             this.zip.progress = 0;
             this.zip.uploading = true;
             const _this = this;
-            Axios.post('/api/zips/upload', formdata, {
+            this.$http.post('/api/zips/upload', formdata, {
                 headers: {'Content-Type': 'multipart/form-data'},
                 onUploadProgress(event) {
                     _this.zip.progress = event.loaded / event.total * 100
@@ -301,7 +299,7 @@ export default {
                 type: 'is-warning',
                 hasIcon: true,
                 onConfirm: () => {
-                    Axios.delete(`/api/blends/${encodeURIComponent(name)}`)
+                    this.$http.delete(`/api/blends/${encodeURIComponent(name)}`)
                     .then(() => {
                         this.$buefy.toast.open({
                             type: 'is-success',

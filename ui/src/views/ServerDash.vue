@@ -31,6 +31,17 @@
             </div>
             <div class="column">
                 <h5 class="title is-5 has-text-centered">Add Server</h5>
+                <form @submit.prevent="addServer">
+                    <b-field label="Server Name" :message="addServerName">
+                        <b-input v-model="form_addserver.name" type="text" placeholder="My Server" required />
+                    </b-field>
+                    <b-field label="Address" message="Must in the format of http(s)://site.com">
+                        <b-input v-model="form_addserver.address" type="text" placeholder="https://blender.mysite.com/" required pattern="(https?:\/\/)(.*)" />
+                    </b-field>
+                    <b-field>
+                        <b-button tag="input" native-type="submit" type="is-success" value="Add Server" />
+                    </b-field>
+                </form>
             </div>
         </div>
     </div>
@@ -38,24 +49,20 @@
 </template>
 
 <script>
-import Axios from 'axios'
+const URL_REGEX = new RegExp(/@(https?|ftp):\/\/(-\.)?([^\s/?.#-]+\.?)+(\/[^\s]*)?$@iS/)
 export default {
     data() {
         return {
+            form_addserver: {
+                name: null,
+                address: null
+            },
             servers: [
                 {
                     id: "local",
                     name: "Local Server",
                     address: "",
                     status: "loading",
-                    data: {}
-                },
-                {
-                    id: "staging",
-                    name: "Staging",
-                    address: "https://staging.blender.jackz.me",
-                    status: "loading",
-                    auth: ['ezra', 'JanhkXntY7pdJ8RsA6IS8MMDwc'],
                     data: {}
                 }
             ]
@@ -74,28 +81,31 @@ export default {
     methods: {
         refreshStatus() {
             this.servers.forEach((server,index) => {
-                const auth = server.auth && Array.isArray(server.auth) && server.auth.length == 2 ? `${server.auth[0]}:${server.auth[1]}` : null;
-                const Authorization = auth ? `Basic ${btoa(auth)}` : null
-                Axios.get(`${server.address}/api/render/status`, {
-                    headers: {
-                        Authorization
-                    }
-                })
-                .then(response => {
-                    this.servers[index].status = "online"
-                    this.servers[index].data = {
-                        blend: response.data.blend,
-                        active: response.data.active,
-                    }
-                })
-                .catch((err) => {
-                    console.warn(`Server ${server.id} status check failed:`,err.message)
-                    if(err.message == "Network Error") {
-                        this.servers[index].status = "error"
-                    }else{
-                        this.servers[index].status = "offline"
-                    }
-                })
+                this.getStatus(server, index);
+            })
+        },
+        getStatus(server, index) {
+            const auth = server.auth && Array.isArray(server.auth) && server.auth.length == 2 ? `${server.auth[0]}:${server.auth[1]}` : null;
+            const Authorization = auth ? `Basic ${btoa(auth)}` : null
+            this.$http.get(`${server.address}/api/render/status`, {
+                headers: {
+                    Authorization
+                }
+            })
+            .then(response => {
+                this.servers[index].status = "online"
+                this.servers[index].data = {
+                    blend: response.data.blend,
+                    active: response.data.active,
+                }
+            })
+            .catch((err) => {
+                console.warn(`Server ${server.id} status check failed:`,err.message)
+                if(err.message == "Network Error") {
+                    this.servers[index].status = "error"
+                }else{
+                    this.servers[index].status = "offline"
+                }
             })
         },
         deleteServer(id) {
@@ -117,13 +127,47 @@ export default {
                 }
             }
         },
+        addServer() {
+            if(this.safeName.length == 0) {
+                return this.$buefy.toast.open({
+                    message: 'Invalid name, must contain at least some alphanumeric characters.',
+                    type: 'is-danger',
+                    duration: 5000
+                })
+            }
+            if(!URL_REGEX.test(this.form_addserver.address)) {
+                return this.$buefy.toast.open({
+                    message: 'Specified address is not a valid URL.',
+                    type: 'is-danger',
+                    duration: 5000
+                })
+            }
+            const index = this.servers.push({
+                id: this.safeName,
+                name: this.form_addserver.name,
+                address: this.form_addserver.address.replace(/\/$/,''),
+                status: null,
+            })
+            this.getStatus(this.servers[index], index);
+            this.save();
+        },
         save() {
             window.localStorage.setItem('blender_servers', JSON.stringify(this.servers))
         }
     },
+    computed: {
+        safeName() {
+            if(!this.form_addserver.name) return ""
+            return this.form_addserver.name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
+        },
+        addServerName() {
+            if(!this.form_addserver.name) return ""
+            return `ID: ${this.safeName}`
+        }
+    },
     filters: {
         formatStatus({ status, data }) {
-            if(status === "loading") return "Loading..."
+            if(!status || status === "loading") return "Loading..."
             if(status === "offline") return `Offline`
             if(status === "error") return `Errored`
             if(data.active) return `Rendering - ${data.blend}`

@@ -186,7 +186,6 @@ import Settings from '../components/Settings'
 
 import io from 'socket.io-client';
 import VirtualList from 'vue-virtual-scroll-list'
-import Axios from 'axios'
 import humanizeDuration from "humanize-duration";
 
 const AVG_TIME_PER_FRAME_VALUES = 20;
@@ -289,14 +288,13 @@ export default {
         this.options.console.paused = !this.options.console.paused
     },
     openBlendChooser() {
-        const _this = this;
         this.$buefy.modal.open({
             parent: this,
             component: () => import('../components/BlendChooser'),
             trapFocus: true,
             events: {
-                setBlend(value) {
-                    _this.blend_file = value;
+                setBlend: (value) => {
+                    this.blend_file = value;
                 }
             }
         })
@@ -306,13 +304,10 @@ export default {
             parent: this,
             component: () => import('../components/ZIPDownloader'),
             trapFocus: true,
-            events: {
-                
-            }
+            
         })
     },
     openSettingsModal() {
-        const _this = this;
         this.$buefy.modal.open({
             parent: this,
             component: Settings,
@@ -324,10 +319,10 @@ export default {
                 }
             },
             events: {
-                save(values) {
+                save: (values) => {
                     console.debug(values)
-                    _this.options.stats.use_celsius = values.use_celsius;
-                    _this.options.enable_socket = values.socket_enabled
+                    this.options.stats.use_celsius = values.use_celsius;
+                    this.options.enable_socket = values.socket_enabled
                 }
             }
         })
@@ -344,7 +339,7 @@ export default {
         }
         this.render.logs = []
         const frames = this.options.blend.frames.all ? null: [ this.options.blend.frames.start,this.options.blend.frames.stop];
-        Axios.post(`/api/render/${this.blend_file}` , {
+        this.$http.post(`/api/render/${this.blend_file}` , {
             useGPU: this.options.blend.use_gpu,
             frames,
             python_scripts: this.options.blend.python_scripts,
@@ -373,7 +368,7 @@ export default {
         //this.render.active = true;
     },
     fetchLogs() {
-        Axios.get('/api/render/logs')
+        this.$http.get('/api/render/logs')
         .then(response => {
             this.logs = response.data
         }).catch(err => {
@@ -388,7 +383,7 @@ export default {
             type: 'is-warning',
             hasIcon: true,
             onConfirm() {
-                Axios.post('/api/render/cancel')
+                this.$http.post('/api/render/cancel')
                 .then(() => {
                     this.$buefy.toast.open({
                         type:'is-warning',
@@ -405,7 +400,7 @@ export default {
         })
     },
     fetchStatus() {
-        Axios.get('/api/render/status')
+        this.$http.get('/api/render/status')
         .then(response => {
             this.render.active = response.data.active;
             this.render.current_frame = response.data.current_frame;

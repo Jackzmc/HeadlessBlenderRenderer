@@ -51,7 +51,6 @@
 </template>
 
 <script>
-import Axios from 'axios'
 export default {
     data() {
         return {
@@ -62,7 +61,7 @@ export default {
     methods: {
         refresh() {
             this.loading = true;
-            Axios.get('/api/zips')
+            this.$http.get('/api/zips')
             .then(response => {
                 this.list = response.data.files
             })
@@ -89,7 +88,7 @@ export default {
                 type: 'is-warning',
                 hasIcon: true,
                 onConfirm: () => {
-                    Axios.delete(`/api/zips/${encodeURIComponent(name)}`)
+                    this.$http.delete(`/api/zips/${encodeURIComponent(name)}`)
                     .then(() => {
                         this.$buefy.toast.open({
                             type: 'is-success',

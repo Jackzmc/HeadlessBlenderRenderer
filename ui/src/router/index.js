@@ -12,6 +12,11 @@ Vue.use(VueRouter)
     component: ServerPage
   },
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import(/* webpackChunkName: 'login' */'../views/Login.vue')
+  },
+  {
     path: '*',
     name: 'ServerDash',
     component: ServerDash
@@ -21,7 +26,8 @@ Vue.use(VueRouter)
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  routes
+  routes,
+  linkActiveClass: "is-active"
 })
 
 export default router

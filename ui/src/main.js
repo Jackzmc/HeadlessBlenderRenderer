@@ -6,12 +6,14 @@ import '@mdi/font/css/materialdesignicons.css'
 
 import {version} from '../package.json'
 import router from './router'
+import Axios from 'axios'
 
 
 Vue.use(Buefy)
 Vue.config.productionTip = false
 Vue.config.devtools = true
 Vue.prototype.$VERSION = version;
+Vue.prototype.$http = Axios;
 
 Vue.filter('humanize', (b,defaultText) => {
   if(b === null || b === undefined) return defaultText||'?'
