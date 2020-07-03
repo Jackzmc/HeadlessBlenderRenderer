@@ -1,4 +1,4 @@
-const RenderController = require('./RenderController')
+const RenderController = require('./modules/RenderController')
 
 module.exports = (server) => {
     const io = require('socket.io')({ cookie: false, serveClient: false });

@@ -1,5 +1,5 @@
-const Statistics = require('./modules/Statistics')
-const {execShellCommand} = require('./modules/utils.js');
+const Statistics = require('./Statistics')
+const {execShellCommand} = require('./utils.js');
 const {spawn} = require('child_process')
 const EventEmitter = require('events');
 const prettyMilliseconds = require('pretty-ms');
