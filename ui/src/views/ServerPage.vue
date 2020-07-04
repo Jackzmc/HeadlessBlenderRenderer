@@ -187,6 +187,7 @@ import Settings from '../components/Settings'
 import io from 'socket.io-client';
 import VirtualList from 'vue-virtual-scroll-list'
 import humanizeDuration from "humanize-duration";
+import Axios from 'axios'
 
 const AVG_TIME_PER_FRAME_VALUES = 20;
 const shortEnglishHumanizer = humanizeDuration.humanizer({
@@ -197,9 +198,8 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
     },
   },
 });
-
 export default {
-  name: 'App',
+  name: 'ServerPanel',
   ListComponent,
   components: {
     Statistics,
@@ -246,11 +246,17 @@ export default {
     }
   },
   computed: {
+    server() {
+        return this.$store.state.servers[this.$route.params.server];
+    },
+    baseURL() {
+        return this.server.address;
+    },
     consoleName() {
       return `Console Output (${this.render.logs.length} lines)`
     },
     renderStatus() {
-        return this.blend_file ? 'Select a blend file to start' : 'Idle'
+        return !this.blend_file ? 'Select a blend file to start' : 'Idle'
     },
     socketStatus() {
       return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected from socket server</span>` : `<span class='has-text-success'>Connected to socket server</span>`
@@ -340,7 +346,7 @@ export default {
         }
         this.render.logs = []
         const frames = this.options.blend.frames.all ? null: [ this.options.blend.frames.start,this.options.blend.frames.stop];
-        this.$http.post(`/api/render/${this.blend_file}` , {
+        Axios.post(`/api/render/${this.blend_file}` , {
             useGPU: this.options.blend.use_gpu,
             frames,
             python_scripts: this.options.blend.python_scripts,
@@ -369,7 +375,7 @@ export default {
         //this.render.active = true;
     },
     fetchLogs() {
-        this.$http.get('/api/render/logs')
+        Axios.get('/api/render/logs')
         .then(response => {
             this.logs = response.data
         }).catch(err => {
@@ -384,7 +390,7 @@ export default {
             type: 'is-warning',
             hasIcon: true,
             onConfirm() {
-                this.$http.post('/api/render/cancel')
+                Axios.post('/api/render/cancel')
                 .then(() => {
                     this.$buefy.toast.open({
                         type:'is-warning',
@@ -401,7 +407,7 @@ export default {
         })
     },
     fetchStatus() {
-        this.$http.get('/api/render/status')
+        Axios.get('/api/render/status')
         .then(response => {
             this.render.active = response.data.active;
             this.render.current_frame = response.data.current_frame;
@@ -414,12 +420,34 @@ export default {
                 onAction: () => this.fetchStatus()
             })
         })
+    },
+    socketLogin() {
+        const id = this.$route.params.server
+        this.socket.emit('login', this.server.jwt, cb => {
+            if(cb.error) {
+                if(cb.unauthorized) {
+                    this.$router.push({
+                        path: `/login/${id}`,
+                        query: { redirect: `/server/${id}`, loggedOut: true}
+                    })
+                    return;
+                }else{
+                    this.$buefy.snackbar.open({
+                        message: 'Failed to login to socketIO: ' + cb.error,
+                        type: 'is-danger'
+                    })
+                }
+            }else{
+                this.render.active = cb.settings.active;
+                this.render.current_frame = cb.settings.current_frame;
+                this.render.max_frames = cb.settings.max_frames;
+            }
+        })
     }
   },
   created() {
-      //let domain = params.has('sk_domain') ? params.get('sk_domain') : 'localhost'
-      //let port = params.has('sk_port') ? params.get('sk_port') : '8095'
-        this.socket = io.connect();
+        const id = this.$route.params.server
+        this.socket = io(this.server.address)
         const storedSettings = window.localStorage.getItem('blender_opts')
         if(storedSettings) {
             const json = JSON.parse(storedSettings)
@@ -427,7 +455,22 @@ export default {
             this.options.stats.use_celsius = json.use_celsius;
             this.options.enable_socket = json.socket_enabled
         }
-        this.fetchStatus()
+        this.socketLogin();
+        Axios.defaults.baseURL = this.server.address;
+        Axios.defaults.headers.common['Authorization'] = this.server.jwt;
+        Axios.interceptors.response.use(response => {
+            return response;
+        }, (error)  =>{
+            if (error.response  && 401 === error.response.status) {
+                this.$router.push({
+                    path: `/login/${id}`,
+                    query: { redirect: `/server/${id}`, loggedOut: true}
+                })
+            } else {
+                return Promise.reject(error);
+            }
+        });
+        if(!this.options.enable_socket) this.fetchStatus()
   },
   mounted() {
       this.fetchLogs();
@@ -435,6 +478,7 @@ export default {
       .on('connect', () => {
         if(!this.socket_first_inital) this.socket_first_inital = true;
         this.isSocketOffline = false;
+        this.socketLogin()
       })
       .on('disconnect', () => {
         this.isSocketOffline = true;

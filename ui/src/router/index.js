@@ -3,6 +3,8 @@ import VueRouter from 'vue-router'
 import ServerDash from '../views/ServerDash.vue'
 import ServerPage from '../views/ServerPage.vue'
 
+import store from '../store'
+
 Vue.use(VueRouter)
 
 const routes = [
@@ -45,34 +47,39 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   if(to.meta.permLevel !== null && to.meta.permLevel !== undefined && to.path !== "/login") {
     const permLevel = to.meta.permLevel
+    const serverid = to.params.server;
+    const jwt = store.state.servers[serverid]?.jwt;
     //Check if user has a valid JWT
-    
-    if(localStorage.getItem('blender_jwt') == null) {
+    if(!jwt) {
       return next({
-          path: '/login',
-          params: { nextUrl: to.fullPath }
+          path: '/login/' + to.params.server,
+          query: { redirect: to.fullPath }
       })
     }
     //Fetch the user
-    const user = JSON.parse(localStorage.getItem('blender_user'))
-    if(permLevel >= 2) {
-      if(user.permissions >= 2) {
-        next()
+    const user = store.state.users[serverid];
+    if(user) {
+      if(permLevel >= 2) {
+        if(user.permissions >= 2) {
+          next()
+        }else{
+          //tell client to login, unauthorized
+          next({
+            path: '/login/' + to.params.server,
+            query: { redirect: to.fullPath, unauthorized: true }
+          })
+        }
+      }else if(permLevel >= 0 && user.permissions >= 0) {
+        next();
       }else{
-        //tell client to login, unauthorized
+        //No access
         next({
-          path: '/login',
-          params: { nextUrl: to.fullPath, unauthorized: true }
+          path: '/login/' + to.params.server,
+          query: { redirect: to.fullPath }
         })
       }
-    }else if(permLevel >= 0 && user.permissions >= 0) {
-      next();
     }else{
-      //No access
-      next({
-        path: '/login',
-        params: { nextUrl: to.fullPath }
-      })
+      //try login
     }
   }else{
     next()

@@ -7,7 +7,16 @@
             <div class="box">
                 <span class="has-text-centered">
                 <h2 class="title is-2">Login</h2>
-                <p class="subtitle is-5">Don't have an account? Contact administators to create account.</p>
+                <p class="subtitle is-5">Server: {{$route.params.server}}</p>
+                <hr>
+                <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.loggedout">
+                    Your login token for {{$route.params.server}} has expired, please login again.
+                </b-message>
+                <b-message title="Unauthorized" type="is-danger" aria-close-label="Close message" v-if="$route.query.unauthorized">
+                    You do not have permission to view that page.
+                </b-message>
+                <p>Don't have an account? Contact administators to create account.</p>
+                <br>
                 </span>
                 <form @submit.prevent="loginUser">
                     <b-field label="Username or Email">
@@ -20,6 +29,9 @@
                         <b-button tag="input" native-type="submit" type="is-success" value="Login" />
                     </b-field>
                 </form>
+                <p v-if="$route.query.redirect">
+                    <br>Redirecting to <em>{{$route.query.redirect}}</em> on login.
+                </p>
             </div>
         </div>
         <div class="column"></div>
@@ -41,12 +53,15 @@ export default {
         loginUser() {
             this.$http.post('/api/auth/login',{...this.login})
             .then(response => {
-                localStorage.setItem('blender_user', JSON.stringify(response.data.user))
-                localStorage.setItem('blender_jwt', response.data.token)
                 console.log('login', response.data)
-                this.$emit('login', response.data.user)
-                if(this.$route.params.nextUrl) {
-                    this.$router.push(this.$route.params.nextUrl)
+                this.$store.commit('loginUser', {
+                    user: response.data.user,
+                    jwt: response.data.token,
+                    serverid: this.$route.params.server
+                })
+                this.$store.commit('saveServers')
+                if(this.$route.query.redirect) {
+                    this.$router.push(this.$route.query.redirect)
                 }else{
                     this.$router.push('/')
                 }
@@ -56,6 +71,11 @@ export default {
                     message: 'Login failed: ' + err.message
                 })
             })
+        }
+    },
+    computed: {
+        server() {
+            return this.$store.state.servers[this.$route.params.server]
         }
     }
 }

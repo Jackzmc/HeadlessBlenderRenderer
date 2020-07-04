@@ -1,10 +1,9 @@
 const router = require('express').Router();
 const fileUpload = require('express-fileupload')
 const fs = require('fs').promises;
-
 const prettyMilliseconds = require('pretty-ms');
 const path = require('path')
-
+const { restrictedCheck, userCheck } = require('../modules/Middlewares');
 
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
@@ -13,7 +12,7 @@ router.use(fileUpload({
     abortOnLimit: true,
 }));
 
-router.get('/',async(req,res) => {
+router.get('/', userCheck, async(req,res) => {
     try {
         const entries = await fs.readdir(BLENDS_DIR, {withFileTypes: true});
         const promises = [];
@@ -59,7 +58,7 @@ router.get('/',async(req,res) => {
         res.status(500).json({error:err.message})
     }
 })
-router.get('/:name',(req,res) => {
+router.get('/:name', userCheck, (req,res) => {
     res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
 
     const stream = createReadStream(`${BLENDS_DIR}/${req.params.name}`)
@@ -73,7 +72,7 @@ router.get('/:name',(req,res) => {
         res.end();
     })
 })
-router.delete('/:name',(req,res) => {
+router.delete('/:name', userCheck, (req,res) => {
     fs.unlink(`${BLENDS_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -86,7 +85,7 @@ router.delete('/:name',(req,res) => {
     })
 })
 
-router.post('/upload', (req,res) => {
+router.post('/upload', userCheck, (req,res) => {
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.json({error:'No files were uploaded.'});
     }

@@ -144,6 +144,7 @@
 
 <script>
 export default {
+    name: 'BlendChooser',
     data() {
         return {
             uploader: null, //SocketIOFileClient
@@ -174,7 +175,7 @@ export default {
             .catch(err => {
                 this.$buefy.snackbar.open({
                     title: 'Failure',
-                    message: 'Failed to fetch list of blends: ' + err.response.status,
+                    message: 'Failed to fetch list of blends: ' + (err.response?err.response.status:err.message),
                     type: 'is-danger',
                     hasIcon: true,
                     icon: 'alert-circle'

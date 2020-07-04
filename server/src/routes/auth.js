@@ -16,8 +16,15 @@ router.post('/login', (req, res) => {
         if (!user) return res.status(404).send({error:'No user found.'});
         const passwordValid = bcrypt.compare(req.body.password, user.password)
         if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null });
-        const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: 86400 });
-        res.json({ auth: true, token: token, user: user });
+        jwt.sign({ 
+            username: user.username,
+            permissions: user.permissions,
+        }, SECRET, { expiresIn: 86400 }, (err, token) => {
+            if(err) return res.status(500).json({error: 'Generating login token failed.'})
+            delete user.password;
+            res.json({ auth: true, token: token, user: user });
+        });
+        
     });
 })
 module.exports = router;

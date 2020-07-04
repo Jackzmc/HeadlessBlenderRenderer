@@ -4,9 +4,8 @@ const fs = require('fs').promises;
 const { createReadStream } = require('fs')
 const AdmZip = require('adm-zip');
 const path = require('path')
-
 const prettyMilliseconds = require('pretty-ms');
-
+const { restrictedCheck, userCheck } = require('../modules/Middlewares');
 
 const ZIP_DIR = process.env.ZIP_DIR || `${process.env.HOME_DIR}/zips`
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
@@ -17,7 +16,7 @@ router.use(fileUpload({
 }));
 
 
-router.get('/:name',(req,res) => {
+router.get('/:name', userCheck, (req,res) => {
     res.set('Content-Type', 'application/zip')
     res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
 
@@ -32,7 +31,7 @@ router.get('/:name',(req,res) => {
         res.end();
     })
 })
-router.delete('/:name',(req,res) => {
+router.delete('/:name', userCheck, (req,res) => {
     fs.unlink(`${ZIP_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -44,7 +43,7 @@ router.delete('/:name',(req,res) => {
         return res.status(500).json({error:err.message})
     })
 })
-router.get('/', async(req,res) => {
+router.get('/', userCheck, async(req,res) => {
     try {
         const files_raw = await fs.readdir(ZIP_DIR);
         const promises = [];
@@ -77,7 +76,7 @@ router.get('/', async(req,res) => {
     }
 })
 
-router.post('/upload', (req,res) => {
+router.post('/upload', userCheck, (req,res) => {
     if (!req.files || Object.keys(req.files).length === 0 || !req.files.file) {
         return res.json({error:'No file was uploaded.'});
     }

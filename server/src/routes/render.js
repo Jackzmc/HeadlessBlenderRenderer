@@ -1,17 +1,19 @@
 const router = require('express').Router();
+const { restrictedCheck, userCheck } = require('../modules/Middlewares');
+
 let renderController;
-router.post(['/cancel','/abort'],(req,res) => {
+router.post(['/cancel','/abort'], userCheck, (req,res) => {
     renderController.cancelRender()
     .then(() => res.json({success: true}))
     .catch(err => res.status(500).json({error: err.message}))
 })
-router.get('/logs', (req,res) => {
+router.get('/logs', restrictedCheck, (req,res) => {
     res.json(renderController.getLogs())
 })
 router.get('/status', (req,res) => {
     res.json(renderController.getSettings()) 
 })
-router.post('/:blend',(req,res) => {
+router.post('/:blend', userCheck, (req,res) => {
     if(!req.params.blend) return res.status(400).json({error: 'Missing blend property'})
     if(!req.params.blend.endsWith(".blend")) return res.status(400).json({error: 'Specified file is not a valid *.blend file.'})
     const frames = req.body.frames&&Array.isArray(req.body.frames) || null;

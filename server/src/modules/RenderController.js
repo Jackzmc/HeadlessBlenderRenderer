@@ -4,8 +4,7 @@ const {spawn} = require('child_process')
 const EventEmitter = require('events');
 const prettyMilliseconds = require('pretty-ms');
 
-
-const UPDATE_INTERVAL = (process.env.STAT_UPDATE_INTERVAL_SECONDS||30) * 100;
+const UPDATE_INTERVAL = (process.env.STAT_UPDATE_INTERVAL_SECONDS||30) * 1000;
 module.exports = class Render {
     active = false;
     current_frame = 0;
@@ -68,7 +67,7 @@ module.exports = class Render {
                         message: err.message,
                         timestamp: Date.now()
                     }
-                    this.io.emit('log', logObject)
+                    this.emit('log', logObject)
                     this.logs.push(logObject)
                     if(this.logs.length >= 50) {
                         this.logs.splice(0, this.logs.length - 50)
@@ -80,12 +79,12 @@ module.exports = class Render {
                     const frame_match = msg.match(/(Saved:)(.*\/)(\d+.png)/)
                     if(frame_match && frame_match.length == 4) {
                         const frame = parseInt(frame_match[3]);
-                        this.io.emit('frame', frame);
+                        this.emit('frame', frame);
                         this.current_frame = frame + 1;
                         //get frame #
                     }
                     if(!this.active) {
-                        this.io.emit('render_start', this.getSettings())
+                        this.emit('render_start', this.getSettings())
                         resolve(this.getSettings())
                         this.active = true;
                         this.started = Date.now();
@@ -94,7 +93,7 @@ module.exports = class Render {
                 })
                 renderProcess.stderr.on('data',data => {
                     if(!this.active) {
-                        this.io.emit('render_start', this.getSettings())
+                        this.emit('render_start', this.getSettings())
                         resolve(this.getSettings())
                         this.active = true;
                         this.started = Date.now();
@@ -104,7 +103,7 @@ module.exports = class Render {
                 renderProcess
                 .on('exit', () => {
                     const time_taken = prettyMilliseconds(Date.now() - this.started);
-                    this.io.emit('render_stop', {
+                    this.emit('render_stop', {
                         started: this.started,
                         time_taken,
                         blend: this.blend
@@ -125,7 +124,7 @@ module.exports = class Render {
             text,
             timestamp: Date.now()
         }
-        this.io.emit('log', logObject)
+        this.emit('log', logObject)
         this.logs.push(logObject)
         if(this.logs.length >= 50) {
             this.logs.splice(0, this.logs.length - 50)
@@ -142,10 +141,15 @@ module.exports = class Render {
         })
     }
     startTimer() {
+        console.info('[RenderController] Starting statistics timer, running every ', UPDATE_INTERVAL, "ms")
+        Statistics().then(stats => {
+            this.last_stats = stats;
+            this.emit('stat', stats)
+        })
         this.timer = setInterval(() => {
             Statistics().then(stats => {
                 this.last_stats = stats;
-                this.io.emit('stat', stats)
+                this.emit('stat', stats)
             })
         }, UPDATE_INTERVAL)
     }
@@ -168,8 +172,20 @@ module.exports = class Render {
             } : null
         }
     }
+    getStatistics() {
+        return this.last_stats;
+    }
     
     getLogs() {
         return this.logs
+    }
+
+    emit(name, object) {
+        for(const socketId in this.io.sockets.sockets) {
+            const socket = this.io.sockets.sockets[socketId];
+            if(socket.authorized) {
+                socket.emit(name, object)
+            }
+        }
     }
 }

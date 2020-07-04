@@ -33,6 +33,9 @@ export default {
     processLogin(user) {
       this.user = user;
     }
+  },
+  created() {
+    this.$store.dispatch('loadServers')
   }
 }
 </script>

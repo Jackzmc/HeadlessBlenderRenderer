@@ -15,24 +15,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        <!-- <tr>
                             <td>Local Server</td>
                             <td></td>
                             <td>{{ localStatus }}</td>
                             <td>
                                 <b-button type="is-success" tag="router-link" to="/server/local">Connect</b-button>
                             </td>
-                        </tr>
-                        <tr v-for="server in servers" :key="server.id">
+                        </tr> -->
+                        <tr v-for="(server, id) in servers" :key="id">
                             <td>{{server.name}}</td>
                             <td>{{server.address}}</td>
                             <td>{{server | formatStatus}}</td>
                             <td>
                                 <div class="buttons">
-                                    <b-button type="is-success" tag="router-link" :to="'/server/' + server.id">
-                                        {{server.loggedin ? 'Connect' : 'Login'}}
+                                    <b-button  type="is-success" tag="router-link" :to="'/server/' + id">
+                                        Connect
                                     </b-button>
-                                    <b-button type="is-danger" @click="deleteServer(server.id)" icon-left="delete"></b-button>
+                                    <!-- <b-button v-else type="is-success" tag="router-link" :to="{path: '/login/' + id, query: { redirect: '/server/' + id}} ">
+                                        Login
+                                    </b-button> -->
+                                    <b-button type="is-danger" @click="deleteServer(server)" icon-left="delete"></b-button>
                                 </div>
                             </td>
                         </tr>
@@ -68,82 +71,25 @@ export default {
                 address: null
             },
             localServerStatus: null,
-            servers: []
         }
     },
     created() {
-        const storedServers = window.localStorage.getItem('blender_servers');
-        if(storedServers) {
-            const json = JSON.parse(storedServers);
-            this.servers = json;
-        }
-        this.refreshStatus();
-        //update status every 5 min
-        setInterval(this.refreshStatus, 1000 * 60 * 5)
-        this.$http.get('/api/render/status')
-        .then(response => {
-            this.localServerStatus = {
-                state: "online",
-                blend: response.data.blend,
-                active: response.data.active
-            }
-        })
-        .catch((err) => {
-            console.warn(`Local server status check failed:`,err.message)
-            if(err.message == "Network Error") {
-                this.localServerStatus = {
-                    state: "error",
-                }
-            }else{
-                this.localServerStatus = {
-                    state: "offline",
-                }
-            }
-        })
+        this.updateServers();
+        setInterval(this.updateServers, 1000 * 60 * 5)
     },
     methods: {
-        refreshStatus() {
-            this.servers.forEach((server,index) => {
-                this.getStatus(server, index);
-            })
-        },
-        getStatus(server, index) {
-            if(!server || index === null || index === undefined) return console.warn('[getStatus] Missing/null parameters given.', server, index)
-            this.$http.get(`${server.address}/api/render/status`)
-            .then(response => {
-                this.servers[index].status = "online"
-                this.servers[index].data = {
-                    blend: response.data.blend,
-                    active: response.data.active,
+        deleteServer(server) {
+            this.$buefy.dialog.confirm({
+                title: 'Delete Server',
+                message: `Are you sure you want to delete the server <b>${server.name}</b>?<br><em>ID: ${server.id}</em>`,
+                confirmText: 'Delete',
+                type: 'is-warning',
+                hasIcon: true,
+                onConfirm: () => {
+                    this.$store.commit('removeServer', server.id)
+                    this.$store.commit('saveServers')
                 }
             })
-            .catch((err) => {
-                console.warn(`Server '${server.id}' status check failed:`,err.message)
-                if(err.message == "Network Error") {
-                    this.servers[index].status = "error"
-                }else{
-                    this.servers[index].status = "offline"
-                }
-            })
-        },
-        deleteServer(id) {
-            for(let i=0; i < this.servers.length; i++) {
-                if(this.servers[i].id === id) {
-                    const server = this.servers[i];
-                    this.$buefy.dialog.confirm({
-                        title: 'Delete Server',
-                        message: `Are you sure you want to delete the server <b>${server.name}</b>?<br><em>ID: ${server.id}</em>`,
-                        confirmText: 'Delete',
-                        type: 'is-warning',
-                        hasIcon: true,
-                        onConfirm: () => {
-                            this.servers.splice(i, 1);
-                            this.save();
-                        }
-                    })
-                    break;
-                }
-            }
         },
         addServer() {
             if(this.safeName.length == 0) {
@@ -160,17 +106,25 @@ export default {
                     duration: 5000
                 })
             }
-            const index = this.servers.push({
+            console.log('add user', {
                 id: this.safeName,
                 name: this.form_addserver.name,
                 address: this.form_addserver.address.replace(/\/$/,''),
                 status: null,
             })
-            this.getStatus(this.servers[index-1], index-1);
-            this.save();
+            this.$store.commit('loadServer',{
+                id: this.safeName,
+                name: this.form_addserver.name,
+                address: this.form_addserver.address.replace(/\/$/,''),
+                status: null,
+            })
+            this.$store.dispatch('refreshStatus', this.$store.state[this.safeName])
+            this.$store.commit('saveServers')
         },
-        save() {
-            window.localStorage.setItem('blender_servers', JSON.stringify(this.servers))
+        updateServers() {
+            for(const key in this.$store.state.servers) {
+                this.$store.dispatch('refreshStatus', this.$store.state.servers[key])
+            }
         }
     },
     computed: {
@@ -182,11 +136,8 @@ export default {
             if(!this.form_addserver.name) return ""
             return `ID: ${this.safeName}`
         },
-        localStatus() {
-            if(!this.localServerStatus) return "Loading...";
-            if(this.localServerStatus.active) return `Rendering - ${this.localServerStatus.blend}`
-            if(this.localServerStatus.state === "offline") return "Offline";
-            return "Idle"
+        servers() {
+            return this.$store.state.servers
         }
     },
     filters: {
