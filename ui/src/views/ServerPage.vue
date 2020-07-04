@@ -265,6 +265,7 @@ export default {
       return (this.render.current_frame / this.render.max_frames * 100).toFixed(1)
     },
     averageTimePerFrame() {
+        if(this.render.lastFrameDurations.length == 0) return 0;
         const sum = this.render.lastFrameDurations.reduce((a,b) => a+b, 0)
         return Math.round(sum / this.render.lastFrameDurations.length)
     },
@@ -455,11 +456,10 @@ export default {
         //clean up logs, keep only last 200. only on frame
         const length = this.render.logs.length ;
         if(length >= 200) {
-        this.render.logs.splice(0,length-200)
+            this.render.logs.splice(0,length-200)
         }
-        const lastFrameTime = this.render.last_frame_time
-        if(lastFrameTime && lastFrameTime > 0) {
-            const difference = Date.now() - lastFrameTime;
+        if(this.render.last_frame_time > 0) {
+            const difference = Date.now() - this.render.last_frame_time;
             this.render.lastFrameDurations.push(difference)
             if(this.render.lastFrameDurations.length > AVG_TIME_PER_FRAME_VALUES) {
                 this.render.lastFrameDurations.shift()
@@ -468,9 +468,9 @@ export default {
         this.render.last_frame_time = Date.now()
           //console.log('FRAME:',data)
       })
-      .on('render_start',({frame, max_frames, blend, duration}) => {
+      .on('render_start',({current_frame, max_frames, blend, duration}) => {
           this.render.active = true;
-          this.render.current_frame = frame || 0;
+          this.render.current_frame = current_frame || 0;
           this.render.max_frames = max_frames;
           this.blend_file = blend
           this.render.started = duration.started || Date.now()
