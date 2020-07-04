@@ -1,5 +1,18 @@
 <template>
   <div id="app">
+    <b-navbar>
+        <template slot="end">
+            <b-navbar-dropdown :label="user.username" right>
+                <b-navbar-item @click="openUserSettings">
+                    Settings
+                </b-navbar-item>
+                <hr class="dropdown-divider" aria-role="menuitem">
+                <b-navbar-item @click="logout" class="has-text-danger">
+                    Logout
+                </b-navbar-item>
+            </b-navbar-dropdown>
+        </template>
+    </b-navbar>
     <div class="container">
         <div class="columns">
             <div class="column is-5">
@@ -277,6 +290,9 @@ export default {
     },
     eta() {
         return this.averageTimePerFrame * (this.render.max_frames - this.render.current_frame)
+    },
+    user() {
+        return this.$store.state.users[this.$route.params.server]
     }
   },
   methods:{
@@ -304,6 +320,13 @@ export default {
                     this.blend_file = value;
                 }
             }
+        })
+    },
+    openUserSettings() {
+        this.$buefy.modal.open({
+            parent: this,
+            component: () => import('../components/UserModal'),
+            trapFocus: true,
         })
     },
     openZIPModal() {
@@ -428,7 +451,7 @@ export default {
                 if(cb.unauthorized) {
                     this.$router.push({
                         path: `/login/${id}`,
-                        query: { redirect: `/server/${id}`, loggedOut: true}
+                        query: { redirect: `/server/${id}`, loggedOut: true, ret: 4}
                     })
                     return;
                 }else{
@@ -442,6 +465,13 @@ export default {
                 this.render.current_frame = cb.settings.current_frame;
                 this.render.max_frames = cb.settings.max_frames;
             }
+        })
+    },
+    logout() {
+        this.$store.commit('logout', this.$route.params.server);
+        this.$router.push({
+            path: `/login/${this.$route.params.server}`,
+            query: {loggedout: true, ret:5}
         })
     }
   },
@@ -464,7 +494,7 @@ export default {
             if (error.response  && 401 === error.response.status) {
                 this.$router.push({
                     path: `/login/${id}`,
-                    query: { redirect: `/server/${id}`, loggedOut: true}
+                    query: { redirect: `/server/${id}`, expired: true, ret: 6}
                 })
             } else {
                 return Promise.reject(error);
@@ -556,7 +586,7 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  margin-top: 20px;
+  
 }
 .disconnected {
     background-color: lightgray !important;

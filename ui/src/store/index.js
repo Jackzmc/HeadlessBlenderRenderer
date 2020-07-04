@@ -38,13 +38,14 @@ export default new Vuex.Store({
       window.localStorage.setItem('blender_servers', JSON.stringify(stored))
     },
     loginUser(state, { user, serverid, jwt}) {
-      state.servers[serverid].jwt = jwt;
+      if(jwt) state.servers[serverid].jwt = jwt;
       state.users[serverid] = user;
     }
   },
   actions: {
     loadServers({commit, dispatch}) {
       const storedServers = window.localStorage.getItem('blender_servers');
+      const userCache = window.sessionStorage.getItem('blender_userCache');
       if(storedServers) {
           const json = JSON.parse(storedServers);
           for(const id in json) {
@@ -52,6 +53,15 @@ export default new Vuex.Store({
             commit('loadServer', json[id])
             dispatch('refreshStatus', json[id])
           }
+      }
+      if(userCache) {
+        const userJson = JSON.parse(userCache);
+        for(const server in userJson) {
+          commit('loginUser', {
+            serverid: server,
+            user: userJson[server]
+          })
+        }
       }
     },
     refreshStatus(state, server) {

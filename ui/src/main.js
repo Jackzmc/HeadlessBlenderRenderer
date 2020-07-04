@@ -16,6 +16,8 @@ Vue.config.devtools = true
 Vue.prototype.$VERSION = version;
 Vue.prototype.$http = Axios;
 
+store.dispatch('loadServers')
+
 Vue.filter('humanize', (b,defaultText) => {
   if(b === null || b === undefined) return defaultText||'?'
   const s=1024;

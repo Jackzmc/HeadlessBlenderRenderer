@@ -35,7 +35,7 @@ export default {
     }
   },
   created() {
-    this.$store.dispatch('loadServers')
+    
   }
 }
 </script>

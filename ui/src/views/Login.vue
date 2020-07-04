@@ -9,8 +9,11 @@
                 <h2 class="title is-2">Login</h2>
                 <p class="subtitle is-5">Server: {{$route.params.server}}</p>
                 <hr>
-                <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.loggedout">
+                <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.expired">
                     Your login token for {{$route.params.server}} has expired, please login again.
+                </b-message>
+                <b-message type="is-success" aria-close-label="Close message" v-if="$route.query.loggedout">
+                    You have successfully logged out.
                 </b-message>
                 <b-message title="Unauthorized" type="is-danger" aria-close-label="Close message" v-if="$route.query.unauthorized">
                     You do not have permission to view that page.
@@ -53,17 +56,19 @@ export default {
         loginUser() {
             this.$http.post('/api/auth/login',{...this.login})
             .then(response => {
-                console.log('login', response.data)
                 this.$store.commit('loginUser', {
                     user: response.data.user,
                     jwt: response.data.token,
                     serverid: this.$route.params.server
                 })
+                let currentUserCache = JSON.parse(window.sessionStorage.blender_userCache || "{}")
+                currentUserCache[this.$route.params.server] = response.data.user;
+                window.sessionStorage.setItem('blender_userCache', JSON.stringify(currentUserCache))
                 this.$store.commit('saveServers')
                 if(this.$route.query.redirect) {
                     this.$router.push(this.$route.query.redirect)
                 }else{
-                    this.$router.push('/')
+                    this.$router.push(`/server/${this.$route.params.server}`)
                 }
             })
             .catch(err => {
@@ -71,6 +76,12 @@ export default {
                     message: 'Login failed: ' + err.message
                 })
             })
+        }
+    },
+    created() {
+        //server does not exist.
+        if(!this.$store.state.servers[this.$route.params.server]) {
+            this.$router.push('/');
         }
     },
     computed: {
