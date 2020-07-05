@@ -51,8 +51,8 @@
             <div class="column" v-if="selected">
                 <h4 class="title is-4 has-text-centered">Editing user '{{selected.username}}'</h4>
                 <form @submit.prevent="updateUser">
-                    <b-field label="Username">
-                        <b-input type="text" v-model="form.updateUser.username" required/>
+                    <b-field label="Username" message="Username can't be changed.">
+                        <b-input type="text" v-model="form.updateUser.username" disabled readonly />
                     </b-field>
                     <b-field label="Email">
                         <b-input type="email" v-model="form.updateUser.email" required />
@@ -72,7 +72,7 @@
                     <b-field>
                         <div class="buttons">
                             <b-button type="is-success" native-type="submit" tag="input" value="Update User" />
-                            <b-button @click="deleteUser(props.row.username)" type="is-danger"  icon-left="delete">Delete User</b-button>
+                            <b-button @click="deleteUser(selected)" type="is-danger"  icon-left="delete">Delete User</b-button>
                         </div>
                     </b-field>
                 </form>
@@ -217,15 +217,30 @@ export default {
                 })
             })
         },
-        deleteUser(username) {
+        deleteUser(user) {
             this.$buefy.dialog.confirm({
                 title: 'Delete User',
-                message: `Are you sure you want to delete the user <b>${username}</b>?`,
+                message: `Are you sure you want to delete the user <b>${user.username}</b>?`,
                 confirmText: 'Delete',
                 type: 'is-warning',
                 hasIcon: true,
                 onConfirm: () => {
-                   
+                    Axios.delete(`/api/auth/users/${this.selected.username}`)
+                    .then(() => {
+                        const index = this.users.findIndex(user => user.username === this.selected.username)
+                        if(index >= 0 ) delete this.users[index]
+                        this.$buefy.toast.open({
+                            type: 'is-success',
+                            duration: 3000,
+                            message: `Deleted user '${this.selected.username}' successfully`
+                        })
+                    })
+                    .catch(err => {
+                        this.$buefy.snackbar.open({
+                            type: 'is-danger',
+                            message: `Failed to delete user: ${err.message}`
+                        })
+                    })
                 }
             })
         }
