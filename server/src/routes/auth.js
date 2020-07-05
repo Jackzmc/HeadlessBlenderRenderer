@@ -114,8 +114,18 @@ router.put('/users/:username', adminCheck, (req,res) => {
             return res.json({success: true})
         })
     })
+})
 
-    
+router.delete('/users/:username', adminCheck, (req,res) => {
+    db.selectUser(req.params.username, (err, user) => {  
+        if(err) return res.status(500).json({error: 'Internal error fetching user'})
+        if(!user) return res.status(404).json({error: 'User not found'})
+
+        db.delete(req.params.username, (err) => {
+            if(err) return res.status(500).json({error: 'Internal error deleting user'})
+            return res.json({success: true})
+        })
+    })
 })
 
 module.exports = router;

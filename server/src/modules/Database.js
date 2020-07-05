@@ -69,6 +69,16 @@ class Db {
         )
     }
 
+    delete(username, callback) {
+        return this.db.run(
+            'DELETE FROM user WHERE username = ?',
+            [username],
+            (err) => {
+                callback(err);
+            }
+        )
+    }
+
     changePassword(username, password, callback) {
         bcrypt.hash(password, 15, (err, hash) => {
             if(err) return callback(err);
