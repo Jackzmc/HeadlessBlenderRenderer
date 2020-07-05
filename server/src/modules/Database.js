@@ -31,9 +31,10 @@ class Db {
     selectUser(query, callback) {
         return this.db.get(
             `SELECT * FROM user WHERE email = ? OR username = ?`,
-            [query, query],function(err,row){
-                callback(err,row)
-            })
+            [query, query], (err,row) =>{
+                callback(err, row)
+            }
+        )
     }
 
     insertAdmin(user, callback) {
@@ -56,6 +57,19 @@ class Db {
             user, (err) => {
                 callback(err)
             })
+    }
+
+    changePassword(username, password, callback) {
+        bcrypt.hash(password, 15, (err, hash) => {
+            if(err) return callback(err);
+            return this.db.run(
+                'UPDATE user SET password = ? WHERE username = ?',
+                [hash, username], (err) => {
+                    callback(err);
+                }
+            )
+        })
+        
     }
 }
 

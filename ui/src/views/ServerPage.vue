@@ -327,6 +327,10 @@ export default {
             parent: this,
             component: () => import('../components/UserModal'),
             trapFocus: true,
+            props: {
+                user: this.$store.state.users[this.server.id],
+                server: this.server
+            }
         })
     },
     openZIPModal() {

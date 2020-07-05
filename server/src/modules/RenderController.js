@@ -141,7 +141,7 @@ module.exports = class Render {
         })
     }
     startTimer() {
-        console.info('[RenderController] Starting statistics timer, running every ', UPDATE_INTERVAL, "ms")
+        console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
         Statistics().then(stats => {
             this.last_stats = stats;
             this.emit('stat', stats)
