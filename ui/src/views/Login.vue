@@ -74,18 +74,15 @@ export default {
             .catch(err => {
                 if(err.response.status === 404) {
                     return this.$buefy.snackbar.open({
-                        title: 'Login Failed',
-                        message: 'No account was found with that username or password'
+                        message: 'Login failed: No account was found with that username or password'
                     })
                 }else if(err.response.status === 401) {
                     this.$buefy.snackbar.open({
-                        title: 'Login Failed',
-                        message: 'Username or password were invalid.'
+                        message: 'Login failed: Username or password were invalid.'
                     })
                 }else{
                     this.$buefy.snackbar.open({
-                        title: 'Login Failed',
-                        message: err.message
+                        message: `Login failed: ${err.message}`
                     })
                 }
                 

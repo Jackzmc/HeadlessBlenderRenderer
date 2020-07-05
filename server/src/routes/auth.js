@@ -3,7 +3,7 @@ const Database = require('../modules/Database')
 const path = require('path')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const { restrictedCheck} = require('../modules/Middlewares');
+const { restrictedCheck, adminCheck } = require('../modules/Middlewares');
 
 const db = new Database(path.join(__dirname, '/../../users.db'))
 
@@ -57,7 +57,63 @@ router.post('/resetpassword', restrictedCheck, (req,res) => {
             return res.json({success: true})
         })
     });
+})
 
+router.get('/users', adminCheck, (req,res) => {
+    db.selectAll((err, rows) => {
+        if(err) return res.status(500).json({error: err.message})
+        const users = rows.map(v => {
+            delete v.password;
+            return v;
+        })
+        return res.json(users)
+    })
+})
+
+router.post('/users/:username', adminCheck, (req,res) => {
+    if(!req.params.username) return res.status(400).json({error: 'Missing field', field: 'username'})
+    if(!req.body.password) return res.status(400).json({error: 'Missing field', field: 'password'})
+    if(!req.body.email) return res.status(400).json({error: 'Missing field', field: 'email'})
+    if(req.body.permissions === null || req.body.permissions === undefined) return res.status(400).json({error: 'Missing field', field: 'permissions'})
+    bcrypt.hash(req.body.password, 15, (err, hash) => {
+        if(err) {
+            console.error('[/auth/users/:username]', err.message)
+            return res.status(500).json({error: err.message})
+        }
+        db.insert({
+            username: req.params.username,
+            password: hash,
+            email: req.body.email,
+            permissions: req.body.permissions
+        }, (err) => {
+            if(err) {
+                console.error('[/auth/users/:username]', err.message)
+                return res.status(500).json({error: err.message})
+            }
+            return res.json({success: true})
+        })
+    })
+    
+})
+
+router.put('/users/:username', adminCheck, (req,res) => {
+    db.selectUser(req.params.username, (err, user) => {  
+        if(err) return res.status(500).json({error: 'Internal error fetching user'})
+        if(!user) return res.status(404).json({error: 'User not found'})
+
+        if(req.body.email) user.email = req.body.email;
+        if(req.body.permissions) user.permissions = req.body.permissions;
+        if(req.body.password) {
+            bcrypt.hash(req.body.password, 15, (err, hash) => {
+                if(err) return res.status(500).json({error: 'Internal error updating password.'})
+                user.password = hash;
+            })
+        }
+        db.update(user, (err) => {
+            if(err) return res.status(500).json({error: 'Internal error updating user'})
+            return res.json({success: true})
+        })
+    })
 
     
 })

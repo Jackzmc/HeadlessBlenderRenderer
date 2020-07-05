@@ -69,8 +69,7 @@ export default {
             .catch(err => {
                 console.error('Change password failed', err)
                 return this.$buefy.snackbar.open({
-                    title: 'Reset password failed',
-                    message: err.message,
+                    message: `Reset password failed: ${err.message}`,
                     type: 'is-danger',
                 })
             }).finally(() => {

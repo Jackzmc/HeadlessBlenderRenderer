@@ -1,10 +1,26 @@
 <template>
   <div id="app">
     <b-navbar>
+        <template slot="brand">
+            <b-navbar-item tag="router-link" to="/">
+                <h4 class="title is-4">Blender Render UI</h4>
+            </b-navbar-item>
+        </template>
+        <template slot="start">
+            <b-navbar-item tag="router-link" to="/">
+                Servers Dashboard
+            </b-navbar-item>
+            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions >= 2">
+                Admin Panel
+            </b-navbar-item>
+        </template>
         <template slot="end">
             <b-navbar-dropdown :label="user.username" right>
                 <b-navbar-item @click="openUserSettings">
                     Settings
+                </b-navbar-item>
+                <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions >= 2">
+                    Admin Panel
                 </b-navbar-item>
                 <hr class="dropdown-divider" aria-role="menuitem">
                 <b-navbar-item @click="logout" class="has-text-danger">
@@ -16,8 +32,8 @@
     <div class="container">
         <div class="columns">
             <div class="column is-5">
-                <b-button tag="router-link" to="/" icon-left="keyboard-return">Return to Server Selection</b-button>
-                <p class="title is-1">Blender Render UI</p>
+                <br>
+                <br>
                 <span>
                     <div v-if="render.active" class="notification is-dark">
                         <h6 class="title is-6">Rendering <span class="has-text-success">{{blend_file}}</span></h6>
@@ -56,7 +72,7 @@
                             {{ blend_file }}
                         </span>
                     </b-field>
-                    <b-field label="Render Options">
+                    <b-field label="Render Mode">
                         <b-checkbox :disabled="render.active" v-model="options.blend.use_gpu">
                             Rendering with {{options.blend.use_gpu? "GPU" : "CPU"}}
                         </b-checkbox>
@@ -262,6 +278,9 @@ export default {
     server() {
         return this.$store.state.servers[this.$route.params.server];
     },
+    user() {
+        return this.$store.state.users[this.$route.params.server]
+    },
     baseURL() {
         return this.server.address;
     },
@@ -291,9 +310,7 @@ export default {
     eta() {
         return this.averageTimePerFrame * (this.render.max_frames - this.render.current_frame)
     },
-    user() {
-        return this.$store.state.users[this.$route.params.server]
-    }
+    
   },
   methods:{
     togglePause() {

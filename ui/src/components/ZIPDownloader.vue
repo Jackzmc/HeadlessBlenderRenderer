@@ -67,7 +67,6 @@ export default {
             })
             .catch(err => {
                 this.$buefy.snackbar.open({
-                    title: 'Failure',
                     message: 'Failed to fetch list of ZIPs: ' + err.response.status,
                     type: 'is-danger',
                     hasIcon: true,

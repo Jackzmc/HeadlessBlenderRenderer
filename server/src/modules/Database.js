@@ -53,10 +53,20 @@ class Db {
 
     insert(user, callback) {
         return this.db.run(
-            'INSERT INTO user (username,email,password) VALUES (?,?,?)',
-            user, (err) => {
+            'INSERT INTO user (username,email,password,permissions) VALUES (?,?,?,?)',
+            [user.username, user.email, user.password, user.permissions], 
+            (err) => {
                 callback(err)
             })
+    }
+
+    update(user, callback) {
+        return this.db.run(
+            'UPDATE user SET username = ?, email = ?, password = ?, permissions = ? WHERE username = ?',
+            [user.username, user.email, user.password, user.permissions, user.username], (err) => {
+                callback(err)
+            }
+        )
     }
 
     changePassword(username, password, callback) {
