@@ -48,10 +48,21 @@ export default new Vuex.Store({
       const userCache = window.sessionStorage.getItem('blender_userCache');
       if(storedServers) {
           const json = JSON.parse(storedServers);
-          for(const id in json) {
-            json[id].id = id;
-            commit('loadServer', json[id])
-            dispatch('refreshStatus', json[id])
+          if(Object.keys(json).length > 0) {
+            for(const id in json) {
+              json[id].id = id;
+              commit('loadServer', json[id])
+              dispatch('refreshStatus', json[id])
+            }
+          }else{
+            const server = {
+              id: 'local',
+              name: 'Local Server',
+              address: ''
+            }
+            commit('loadServer', server);
+            dispatch('refreshStatus', server)
+            commit('saveServers')
           }
       }
       if(userCache) {
