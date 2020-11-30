@@ -7,7 +7,7 @@
             <div class="box">
                 <span class="has-text-centered">
                 <h2 class="title is-2">Login</h2>
-                <p class="subtitle is-5">To Server: {{$route.params.server}}</p>
+                <p class="subtitle is-5">To Server: <em>{{server.name}}</em></p>
                 <hr>
                 <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.expired">
                     Your login token for {{$route.params.server}} has expired, please login again.
@@ -29,7 +29,10 @@
                         <b-input type="password" v-model="login.password" icon="key" password-reveal required/>
                     </b-field>
                     <b-field>
-                        <b-button tag="input" native-type="submit" type="is-success" value="Login" />
+                        <div class="buttons">
+                            <b-button tag="input" native-type="submit" type="is-success" value="Login" />
+                            <b-button value="Cancel" tag="router-link" to="/">Cancel</b-button>
+                        </div>
                     </b-field>
                 </form>
                 <p v-if="$route.query.redirect">
@@ -54,7 +57,7 @@ export default {
     },
     methods: {
         loginUser() {
-            this.$http.post('/api/auth/login',{...this.login})
+            this.$http.post(`${this.server.address}/api/auth/login`, {...this.login})
             .then(response => {
                 this.$store.commit('loginUser', {
                     user: response.data.user,
@@ -72,6 +75,7 @@ export default {
                 }
             })
             .catch(err => {
+                this.login = {username: null, password: null}
                 if(err.response) {
                     if(err.response.status === 404) {
                         return this.$buefy.snackbar.open({
