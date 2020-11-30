@@ -15,14 +15,15 @@ class Db {
                 password text,
                 permissions integer)`
         const response = this.db.run(sql)
+        //Create a default admin user with password hash of 'admin'
         bcrypt.hash('admin', (err, hash) => {
             const user = {
-                username: 'admim',
+                username: 'admin',
                 email: 'admin@localhost',
                 password: hash,
-                permissions: 2
+                permissions: 9
             }
-            this.insertAdmin(user);
+            this.insert(user);
         })
         
         return response;
@@ -37,14 +38,6 @@ class Db {
         )
     }
 
-    insertAdmin(user, callback) {
-        return this.db.run(
-            'INSERT INTO user (username,email,password,permissions) VALUES (?,?,?,?)',
-            user, (err) => {
-                if(callback) callback(err)
-            })
-    }
-
     selectAll(callback) {
         return this.db.all(`SELECT * FROM user`, function(err,rows) {
             callback(err,rows)
@@ -56,7 +49,7 @@ class Db {
             'INSERT INTO user (username,email,password,permissions) VALUES (?,?,?,?)',
             [user.username, user.email, user.password, user.permissions], 
             (err) => {
-                callback(err)
+                if(callback) callback(err)
             })
     }
 
