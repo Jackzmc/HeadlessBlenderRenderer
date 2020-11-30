@@ -74,11 +74,11 @@ export default {
             .catch(err => {
                 if(err.response.status === 404) {
                     return this.$buefy.snackbar.open({
-                        message: 'Login failed: No account was found with that username or password'
+                        message: 'No account was found with that username or password'
                     })
                 }else if(err.response.status === 401) {
                     this.$buefy.snackbar.open({
-                        message: 'Login failed: Username or password were invalid.'
+                        message: 'Username or password is invalid.'
                     })
                 }else{
                     this.$buefy.snackbar.open({

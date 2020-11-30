@@ -1,6 +1,6 @@
 <template>
   <div>
-    <router-view @login="processLogin" />
+    <router-view />
   </div>
 </template>
 

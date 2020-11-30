@@ -12,7 +12,7 @@ export default new Vuex.Store({
   mutations: {
     loadServer(state, server) {
       if(server && server.id) {
-        state.servers[server.id] = server
+        state.servers = { ... state.servers, ...{[server.id]: server}}
       }
     },
     removeServer(state, id) {
@@ -21,7 +21,7 @@ export default new Vuex.Store({
     updateServer(state, server) {
       if(!server || !server.id) return;
       if(state.servers[server.id]) {
-        state.servers[server.id] = server;
+        state.servers = { ... state.servers, ...{[server.id]: server}}
       }
     },
     saveServers(state) {
@@ -92,6 +92,11 @@ export default new Vuex.Store({
           state.commit('updateServer', server)
 
       })
+    }
+  },
+  getters: {
+    servers(state) {
+      return state.servers;
     }
   },
   modules: {

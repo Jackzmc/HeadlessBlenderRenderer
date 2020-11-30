@@ -23,10 +23,10 @@
                                 <b-button type="is-success" tag="router-link" to="/server/local">Connect</b-button>
                             </td>
                         </tr> -->
-                        <tr v-for="(server, id) in servers" :key="id">
+                        <tr v-for="(server, id) in $store.getters.servers" :key="id">
                             <td>{{server.name}}</td>
                             <td>{{server.address}}</td>
-                            <td>{{server | formatStatus}}</td>
+                            <td>{{formatStatus(server)}} </td>
                             <td>
                                 <div class="buttons">
                                     <b-button  type="is-success" tag="router-link" :to="'/server/' + id">
@@ -125,6 +125,14 @@ export default {
             for(const key in this.$store.state.servers) {
                 this.$store.dispatch('refreshStatus', this.$store.state.servers[key])
             }
+        },
+        formatStatus({ status, data }) {
+            if(!status || status === "loading") return "Loading..."
+            if(status === "offline") return `Offline`
+            if(status === "error") return `Errored`
+            if(data.active) return `Rendering - ${data.blend}`
+            return `Idle`
+            
         }
     },
     computed: {
@@ -137,18 +145,8 @@ export default {
             return `ID: ${this.safeName}`
         },
         servers() {
-            return this.$store.state.servers
+            return this.$store.getters.servers
         }
     },
-    filters: {
-        formatStatus({ status, data }) {
-            if(!status || status === "loading") return "Loading..."
-            if(status === "offline") return `Offline`
-            if(status === "error") return `Errored`
-            if(data.active) return `Rendering - ${data.blend}`
-            return `Idle`
-            
-        }
-    }
 }
 </script>
