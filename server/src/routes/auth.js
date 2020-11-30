@@ -8,7 +8,7 @@ const { restrictedCheck, adminCheck } = require('../modules/Middlewares');
 const db = new Database(path.join(__dirname, '/../../users.db'))
 
 const SECRET = process.env.JWT_SECRET;
-const SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS || 20;
+const SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS || 12;
 
 router.post('/login', (req, res) => {
     if(!req.body.email && !req.body.username) return res.status(400).json({error: 'Missing username/email'})
