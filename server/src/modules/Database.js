@@ -21,9 +21,11 @@ class Db {
                 username: 'admin',
                 email: 'admin@localhost',
                 password: hash,
-                permissions: 9
+                permissions: 99
             }
-            this.insert(user);
+            this.insert(user, err => {
+                if(!err) console.info('[Database] Created a new default admin account.')
+            });
         })
         
         return response;
