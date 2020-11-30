@@ -7,7 +7,7 @@
             <div class="box">
                 <span class="has-text-centered">
                 <h2 class="title is-2">Login</h2>
-                <p class="subtitle is-5">Server: {{$route.params.server}}</p>
+                <p class="subtitle is-5">To Server: {{$route.params.server}}</p>
                 <hr>
                 <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.expired">
                     Your login token for {{$route.params.server}} has expired, please login again.
@@ -18,7 +18,7 @@
                 <b-message title="Unauthorized" type="is-danger" aria-close-label="Close message" v-if="$route.query.unauthorized">
                     You do not have permission to view that page.
                 </b-message>
-                <p>Don't have an account? Contact administators to create account.</p>
+                <p>Don't have an account? Contact the administators to create account.</p>
                 <br>
                 </span>
                 <form @submit.prevent="loginUser">
@@ -72,14 +72,16 @@ export default {
                 }
             })
             .catch(err => {
-                if(err.response.status === 404) {
-                    return this.$buefy.snackbar.open({
-                        message: 'No account was found with that username or password'
-                    })
-                }else if(err.response.status === 401) {
-                    this.$buefy.snackbar.open({
-                        message: 'Username or password is invalid.'
-                    })
+                if(err.response) {
+                    if(err.response.status === 404) {
+                        return this.$buefy.snackbar.open({
+                            message: 'No account was found with that username or password'
+                        })
+                    }else if(err.response.status === 401) {
+                        this.$buefy.snackbar.open({
+                            message: 'Username or password is invalid.'
+                        })
+                    }
                 }else{
                     this.$buefy.snackbar.open({
                         message: `Login failed: ${err.message}`

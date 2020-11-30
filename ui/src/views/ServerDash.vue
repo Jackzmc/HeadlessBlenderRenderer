@@ -127,7 +127,7 @@ export default {
             }
         },
         formatStatus({ status, data }) {
-            if(!status || status === "loading") return "Loading..."
+            if(!status || status === "loading") return "Not Logged In"
             if(status === "offline") return `Offline`
             if(status === "error") return `Errored`
             if(data.active) return `Rendering - ${data.blend}`
