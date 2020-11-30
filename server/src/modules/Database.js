@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt')
 
+const SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS || 20;
+
 class Db {
     constructor(file) {
         this.db = new sqlite3.Database(file);
@@ -16,16 +18,21 @@ class Db {
                 permissions integer)`
         const response = this.db.run(sql)
         //Create a default admin user with password hash of 'admin'
-        bcrypt.hash('admin', (err, hash) => {
-            const user = {
-                username: 'admin',
-                email: 'admin@localhost',
-                password: hash,
-                permissions: 99
+        bcrypt.hash('admin', SALT_ROUNDS, (err, hash) => {
+            if(err) {
+                console.error('[Database] Failed to hash default admin password')
+                process.exit(1)
+            }else{
+                const user = {
+                    username: 'admin',
+                    email: 'admin@localhost',
+                    password: hash,
+                    permissions: 99
+                }
+                this.insert(user, err => {
+                    if(!err) console.info('[Database] Created a new default admin account.')
+                });
             }
-            this.insert(user, err => {
-                if(!err) console.info('[Database] Created a new default admin account.')
-            });
         })
         
         return response;
@@ -75,7 +82,7 @@ class Db {
     }
 
     changePassword(username, password, callback) {
-        bcrypt.hash(password, 15, (err, hash) => {
+        bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
             if(err) return callback(err);
             return this.db.run(
                 'UPDATE user SET password = ? WHERE username = ?',

@@ -8,6 +8,7 @@ const { restrictedCheck, adminCheck } = require('../modules/Middlewares');
 const db = new Database(path.join(__dirname, '/../../users.db'))
 
 const SECRET = process.env.JWT_SECRET;
+const SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS || 20;
 
 router.post('/login', (req, res) => {
     if(!req.body.email && !req.body.username) return res.status(400).json({error: 'Missing username/email'})
@@ -75,7 +76,7 @@ router.post('/users/:username', adminCheck, (req,res) => {
     if(!req.body.password) return res.status(400).json({error: 'Missing field', field: 'password'})
     if(!req.body.email) return res.status(400).json({error: 'Missing field', field: 'email'})
     if(req.body.permissions === null || req.body.permissions === undefined) return res.status(400).json({error: 'Missing field', field: 'permissions'})
-    bcrypt.hash(req.body.password, 15, (err, hash) => {
+    bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
         if(err) {
             console.error('[/auth/users/:username]', err.message)
             return res.status(500).json({error: err.message})
@@ -104,7 +105,7 @@ router.put('/users/:username', adminCheck, (req,res) => {
         if(req.body.email) user.email = req.body.email;
         if(req.body.permissions) user.permissions = req.body.permissions;
         if(req.body.password) {
-            bcrypt.hash(req.body.password, 15, (err, hash) => {
+            bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
                 if(err) return res.status(500).json({error: 'Internal error updating password.'})
                 user.password = hash;
             })
