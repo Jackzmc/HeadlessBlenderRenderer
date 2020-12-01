@@ -23,7 +23,7 @@
         <h3 class="title is-3">Server Management</h3>
         <p class="subtitle is-6">Manage the current users and the server settings.</p>
         <!-- TODO: add router-view when server settings is ever added -->
-        <b-tabs type="is-toggle">
+        <b-tabs type="is-toggle" @input="onTabChange">
             <b-tab-item label="Users">
                 <hr>
                 <div class="columns">
@@ -128,8 +128,42 @@
                     </b-field>
                 </form>
             </b-tab-item>
-            <b-tab-item label="Info">
-                Todo
+            <b-tab-item label="Info" value="info">
+                <span v-if="serverInfo">
+                    <b-message label="Error" v-if="serverInfo.error">
+                        {{serverInfo.error}}
+                    </b-message>
+                    <table class="table">
+                        <tr>
+                            <th>OS</th>
+                            <td>{{serverInfo.platform}}</td>
+                        </tr>
+                        <tr>
+                            <th>Server Version</th>
+                            <td>{{serverInfo.version}}</td>
+                        </tr>
+                        <tr>
+                            <th>Date Started</th>
+                            <td>{{startDate}}</td>
+                        </tr>
+                        <tr>
+                            <th>CPU</th>
+                            <td>{{serverInfo.cpu.name}}</td>
+                        </tr>
+                        <tr v-for="(gpu,index) in serverInfo.gpus" :key="index">
+                            <th>GPU #{{index+1}}</th>
+                            <td>{{gpu.name}}</td>
+                        </tr>
+                        <tr>
+                            <th>Memory</th>
+                            <td>{{serverInfo.memory.used | humanize}} / {{serverInfo.memory.total | humanize}}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Renders Completed</th>
+                            <td>{{serverInfo.totalRenders}}</td>
+                        </tr>
+                    </table>
+                </span>
             </b-tab-item>
         </b-tabs>
         
@@ -162,7 +196,8 @@ export default {
                 settings: {
                     extraShellArgs: false
                 }
-            }
+            },
+            serverInfo: null
         }
     },
     created() {
@@ -189,8 +224,24 @@ export default {
         user() {
             return this.$store.state.users[this.$route.params.server]
         },
+        startDate() {
+            if(this.serverInfo.started) {
+                const d = new Date(this.serverInfo.started);
+                return `${d.toLocaleDateString()} at ${d.toLocaleTimeString()}`
+            }
+            return null;
+        }
     },
     methods: {
+        onTabChange(type) {
+            if(type === 'info' && !this.serverInfo) {
+                Axios.get('/api/stats')
+                .then(response => this.serverInfo = response.data)
+                .catch(err => {
+                    this.serverInfo.error = err.message;
+                })
+            }
+        },
         formatPermission(number) {
             switch(parseInt(number)) {
                 case 0: return "Restricted"
