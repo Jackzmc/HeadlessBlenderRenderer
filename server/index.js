@@ -1,3 +1,5 @@
+const render = require('./src/routes/render.js');
+
 require('dotenv').config();
 const app = require('express')()
 const server = require('http').Server(app);
@@ -17,6 +19,15 @@ require('./src/modules/SetupDirectory');
 const renderController = require('./src/socket.js')(server);
 app.use('/api', require('./src/server.js')(renderController))
 
+process.on('SIGTERM', () => gracefulShutdown)
+process.on('SIGINT', () => gracefulShutdown)
+
 server.listen(process.env.WEBPORT||8080,() => {
     console.info(`Listening on :${process.env.WEBPORT||8080}`)
 })
+
+async function gracefulShutdown() {
+    console.info('Received shutdown signal. Cancelling any active renders...')
+    await renderController.cancelRender()
+    process.exit(0)
+}
