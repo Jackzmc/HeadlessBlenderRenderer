@@ -1,11 +1,14 @@
 const bodyParser = require('body-parser')
 const router = require('express').Router();
 const Statistics = require('./modules/Statistics')
-
+const cors = require('cors')({
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+})
 
 router.use(bodyParser.urlencoded({ extended: false, limit: '500mb'}))
 router.use(bodyParser.json())
-router.use(require('cors')())
+router.options('*', cors)
+router.use(cors)
 
 router.use('/zips', require('./routes/zip'))
 router.use('/blends', require('./routes/blends'))

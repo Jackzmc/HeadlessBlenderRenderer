@@ -17,6 +17,7 @@ router.post('/login', (req, res) => {
         if (err) return res.status(500).json({error:'Internal Server Error'});
         if (!user) return res.status(404).json({error:'No user found.'});
         bcrypt.compare(req.body.password, user.password, (err, passwordValid) => {
+            delete user.password;
             if(err) return res.status(500).json({error: 'Internal Server Error'})
             if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null });
             jwt.sign({ 
@@ -24,7 +25,6 @@ router.post('/login', (req, res) => {
                 permissions: user.permissions,
             }, SECRET, { expiresIn: 86400 }, (err, token) => {
                 if(err) return res.status(500).json({error: 'Generating login token failed.'})
-                delete user.password;
                 res.json({ auth: true, token: token, user: user });
             });
         })

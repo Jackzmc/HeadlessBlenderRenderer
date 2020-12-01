@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken')
 
-const SECRET = process.env.JWT_SECRET;
-
 module.exports = {
     restrictedCheck(req,res,next) {
         return checkPermission(0, req, res, next)
@@ -17,9 +15,9 @@ module.exports = {
 function checkPermission(permLevel,req,res,next) {
     if(req.method === "OPTION") return next();
     if(req.headers.authorization) {
-        jwt.verify(req.headers.authorization, SECRET, (err, decoded) => {
+        jwt.verify(req.headers.authorization, process.env.JWT_SECRET, (err, decoded) => {
             res.locals.user = decoded;
-            if(err) return res.status(401).json({error:'Failed to verify authentication.'})
+            if(err) return res.status(500).json({error:'Failed to verify authentication.'})
             if(decoded.permissions < permLevel) return res.status(401).json({error: 'Permisison level is too low.'})
             return next();
         })
