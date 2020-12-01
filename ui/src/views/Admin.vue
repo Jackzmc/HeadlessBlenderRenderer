@@ -30,19 +30,19 @@
                     <div class="column is-8">
                         <h4 class="title is-4">Registered Users</h4>
                         <p class="subtitle is-6">Click on any user to edit</p>
-                        <b-table :data="users" :selected.sync="selected" :loading="loading">
+                        <b-table :data="users" :selected.sync="selected" @select="editUser" :loading="loading">
                             <template slot-scope="props">
                                 <b-table-column field="username" label="Username">
-                                    {{props.row.username}}
+                                    <p>{{props.row.username}}</p>
                                 </b-table-column>
                                 <b-table-column field="email" label="Email">
-                                    {{props.row.email}}
+                                    <p>{{props.row.email}}</p>
                                 </b-table-column>
                                 <b-table-column field="permissions" label="Permissions">
-                                    {{formatPermission(props.row.permissions) }}
+                                    <p>{{formatPermission(props.row.permissions) }}</p>
                                 </b-table-column>
                                 <b-table-column label="Edit">
-                                    <a @click="editUser(props.row)"><b-icon icon="pencil" /></a>
+                                    <a v-if="props.row.permissions < 99" @click="editUser(props.row)"><b-icon icon="pencil" /></a>
                                 </b-table-column>
                             </template>
                             <template slot="empty">
@@ -54,7 +54,7 @@
                             </template>
                         </b-table>
                     </div>
-                    <div class="column" v-if="selected">
+                    <div class="column" v-if="selected && form.updateUser.permissions < 99">
                         <h4 class="title is-4 has-text-centered">Edit User Info</h4>
                         <form @submit.prevent="updateUser">
                             <b-field label="Username" message="Username can't be changed.">
@@ -252,6 +252,9 @@ export default {
             }
         },
         editUser(user) {
+            if(user.permissions == 99) {
+                return setTimeout(() => this.selected = null, 1)
+            }
             Object.assign(this.form.updateUser, user)
         },
         refreshUsers() {
