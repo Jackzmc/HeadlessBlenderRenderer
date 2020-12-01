@@ -7,7 +7,7 @@
             <div class="box">
                 <span class="has-text-centered">
                 <h2 class="title is-2">Login</h2>
-                <p class="subtitle is-5">To Server: <em>{{server.name}}</em></p>
+                <p class="subtitle is-5">To Server: <span class="has-text-info">{{server.name}}</span></p>
                 <hr>
                 <b-message title="Session expired" type="is-danger" aria-close-label="Close message" v-if="$route.query.expired">
                     Your login token for {{$route.params.server}} has expired, please login again.
@@ -30,7 +30,7 @@
                     </b-field>
                     <b-field>
                         <div class="buttons">
-                            <b-button tag="input" native-type="submit" type="is-success" value="Login" />
+                            <b-button tag="input" native-type="submit" type="is-success" value="Login to Server" />
                             <b-button value="Cancel" tag="router-link" to="/">Cancel</b-button>
                         </div>
                     </b-field>

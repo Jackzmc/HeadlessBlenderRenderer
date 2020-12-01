@@ -76,6 +76,7 @@ router.post('/users/:username', adminCheck, (req,res) => {
     if(!req.body.password) return res.status(400).json({error: 'Missing field', field: 'password'})
     if(!req.body.email) return res.status(400).json({error: 'Missing field', field: 'email'})
     if(req.body.permissions === null || req.body.permissions === undefined) return res.status(400).json({error: 'Missing field', field: 'permissions'})
+    if(isNaN(req.body.permissions) || req.body.permissions < 0 || req.body.permissions >= 3) return res.status(400).json({error: 'Invalid Field', field: 'permissions', reason:'Permissions must be 0, 1, or 2.'})
     bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
         if(err) {
             console.error('[/auth/users/:username]', err.message)
