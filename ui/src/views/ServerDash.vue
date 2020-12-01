@@ -23,18 +23,18 @@
                                 <b-button type="is-success" tag="router-link" to="/server/local">Connect</b-button>
                             </td>
                         </tr> -->
-                        <tr v-for="(server, id) in $store.getters.servers" :key="id">
+                        <tr v-for="(server, id) in $store.getters.servers" :key="id" :style="{color: server.status == 'error' ? 'red': null}">
                             <td>{{server.name}}</td>
                             <td>{{server.address}}</td>
                             <td>{{formatStatus(server)}} </td>
                             <td>
                                 <div class="buttons">
-                                    <b-button  type="is-success" tag="router-link" :to="'/server/' + id">
+                                    <b-button v-if="server.status" type="is-success" tag="router-link" :to="'/server/' + id">
                                         Connect
                                     </b-button>
-                                    <!-- <b-button v-else type="is-success" tag="router-link" :to="{path: '/login/' + id, query: { redirect: '/server/' + id}} ">
+                                    <b-button v-else type="is-success" tag="router-link" :to="{path: '/login/' + id, query: { redirect: '/server/' + id}} ">
                                         Login
-                                    </b-button> -->
+                                    </b-button>
                                     <b-button type="is-danger" @click="deleteServer(server)" icon-left="delete"></b-button>
                                 </div>
                             </td>
@@ -145,7 +145,14 @@ export default {
             return `ID: ${this.safeName}`
         },
         servers() {
-            return this.$store.getters.servers
+            const arr = [];
+            for(const id in this.$store.getters.servers) {
+                arr.push({
+                    id,
+                    ...this.$store.getters.servers[id]
+                })
+            }
+            return arr;
         }
     },
 }

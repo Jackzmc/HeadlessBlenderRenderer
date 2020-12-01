@@ -16,7 +16,9 @@ export default new Vuex.Store({
       }
     },
     removeServer(state, id) {
-      delete state.servers[id]
+      let servers = state.servers;
+      delete servers[id]
+      state.servers = servers
     },
     updateServer(state, server) {
       if(!server || !server.id) return;
