@@ -83,9 +83,9 @@ router.post('/users/:username', adminCheck, (req,res) => {
             return res.status(500).json({error: err.message})
         }
         db.insert({
-            username: req.params.username,
+            username: req.params.username.trim(),
             password: hash,
-            email: req.body.email,
+            email: req.body.email.trim(),
             permissions: req.body.permissions
         }, (err) => {
             if(err) {
@@ -99,20 +99,25 @@ router.post('/users/:username', adminCheck, (req,res) => {
 })
 
 router.put('/users/:username', adminCheck, (req,res) => {
-    db.selectUser(req.params.username, (err, user) => {  
+    db.selectUser(req.params.username, async(err, user) => {  
         if(err) return res.status(500).json({error: 'Internal error fetching user'})
         if(!user) return res.status(404).json({error: 'User not found'})
 
-        if(req.body.email) user.email = req.body.email;
+        if(req.body.email) user.email = req.body.email.trim();
         if(req.body.permissions) user.permissions = req.body.permissions;
         if(req.body.password) {
-            bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
-                if(err) return res.status(500).json({error: 'Internal error updating password.'})
+            try {
+                const hash = await bcrypt.hash(req.body.password, SALT_ROUNDS);
                 user.password = hash;
-            })
+            }catch(err) {
+                return res.status(500).json({error: 'Internal error updating password.'})
+            }
         }
         db.update(user, (err) => {
-            if(err) return res.status(500).json({error: 'Internal error updating user'})
+            if(err) {
+                console.error('[Auth] Update user db error: ', err.message)
+                return res.status(500).json({error: 'Internal error updating user'})
+            }
             return res.json({success: true})
         })
     })
