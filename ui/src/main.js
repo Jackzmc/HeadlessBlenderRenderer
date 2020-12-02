@@ -15,6 +15,7 @@ Vue.config.productionTip = false
 Vue.config.devtools = true
 Vue.prototype.$VERSION = version;
 Vue.prototype.$http = Axios;
+Vue.prototype.$NODE_ENV = process.env.NODE_ENV
 
 store.dispatch('loadServers')
 
