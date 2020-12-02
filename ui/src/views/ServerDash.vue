@@ -2,7 +2,7 @@
 <div>
     <br>
     <div class="container">
-        <h1 class="title is-1">Blender Render UI - Server Dashboard</h1>
+        <h1 class="title is-1">Headless Blender Render - Servers Dashboard</h1>
         <div class="columns">
             <div class="column is-8">
                 <table class="table is-fullwidth">
@@ -41,6 +41,10 @@
                         </tr>
                     </tbody>
                 </table>
+                <div v-if="Object.keys($store.getters.servers).length == 0" class="has-text-centered">
+                    <p>No servers have been added. Add a server with the form on the right.</p><br>
+                    <em>Host your own server with <a href="https://github.com/Jackzmc/HeadlessBlenderRenderer">Jackzmc/HeadlessBlenderRenderer</a></em>
+                </div>
             </div>
             <div class="column">
                 <h5 class="title is-5 has-text-centered">Add Server</h5>
@@ -48,7 +52,7 @@
                     <b-field label="Server Name" :message="addServerName">
                         <b-input v-model="form_addserver.name" type="text" placeholder="My Server" required />
                     </b-field>
-                    <b-field label="Address" message="Must in the format of http(s)://site.com">
+                    <b-field label="Server Domain or Address" message="Must in the format of http(s)://site.com. Do not include /api/">
                         <b-input v-model="form_addserver.address" type="text" placeholder="https://blender.mysite.com/" required pattern="(https?:\/\/)(.*)" />
                     </b-field>
                     <b-field>
@@ -75,7 +79,8 @@ export default {
     },
     created() {
         this.updateServers();
-        setInterval(this.updateServers, 1000 * 60 * 5)
+        //TODO: perhaps implement a slower update if its been offline
+        setInterval(this.updateServers, 1000 * 60 * 15)
     },
     methods: {
         deleteServer(server) {
