@@ -1,7 +1,8 @@
 
 # Headless Blender Renderer
 
-A UI/Server for a headless blender setup, with CPU &amp; GPU monitoring, and more
+A UI/Server for a headless blender setup, with CPU &amp; GPU monitoring, and more.
+Currently only support linux for the time being for actual rendering. Everything else works (even statistics) on windows but not rendering due to some quirks.
 
 Note: Statistics only support NVIDIA gpus at this time. No support for AMD or type of card.
 (If you know a way to get statistics for amd similar to nvidia-smi, notify me)

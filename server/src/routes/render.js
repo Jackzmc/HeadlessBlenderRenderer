@@ -36,21 +36,26 @@ router.get('/preview', async(req,res) => {
     if(renderController.isRenderActive()) {
         try {
             const files = await readdir(process.env.HOME_DIR+"/tmp")
-            const lastFile = files[files.length - 1];
-            res.set('Content-Type', 'application/png')
-            res.set('Content-Disposition', `attachment; filename="preview.png"`);
+            if(files.length > 0) {
+                const lastFile = files[files.length - 1];
+                res.set('Content-Type', 'application/png')
+                res.set('Content-Disposition', `attachment; filename="preview.png"`);
 
-            const stream = createReadStream(`${process.env.HOME_DIR}/tmp/${lastFile}`)
-            .on('open',() => {
-                stream.pipe(res)
-            })
-            .on('error', (err) => {
-                res.status(500).send(err)
-            })
-            .on('end', () => {
-                res.end();
-            })
+                createReadStream(`${process.env.HOME_DIR}/tmp/${lastFile}`)
+                .on('open',() => {
+                    stream.pipe(res)
+                })
+                .on('error', (err) => {
+                    res.status(500).send(err)
+                })
+                .on('end', () => {
+                    res.end();
+                })
+            }else{
+                res.json({error: 'No frames have been rendered', code:'RENDER_NO_FRAMES'})
+            }
         }catch(err) {
+            console.log('[render/preview]',err)
             res.json({error: 'No frames have been rendered', code:'RENDER_NO_FRAMES'})
         }
     }else{

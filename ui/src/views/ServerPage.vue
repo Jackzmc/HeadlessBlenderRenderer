@@ -113,12 +113,12 @@
                             type="is-dark">
                         </b-taginput>
                     </b-field>
-                    <b-field label="Extra Command Arguments (Optional) (Disabled for now)">
+                    <!--<b-field label="Extra Command Arguments (Optional)">
                         <b-input
                         v-model="options.blend.extra_arguments" 
                         disabled 
                         />
-                    </b-field>
+                    </b-field>-->
                     <br>
                 </span>
                 <div class="notification is-dark" v-if="!render.active">
@@ -355,7 +355,9 @@ export default {
             parent: this,
             component: () => import('../components/ZIPDownloader'),
             trapFocus: true,
-            
+            props: {
+                server: this.server
+            }
         })
     },
     openSettingsModal() {
