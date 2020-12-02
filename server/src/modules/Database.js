@@ -11,39 +11,38 @@ class Db {
 
     createTable() {
         const sql = `
-            CREATE TABLE IF NOT EXISTS user (
-                username text PRIMARY KEY,
-                email text UNIQUE,
-                password text,
-                permissions integer)`
-        const response = this.db.run(sql)
-        //Create a default admin user with password hash of 'admin'
-        this.db.get('SELECT COUNT(*) as count FROM user', [], (err, row) => {
-            if(row.count == 0) {
-                console.info('[Database] Creating default admin user.')
-                bcrypt.hash('admin', SALT_ROUNDS, (err, hash) => {
-                    if(err) {
-                        console.error('[Database] Failed to hash default admin password')
-                        process.exit(1)
-                    }else{
-                        const user = {
-                            username: 'admin',
-                            email: 'admin@localhost',
-                            password: hash,
-                            permissions: 99
-                        }
-                        this.insert(user, err => {
-                            if(!err) console.info('[Database] Created a new default admin account.')
-                            else if(err.code != 'SQLITE_CONSTRAINT') {
-                                console.error('[Database] Failed to insert new admin account.\n', err.message)
+        CREATE TABLE IF NOT EXISTS user (
+            username text PRIMARY KEY,
+            email text UNIQUE,
+            password text,
+            permissions integer)`
+        this.db.run(sql, (result, err) => {
+            this.db.get('SELECT COUNT(*) as count FROM user', [], (err, row) => {
+                if(row.count == 0) {
+                    console.info('[Database] Creating a default admin user.')
+                    bcrypt.hash('admin', SALT_ROUNDS, (err, hash) => {
+                        if(err) {
+                            console.error('[Database] Failed to hash default admin password')
+                            process.exit(1)
+                        }else{
+                            const user = {
+                                username: 'admin',
+                                email: 'admin@localhost',
+                                password: hash,
+                                permissions: 99
                             }
-                            
-                        });
-                    }
-                })
-            }
+                            this.insert(user, err => {
+                                if(err.code != 'SQLITE_CONSTRAINT') {
+                                    console.error('[Database] Failed to insert new admin account.\n', err.message)
+                                }
+                                
+                            });
+                        }
+                    })
+                }
+            })
         })
-        return response;
+        //Create a default admin user with password hash of 'admin'
     }
 
     selectUser(query, callback) {
