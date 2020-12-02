@@ -371,9 +371,9 @@ export default {
             },
             events: {
                 save: (values) => {
-                    console.debug(values)
                     this.options.stats.use_celsius = values.use_celsius;
                     this.options.enable_socket = values.socket_enabled
+                    window.localStorage.setItem('blender_opts', JSON.stringify(values))
                 }
             }
         })

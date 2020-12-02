@@ -42,7 +42,7 @@ export default {
     methods: {
         save() {
             const saveObject = {
-                use_celsius: this.use_celsius,
+                use_celsius: this.temperature === 'celsius',
                 socket_enabled: this.socket_enabled
             }
             if(window.localStorage) {
@@ -58,10 +58,11 @@ export default {
                 })
             }
             this.$emit('save', saveObject);
+            this.$parent.close()
         }
     },
     created() {
-        this.use_celsius = this.default.use_celsius;
+        this.temperature = this.default.use_celsius ? 'celsius' : 'fahrenheit';
         this.socket_enabled = this.default.socket_enabled
     }
 }
