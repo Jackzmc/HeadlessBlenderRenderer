@@ -116,12 +116,15 @@
                     </div>
                 </div>
             </b-tab-item>
-            <b-tab-item label="Server Settings">
+            <b-tab-item label="Server Settings" v-if="$NODE_ENV !== 'production'">
                 <hr>
-                <b-message label="Notice" type="is-warning">This tab is currently in development.</b-message>
+                <b-message label="Notice" type="is-warning">This tab is currently in development. Server-side functionality may not work at this time.</b-message>
                 <form @submit.prevent="updateSettings">
                     <div class="field">
                         <b-checkbox v-model="form.settings.extraShellArgs">Allow Extra Shell Arguments</b-checkbox>
+                    </div>
+                    <div class="field">
+                        <b-checkbox v-model="form.settings.statistics">Enable System Statistics (CPU, GPU, MEM info)</b-checkbox>
                     </div>
                     <b-field>
                         <b-button type="is-success" tag="input" value="Save" />
@@ -194,7 +197,8 @@ export default {
                     permissions: 0
                 },
                 settings: {
-                    extraShellArgs: false
+                    extraShellArgs: false,
+                    statistics: true
                 }
             },
             serverInfo: null
