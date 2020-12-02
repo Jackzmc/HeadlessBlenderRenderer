@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { restrictedCheck, userCheck } = require('../modules/Middlewares');
+const {readdir} = require('fs/promises')
 
 let renderController;
 router.post(['/cancel','/abort'], userCheck, (req,res) => {
@@ -30,6 +31,31 @@ router.post('/:blend', userCheck, (req,res) => {
     .catch(err => {
         res.status(500).json({error: err.message})
     })
+})
+router.get('/preview', async(req,res) => {
+    if(renderController.isRenderActive()) {
+        try {
+            const files = await readdir(process.env.HOME_DIR+"/tmp")
+            const lastFile = files[files.length - 1];
+            res.set('Content-Type', 'application/png')
+            res.set('Content-Disposition', `attachment; filename="preview.png"`);
+
+            const stream = createReadStream(`${process.env.HOME_DIR}/tmp/${lastFile}`)
+            .on('open',() => {
+                stream.pipe(res)
+            })
+            .on('error', (err) => {
+                res.status(500).send(err)
+            })
+            .on('end', () => {
+                res.end();
+            })
+        }catch(err) {
+            res.json({error: 'No frames have been rendered', code:'RENDER_NO_FRAMES'})
+        }
+    }else{
+        return res.json({error: 'No render is currently running.', code: 'RENDER_INACTIVE'})
+    }
 })
 module.exports = (_controller) => {
     renderController = _controller;
