@@ -52,10 +52,12 @@
 
 <script>
 export default {
+    props: ['server'],
     data() {
         return {
             loading: true,
-            list: []
+            list: [],
+            tokens: {}
         }
     },
     methods: {
@@ -77,7 +79,34 @@ export default {
         },
         downloadZip(name) {
             //this.downloading = true;
-            window.open(`/api/zips/${encodeURIComponent(name)}`,`Download ${name}`)
+            if(this.tokens[name]) {
+                const url = `${this.server.address}/api/zips/${encodeURIComponent(name)}/download?token=${this.tokens[name]}`
+                this.$buefy.dialog.alert({
+                    type: 'is-success',
+                    message: `<a href='${url}'>${url}</a>`,
+                    title: `Download ${name}`
+                })
+            }else{
+                this.$http.post(`/api/zips/${encodeURIComponent(name)}/token`)
+                .then(response => {
+                    const url = `${this.server.address}/api/zips/${encodeURIComponent(name)}/download?token=${response.data.token}`
+                    this.$buefy.dialog.alert({
+                        type: 'is-success',
+                        message: `<a href='${url}'>${url}</a>`,
+                        title: `Download ${name}`
+                    })
+                    this.tokens[name] = response.data.token
+                })
+                .catch(err => {
+                    this.$buefy.dialog.alert({
+                        title: 'Download Failure',
+                        message: 'Could not acquire a download token for this file. <b>Server returned:</b> ' + err.response?err.response.data.error||JSON.stringify(err.response.data):err.message,
+                        type: 'is-danger',
+                        hasIcon: true,
+                        icon: 'alert-circle'
+                    })
+                })
+            }
         },
         deleteZip(name) {
             this.$buefy.dialog.confirm({
@@ -111,7 +140,15 @@ export default {
         },
     },
     mounted() {
+        console.log(this.server)
         this.refresh()
     }
 }
 </script>
+
+<style scoped>
+td {
+    vertical-align: middle;
+}
+</style>
+
