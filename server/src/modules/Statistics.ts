@@ -7,42 +7,39 @@ const START_DATE: number = Date.now();
 
 let antispam_stat_inc: number = 0;
 
-export default function() {
+export default async function() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
-    return new Promise(async(resolve,reject) => {
-        try {
-            const [
-                si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
-                si.cpu(),
-                si.mem(),
-                si.cpuCurrentspeed(),
-                si.currentLoad(),
-                si.cpuTemperature(),
-                execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
-            ])
-            const gpus = await parseGPUs(nvidia_smi_result as string)
- 
-            return resolve({
-                platform: process.platform,
-                version: SERVER_VERSION,
-                started: START_DATE,
-                cpu: {
-                    name: si_cpu.brand,
-                    usage: Math.round(cpu_load.currentload  * 1e1) / 1e1,
-                    speed: cpu_speed.avg,
-                    temp: cpu_temp.main,
-                },
-                memory: {
-                    used:si_mem.used,
-                    total:si_mem.total,
-                    available:si_mem.available
-                },
-                gpus
-            })
-        }catch(err) {
-            reject(err);
+    try {
+        const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
+            si.cpu(),
+            si.mem(),
+            si.cpuCurrentspeed(),
+            si.currentLoad(),
+            si.cpuTemperature(),
+            execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
+        ])
+        const gpus = await parseGPUs(nvidia_smi_result as string)
+
+        return {
+            platform: process.platform,
+            version: SERVER_VERSION,
+            started: START_DATE,
+            cpu: {
+                name: si_cpu.brand,
+                usage: Math.round(cpu_load.currentload  * 1e1) / 1e1,
+                speed: cpu_speed.avg,
+                temp: cpu_temp.main,
+            },
+            memory: {
+                used:si_mem.used,
+                total:si_mem.total,
+                available:si_mem.available
+            },
+            gpus
         }
-    })
+    }catch(err) {
+        
+    }
 }
 
 async function parseGPUs(result: string) {

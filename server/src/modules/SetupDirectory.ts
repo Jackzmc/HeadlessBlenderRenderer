@@ -31,7 +31,7 @@ try {
                     fs.readdir(FOLDER_SCRIPTS, (err, files) => {
                         if(err) return console.error('ERROR: Failed to setup HOME_DIR, could not read scripts folder. Does it exist?')
                         files.forEach(file => {
-                            fs.rename(path.join(FOLDER_SCRIPTS,file), path.join(process.env.HOME_DIR, file), null)
+                            fs.rename(path.join(FOLDER_SCRIPTS,file), path.join(process.env.HOME_DIR, file), () => {})
                         })
                     })
                 }else{

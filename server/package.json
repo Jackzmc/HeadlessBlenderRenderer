@@ -4,7 +4,7 @@
   "version": "2.3.1",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsc && nodemon"
+    "dev": "tsc | exit 0 && nodemon"
   },
   "dependencies": {
     "adm-zip": "^0.4.16",
