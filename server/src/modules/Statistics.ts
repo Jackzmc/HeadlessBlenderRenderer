@@ -6,6 +6,7 @@ const SERVER_VERSION = require('../../package.json').version;
 const START_DATE: number = Date.now();
 
 let antispam_stat_inc: number = 0;
+let statsDisabled = false; 
 
 export default async function() {
     const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
@@ -38,7 +39,9 @@ export default async function() {
             gpus
         }
     }catch(err) {
-        
+        statsDisabled = true;
+        console.log("[ERROR] Statistics have been disabled due to an error.\n", err.message)
+        throw err;
     }
 }
 

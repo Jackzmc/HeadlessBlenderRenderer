@@ -8,7 +8,7 @@ import { Socket } from 'socket.io'
 import { Database } from 'sqlite3'
 import DB from './Database';
 
-const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS)||30 ) * 1000;
+const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 
 export interface RenderOptions {
     useGPU?: boolean,
@@ -161,18 +161,22 @@ export default class RenderController {
             throw new Error('Render is not active.')
         }
     }
-    startTimer(): void {
-        console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
-        Statistics().then(stats => {
+    async startTimer(): Promise<void> {
+        try {
+            const stats = await Statistics()
             this.last_stats = stats;
             this.emit('stat', stats)
-        })
-        this.#timer = setInterval(() => {
-            Statistics().then(stats => {
-                this.last_stats = stats;
-                this.emit('stat', stats)
-            })
-        }, UPDATE_INTERVAL)
+            console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
+            this.#timer = setInterval(() => {
+                Statistics().then(stats => {
+                    this.last_stats = stats;
+                    this.emit('stat', stats)
+                })
+            }, UPDATE_INTERVAL)
+        }
+        catch(err) {
+
+        }
     }
 
     isRenderActive() {
