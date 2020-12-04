@@ -88,7 +88,7 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
     if(!req.body.password) return res.status(400).json({error: 'Missing field', field: 'password', code: 'MISSING_FIELD'})
     //if(!req.body.email) return res.status(400).json({error: 'Missing field', field: 'email'})
     if(req.body.permissions === null || req.body.permissions === undefined) return res.status(400).json({error: 'Missing field', field: 'permissions', code: 'MISSING_FIELD'})
-    if(isNaN(req.body.permissions) || req.body.permissions < 0 || req.body.permissions >= 99) return res.status(400).json({error: 'Invalid Field', field: 'permissions', reason:'Permissions number is invalid. Refer to the permission bit map.', code: 'INVALID_PERMISSIONS'})
+    if(isNaN(req.body.permissions) || req.body.permissions < 0 || req.body.permissions >= 99) return res.status(400).json({error: 'Invalid permissions number.', field: 'permissions', reason:'Permissions number is invalid. Refer to the permission bit map.', code: 'INVALID_FIELD'})
     bcrypt.hash(req.body.password, SALT_ROUNDS, (err: Error, hash: string) => {
         if(err) {
             console.error('[/auth/users/:username]', err.message)
@@ -97,7 +97,7 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
         const user = {
             username: req.params.username.trim(),
             password: hash,
-            email: req.body.email.trim(),
+            email: req.body.email?.trim(),
             permissions: req.body.permissions,
         }
         db.insert(user, (err: Error) => {

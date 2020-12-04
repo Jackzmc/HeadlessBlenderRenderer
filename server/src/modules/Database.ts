@@ -152,7 +152,7 @@ export default class DB {
     }
 
     getLogs(callback: Function) {
-        this.#db.run(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (result: RunResult, err: Error) => {
+        this.#db.all(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (err: Error, result: RunResult) => {
             callback(result, err)
         })
         return this;
@@ -160,7 +160,7 @@ export default class DB {
 
     logAction(user: User, type: ActionType, ...extras: any[]) {
         const {permissions} = user || {permissions: -1};
-        const username = user ? `${user.username} [${getPermissionRole(user.permissions)}]` : null
+        const username = user ? `${user.username} (${getPermissionRole(user.permissions)})` : null
 
         let msg: string;
         switch(type) {

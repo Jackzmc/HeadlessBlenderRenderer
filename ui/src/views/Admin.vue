@@ -77,13 +77,17 @@
                             <b-field label="Password (leave blank to keep current)">
                                 <b-input type="password" v-model="form.updateUser.password"  />
                             </b-field>
-                            <b-field label="Permissions" >
-                                <b-tooltip label="The permission the user will have">
-                                <b-select v-model="form.updateUser.permissions" :disabled="form.updateUser.permissions == 99" multiple>
-                                    <option value="0">Restricted - View access</option>
-                                    <option value="1">Normal - Unrestricted render access</option>
-                                    <option value="2">Admin - Can manage users and settings as well</option>
-                                    <option v-if="form.updateUser.permissions == 99" value="99">Default Admin - Cannot be changed/deleted.</option>
+                            <b-field label="Permissions">
+                                <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
+                                <b-select v-model="form.updateUser.permissions" multiple expanded>
+                                    <option value=1>Can download ZIPs</option>
+                                    <option value=2>Can upload blends & blend zips</option>
+                                    <option value=3>Can start/stop renders</option>
+                                    <option value=4>Can edit server settings</option>
+                                    <option value=5>View admin logs/info</option>
+                                    <option value=6>Manage Users</option>
+                                    <option value=7>Server admin</option>
+                                    <option value=8>Can edit other admins</option>
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
@@ -103,7 +107,7 @@
                                 <b-input type="text" v-model="form.addUser.username" required/>
                             </b-field>
                             <b-field label="Email">
-                                <b-input type="email" v-model="form.addUser.email" required />
+                                <b-input type="email" v-model="form.addUser.email" />
                             </b-field>
                             <b-field label="Password">
                                 <b-input type="password" v-model="form.addUser.password" required />
@@ -111,14 +115,14 @@
                             <b-field label="Permissions">
                                 <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
                                 <b-select v-model="form.addUser.permissions" multiple expanded>
-                                    <option value="1">Can download ZIPs</option>
-                                    <option value="2">Can upload blends & blend zips</option>
-                                    <option value="3">Can start/stop renders</option>
-                                    <option value="4">Can edit server settings</option>
-                                    <option value="5">View admin logs/info</option>
-                                    <option value="6">Manage Users</option>
-                                    <option value="7">Server admin</option>
-                                    <option value="8">Can edit other admins</option>
+                                    <option value=1>Can download ZIPs</option>
+                                    <option value=2>Can upload blends & blend zips</option>
+                                    <option value=3>Can start/stop renders</option>
+                                    <option value=4>Can edit server settings</option>
+                                    <option value=5>View admin logs/info</option>
+                                    <option value=6>Manage Users</option>
+                                    <option value=7>Server admin</option>
+                                    <option value=8>Can edit other admins</option>
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
@@ -132,7 +136,7 @@
                     </div>
                 </div>
             </b-tab-item>
-            <b-tab-item label="Render Logs">
+            <b-tab-item label="Render Logs" value="logs">
                 <VirtualList                    
                     style="height: 220px; overflow-y: auto;"
                     :data-key="'timestamp'"
@@ -234,9 +238,8 @@ export default {
                 }
             },
             serverInfo: null,
-            serverLogs: [
-                {timestamp: Date.now(), text: 'User \'ezra\' has started a new render: b.blend'}
-            ]
+            serverLogs: [],
+            serverLogs_Fetched: false
         }
     },
     created() {
@@ -279,6 +282,13 @@ export default {
                 .catch(err => {
                     this.serverInfo.error = err.message;
                 })
+            }else if(type === 'logs' && !this.serverLogs_Fetched) {
+                Axios.get('/api/auth/logs')
+                .then(response => this.serverLogs = response.data)
+                .catch(err => {
+                    this.serverLogs = [{timestamp: Date.now(), text: 'Failed to get server logs at this time.\n' + err.message}]
+                })
+                .finally(() => this.serverLogs_Fetched = true)
             }
         },
         formatPermission(number) {
@@ -311,13 +321,16 @@ export default {
             .finally(() => this.loading = false)
         },
         addUser() {
-            Axios.post(`/api/auth/users/${this.form.addUser.username}`, {...this.form.addUser})
+            let user = {...this.form.addUser};
+            //Convert array of permissions ex: [0,1, 3] -> 0+1+3
+            user.permissions = user.permissions.reduce((acc, cv) => acc + parseInt(cv), 0)
+            Axios.post(`/api/auth/users/${this.form.addUser.username}`, user)
             .then(() => {
-                this.users.push(this.form.addUser)
+                this.users.push(user)
                 this.$buefy.toast.open({
                     type: 'is-success',
                     duration: 3000,
-                    message: `Added user '${this.form.addUser.username}' successfully`
+                    message: `Added user '${user.username}' successfully`
                 })
             })
             .catch(err => {
@@ -328,14 +341,16 @@ export default {
             })
         },
         updateUser() {
-            Axios.put(`/api/auth/users/${this.selected.username}`, {...this.form.updateUser})
+            let updatedUser = {...this.form.updateUser}
+            updatedUser.permissions = updatedUser.permissions.reduce((acc, cv) => acc + parseInt(cv), 0)
+            Axios.put(`/api/auth/users/${this.selected.username}`, {updatedUser})
             .then(() => {
-                const index = this.users.findIndex(user => user.username === this.selected.username)
-                if(index >= 0 ) Object.assign(this.users[index],this.form.updateUser);
+                const index = this.users.findIndex(user => user.username === updatedUser.username)
+                if(index >= 0 ) Object.assign(this.users[index], this.form.updateUser);
                 this.$buefy.toast.open({
                     type: 'is-success',
                     duration: 3000,
-                    message: `Updated user '${this.selected.username}' successfully`
+                    message: `Updated user '${updatedUser.username}' successfully`
                 })
             })
             .catch(err => {
