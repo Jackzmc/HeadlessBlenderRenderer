@@ -6,6 +6,7 @@ import prettyMilliseconds from 'pretty-ms'
 import Databasse, { ActionType } from './Database'
 import { Socket } from 'socket.io'
 import { Database } from 'sqlite3'
+import DB from './Database';
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS)||30 ) * 1000;
 
@@ -32,8 +33,8 @@ export default class RenderController {
     #process: any
     last_stats
     #timer: NodeJS.Timeout
-    db: Database
-    constructor(io: Socket, db: Database) {
+    db: DB
+    constructor(io: Socket, db: DB) {
         this.io = io;
         this.db = db;
         this.startTimer();
