@@ -1,14 +1,19 @@
 import RenderController from './modules/RenderController'
 import jwt from 'jsonwebtoken'
 import { Server } from 'http';
+import DB from './modules/Database';
 
 const SECRET = process.env.JWT_SECRET;
+
+
 
 export default function(server: Server) {
     const io = require('socket.io')({ cookie: false, serveClient: false });
     io.attach(server)
     
-    const controller = new RenderController(io)
+    const db = new DB('data.db')
+
+    const controller = new RenderController(io, db)
 
     io.on('connection', socket => {
         socket.authorized = false;

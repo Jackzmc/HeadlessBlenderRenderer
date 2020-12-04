@@ -35,7 +35,7 @@ router.post('/:blend', userCheck, (req: Request,res: Response) => {
         frames,
         python_scripts: req.body.python_scripts as string[] || []
     }
-    db.LogAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
+    db.logAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
     renderController.startRender(req.params.blend, options)
     .then((response) => {
         res.json(response)

@@ -18,6 +18,7 @@ export default class DB {
     constructor(file: string) {
         this.#db = new sqlite3.Database(file);
         this.createTables()
+        this.setupSettings();
     }
 
     createTables() {
@@ -40,7 +41,7 @@ export default class DB {
             type text
         )
         `
-        this.#db.run(sql, (result: RunResult, err: Error) => {
+        this.#db.exec(sql, (err: Error) => {
             this.#db.get('SELECT COUNT(*) as count FROM user', [], (err, row) => {
                 if(row.count == 0) {
                     console.info('[Database] Creating a default admin user.')
@@ -56,17 +57,26 @@ export default class DB {
                                 permissions: 99
                             }
                             this.insert(user, (err: NodeJS.ErrnoException) => {
-                                if(err.code != 'SQLITE_CONSTRAINT') {
+                                if(err && err.code != 'SQLITE_CONSTRAINT') {
                                     console.error('[Database] Failed to insert new admin account.\n', err.message)
                                 }
                                 
                             });
+                            this.logAction(null, ActionType.CREATE_USER, user);
                         }
                     })
                 }
             })
         })
         //Create a default admin user with password hash of 'admin'
+    }
+
+    setupSettings() {
+        const sql = `
+            INSERT or IGNORE INTO config (name, value, type) VALUES('extraShellArgs', 'false', 'boolean');
+            INSERT or IGNORE INTO config (name, value, type) VALUES('recordStats', 'true', 'boolean');
+        `
+        this.#db.exec(sql);
     }
 
     selectUser(query: string, callback: Function) {
@@ -88,8 +98,8 @@ export default class DB {
 
     insert(user: User, callback: Function) {
         this.#db.run(
-            'INSERT INTO user (username,email,password,permissions) VALUES (?,?,?,?)',
-            [user.username, user.email, user.password, user.permissions], 
+            'INSERT INTO user (username,email,password,permissions,created) VALUES (?,?,?,?,?)',
+            [user.username, user.email, user.password, user.permissions, Date.now()], 
             (err: Error) => {
                 if(callback) callback(err)
             }
@@ -103,6 +113,14 @@ export default class DB {
             [user.username, user.email, user.password, user.permissions, user.username], (err) => {
                 callback(err)
             }
+        )
+        return this;
+    }
+
+    updateLogin(user: User) {
+        this.#db.run(
+            'UPDATE user set last_login = ? WHERE username = ?',
+            [Date.now(), user.username],
         )
         return this;
     }
@@ -138,9 +156,9 @@ export default class DB {
         return this;
     }
 
-    LogAction(user: User, type: ActionType, ...extras: any[]) {
-        const {permissions} = user;
-        const username = `${user.username} [${getPermissionRole(user.permissions)}]`
+    logAction(user: User, type: ActionType, ...extras: any[]) {
+        const {permissions} = user || {permissions: -1};
+        const username = user ? `${user.username} [${getPermissionRole(user.permissions)}]` : null
 
         let msg: string;
         switch(type) {
@@ -172,7 +190,7 @@ export default class DB {
             [Date.now(), msg],
             null
         )
-        console.info('[Server]', Date.now().toLocaleString(), msg)
+        console.info(`[${new Date().toLocaleTimeString()}] [Server] ${msg}`)
         return this;
     }
 }

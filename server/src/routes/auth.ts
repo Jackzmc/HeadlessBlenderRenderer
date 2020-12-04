@@ -36,7 +36,7 @@ router.post('/login', (req: Request, res: Response) => {
             }, SECRET, { expiresIn: 86400 }, (err: Error, token: string) => {
                 user.last_login = Date.now()
                 if(err) return res.status(500).json({error: 'Generating login token failed.', code: 'LOGIN_ERROR'})
-                db.update(user, null)
+                db.updateLogin(user)
                 res.json({ auth: true, token: token, user: user });
             });
         })
@@ -99,15 +99,13 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
             password: hash,
             email: req.body.email.trim(),
             permissions: req.body.permissions,
-            created: Date.now(),
-            last_login: Date.now()
         }
         db.insert(user, (err: Error) => {
             if(err) {
                 console.error('[/auth/users/:username]', err.message)
                 return res.status(500).json({error: err.message, code: 'DB_INSERT_ERROR'})
             }
-            db.LogAction(res.locals.user, ActionType.CREATE_USER, user)
+            db.logAction(res.locals.user, ActionType.CREATE_USER, user)
             return res.json({success: true})
         })
     })
@@ -134,7 +132,7 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
                 console.error('[Auth] Update user db error: ', err.message)
                 return res.status(500).json({error: 'Internal error updating user', code: 'DB_UPDATE_ERROR' })
             }
-            db.LogAction(res.locals.user, ActionType.EDIT_USER, user)
+            db.logAction(res.locals.user, ActionType.EDIT_USER, user)
             return res.json({success: true})
         })
     })
@@ -147,7 +145,7 @@ router.delete('/users/:username', adminCheck, (req: Request, res: Response) => {
 
         db.delete(req.params.username, (err: Error) => {
             if(err) return res.status(500).json({error: 'Internal error deleting user', code: 'DB_DELETE_ERROR'})
-            db.LogAction(res.locals.user, ActionType.DELETE_USER, user)
+            db.logAction(res.locals.user, ActionType.DELETE_USER, user)
             return res.json({success: true})
         })
     })
