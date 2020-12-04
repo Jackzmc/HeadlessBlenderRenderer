@@ -160,3 +160,13 @@ router.get('/logs', adminCheck, (req: Request, res: Response) => {
         }
     })
 })
+
+router.get('/settings', adminCheck, (req: Request, res: Response) => {
+    db.getSettings((err: Error, settings: any) => {
+        if(err) {
+            res.status(500).json({error: err.message, code: 'DB_ERROR'})
+        }else{
+            res.json(settings)
+        }
+    })
+})

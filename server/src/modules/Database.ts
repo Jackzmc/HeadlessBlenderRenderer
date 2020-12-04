@@ -152,8 +152,49 @@ export default class DB {
     }
 
     getLogs(callback: Function) {
-        this.#db.all(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (err: Error, result: RunResult) => {
-            callback(result, err)
+        this.#db.all(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (err: Error, rows: any[]) => {
+            callback(rows, err)
+        })
+        return this;
+    }
+
+    getSettings(callback: Function) {
+        this.#db.all("SELECT * from config", (err: Error, rows: any[]) => {
+            if(err) {
+                callback(err, null);
+            }else{
+                let settings = {}
+                rows.forEach(row => {
+                    switch(row.type) {
+                        case "boolean": 
+                            settings[row.name] = row.value === "true"
+                        
+                        case 'integer': 
+                            settings[row.name] = parseInt(row.value)
+                        
+                        default:
+                            settings[row.name] = row.value
+                    }
+                })
+                callback(null, settings)
+            }
+        })
+        return this;
+    }
+    
+    updateSetting(name: string, value: any, callback: Function) {
+        this.#db.get("SELECT type from config where name = ?", [name], (err: Error, row: any) => {
+            if(!err) {
+                this.#db.run("UPDATE config SET value=? WHERE name = ?", [value.toString(), name], (err) => {
+                    if(err) {
+                        callback(err, false)
+                    }else{
+                        callback(null, true)
+                    }
+                })
+            }else{
+                callback(err, false);
+            }
         })
         return this;
     }

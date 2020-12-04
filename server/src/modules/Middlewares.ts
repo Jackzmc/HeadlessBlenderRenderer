@@ -16,12 +16,15 @@ function checkPermission(permLevel: number, req: Request,res: Response, next: Ne
     if(req.method === "OPTION") return next();
     if(req.headers.authorization) {
         jwt.verify(req.headers.authorization, process.env.JWT_SECRET, (err: Error, decoded: User) => {
-            res.locals.user = decoded;
-            if(err) return res.status(500).json({error:'Failed to verify authentication.'})
-            if(decoded.permissions < permLevel) return res.status(401).json({error: 'Permisison level is too low.'})
-            return next();
+            if(err) {
+                res.status(401).json({error:'Unauthorized', code: 'UNAUTHORIZED'})
+            }else{
+                if(decoded.permissions < permLevel) return res.status(403).json({error: 'Permisison level is too low.', code: 'FORBIDDEN'})
+                res.locals.user = decoded;
+                next();
+            }
         })
     }else{
-        return res.status(401).json({error:'Unauthorized'})
+        return res.status(401).json({error:'Unauthorized', code: 'UNAUTHORIZED'})
     }
 }
