@@ -2,33 +2,40 @@ import { Request, Response } from 'express';
 import User from '../types';
 import Express from 'express'
 const router = Express.Router();
-import Database from '../modules/Database'
-import path from 'path'
+import Database, { ActionType } from '../modules/Database'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { restrictedCheck, adminCheck } from '../modules/Middlewares'
+import { RunResult } from 'sqlite3';
+import RenderController from '../modules/RenderController';
 
-const db = new Database(path.join(__dirname, '/../../users.db'))
 
 const SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
+let db: Database;
+
+export default function(controller: RenderController) {
+    this.db = controller.db;
+    return router;
+}
+
 router.post('/login', (req: Request, res: Response) => {
-    if(!req.body.email && !req.body.username) return res.status(400).json({error: 'Missing username/email'})
-    if(!req.body.password) return res.status(400).json({error: 'Missing password'})
-    db.selectUser(req.body.email || req.body.username, (err, user) => {
-        if (err) return res.status(500).json({error:'Internal Server Error'});
+    if(!req.body.email && !req.body.username) return res.status(400).json({error: 'Missing username/email', code:'MISSING_FIELD'})
+    if(!req.body.password) return res.status(400).json({error: 'Missing password', code: 'MISSING_FIELD', field: 'password'})
+    db.selectUser(req.body.email || req.body.username, (err: Error, user: User) => {
+        if (err) return res.status(500).json({error:'Internal Server Error', code: 'DB_SELECT_ERROR'});
         if (!user) return res.status(404).json({error:'No user found.'});
-        bcrypt.compare(req.body.password, user.password, (err, passwordValid) => {
+        bcrypt.compare(req.body.password, user.password, (err: Error, passwordValid: boolean) => {
             delete user.password;
             if(err) return res.status(500).json({error: 'Internal Server Error'})
             if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null });
             jwt.sign({ 
                 username: user.username,
                 permissions: user.permissions,
-            }, SECRET, { expiresIn: 86400 }, (err, token) => {
+            }, SECRET, { expiresIn: 86400 }, (err: Error, token: string) => {
                 user.last_login = Date.now()
-                if(err) return res.status(500).json({error: 'Generating login token failed.'})
+                if(err) return res.status(500).json({error: 'Generating login token failed.', code: 'LOGIN_ERROR'})
                 db.update(user, null)
                 res.json({ auth: true, token: token, user: user });
             });
@@ -39,26 +46,26 @@ router.post('/login', (req: Request, res: Response) => {
 })
 
 router.post('/resetpassword', restrictedCheck, (req: Request, res: Response) => {
-    if(!req.body.current_password) return res.status(400).json({error: 'Missing current_password field'})
-    if(!req.body.new_password || !req.body.password_confirm) return res.status(400).json({error: 'Missing new_password and/or password_confirm fields.'})
-    if(!res.locals.user.username) return res.status(401).json({error: 'Unauthorized'})
+    if(!req.body.current_password) return res.status(400).json({error: 'Missing current_password field', code: 'MISSINg_FIELD', field: 'current_password'})
+    if(!req.body.new_password || !req.body.password_confirm) return res.status(400).json({error: 'Missing new_password and/or password_confirm fields.', code: 'MISSING_FIELD', field: 'new_password'})
+    if(!res.locals.user.username) return res.status(401).json({error: 'Unauthorized', code: 'UNAUTHORIZED'})
 
     if(req.body.new_password !== req.body.password_confirm) {
-        return res.status(400).json({error: 'new_password and password_confirm do not match.'})
+        return res.status(400).json({error: 'new_password and password_confirm do not match.', code: 'PASSWORD_MISMATCH'})
     }
 
     db.selectUser(res.locals.user.username, (err: Error, user: User) => {
-        if (err) return res.status(500).json({error:'Internal Server Error'});
-        if (!user) return res.status(404).json({error:'Account not found.'});
+        if (err) return res.status(500).json({error:'Internal Server Error', code: 'DB_SELECT_ERROR'});
+        if (!user) return res.status(404).json({error:'Account not found.', code: 'USER_NOT_FOUND'});
 
         const passwordValid = bcrypt.compare(req.body.current_password, user.password)
-        if (!passwordValid) return res.status(401).json({ error: 'Current password is invalid' });
+        if (!passwordValid) return res.status(401).json({ error: 'Current password is invalid', code: 'INVALID_PASSWORD' });
         
         //valid password, change it now.:
-        db.changePassword(res.locals.user.username, req.body.new_password, (err) => {
+        db.changePassword(res.locals.user.username, req.body.new_password, (err: Error) => {
             if(err) {
                 console.error('[db:changePassword]', err.message)
-                return res.status(500).json({error: 'Internal Server Error occurred while changing password.'})
+                return res.status(500).json({error: 'Internal Server Error occurred while changing password.', code: 'DB_UPDATE_ERROR'})
             }
             return res.json({success: true})
         })
@@ -67,7 +74,7 @@ router.post('/resetpassword', restrictedCheck, (req: Request, res: Response) => 
 
 router.get('/users', adminCheck, (req: Request, res: Response) => {
     db.selectAll((err: Error, rows) => {
-        if(err) return res.status(500).json({error: err.message})
+        if(err) return res.status(500).json({error: err.message, code: 'SELECT_ERROR'})
         const users = rows.map((user: User) => {
             delete user.password;
             return user;
@@ -85,20 +92,22 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
     bcrypt.hash(req.body.password, SALT_ROUNDS, (err: Error, hash: string) => {
         if(err) {
             console.error('[/auth/users/:username]', err.message)
-            return res.status(500).json({error: err.message})
+            return res.status(500).json({error: err.message, code: 'HASH_ERROR'})
         }
-        db.insert({
+        const user = {
             username: req.params.username.trim(),
             password: hash,
             email: req.body.email.trim(),
             permissions: req.body.permissions,
             created: Date.now(),
             last_login: Date.now()
-        }, (err: Error) => {
+        }
+        db.insert(user, (err: Error) => {
             if(err) {
                 console.error('[/auth/users/:username]', err.message)
-                return res.status(500).json({error: err.message})
+                return res.status(500).json({error: err.message, code: 'DB_INSERT_ERROR'})
             }
+            db.LogAction(res.locals.user, ActionType.CREATE_USER, user)
             return res.json({success: true})
         })
     })
@@ -107,7 +116,7 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
 
 router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
     db.selectUser(req.params.username, async(err: Error, user: User) => {  
-        if(err) return res.status(500).json({error: 'Internal error fetching user'})
+        if(err) return res.status(500).json({error: 'Internal error fetching user', code: 'DB_FETCH_ERROR'})
         if(!user) return res.status(404).json({error: 'User not found'})
 
         if(req.body.email) user.email = req.body.email.trim();
@@ -123,8 +132,9 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
         db.update(user, (err: Error) => {
             if(err) {
                 console.error('[Auth] Update user db error: ', err.message)
-                return res.status(500).json({error: 'Internal error updating user'})
+                return res.status(500).json({error: 'Internal error updating user', code: 'DB_UPDATE_ERROR' })
             }
+            db.LogAction(res.locals.user, ActionType.EDIT_USER, user)
             return res.json({success: true})
         })
     })
@@ -132,18 +142,23 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
 
 router.delete('/users/:username', adminCheck, (req: Request, res: Response) => {
     db.selectUser(req.params.username, (err: Error, user: User) => {  
-        if(err) return res.status(500).json({error: 'Internal error fetching user'})
+        if(err) return res.status(500).json({error: 'Internal error fetching user', code: 'DB_FETCH_ERROR'})
         if(!user) return res.status(404).json({error: 'User not found'})
 
-        db.delete(req.params.username, (err) => {
-            if(err) return res.status(500).json({error: 'Internal error deleting user'})
+        db.delete(req.params.username, (err: Error) => {
+            if(err) return res.status(500).json({error: 'Internal error deleting user', code: 'DB_DELETE_ERROR'})
+            db.LogAction(res.locals.user, ActionType.DELETE_USER, user)
             return res.json({success: true})
         })
     })
 })
 
 router.get('/logs', adminCheck, (req: Request, res: Response) => {
-    db.getLogs()
+    db.getLogs((result: RunResult, err: Error) => {
+        if(err) {
+            res.status(500).json({error: err.message, code: 'DB_ERROR'})
+        }else{
+            res.json(result)
+        }
+    })
 })
-
-export default router;

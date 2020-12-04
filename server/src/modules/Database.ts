@@ -6,9 +6,10 @@ const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
 export enum ActionType {
     CREATE_USER,
+    EDIT_USER,
+    DELETE_USER,
     START_RENDER,
     CANCEL_RENDER,
-    EDIT_USER,
     UPDATE_SETTINGS
 }
 
@@ -130,18 +131,39 @@ export default class DB {
         return this;
     }
 
-    getLogs() {
-        return this.#db.run(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`)
+    getLogs(callback: Function) {
+        this.#db.run(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (result: RunResult, err: Error) => {
+            callback(result, err)
+        })
+        return this;
     }
 
     LogAction(user: User, type: ActionType, ...extras: any[]) {
-        const {username, permissions} = user;
+        const {permissions} = user;
+        const username = `${user.username} [${getPermissionRole(user.permissions)}]`
+
         let msg: string;
         switch(type) {
-            case ActionType.CREATE_USER: {
-                msg = `${username} has added a new user: ${extras[0]}`
+            case ActionType.CREATE_USER: 
+                const newUser = extras[0] as User;
+                msg = `${username} has added a new user: ${newUser.username} (permissions = ${newUser.permissions})`
                 break;
-            }
+            
+            case ActionType.START_RENDER: 
+                msg = `${username} has started a new render. File: ${extras[0]}, Mode: ${extras[1]}`
+                break;
+            
+            case ActionType.CANCEL_RENDER: 
+                msg = `${username} has cancelled a render. File: ${extras[0]}. Started by: ${extras[1]}`
+                break;
+            
+            case ActionType.EDIT_USER:
+                const prevUser = extras[0] as User;
+                const editedUser = extras[1] as User;
+                msg = `${username} has updated user '${editedUser.username}' `
+            
+            case ActionType.UPDATE_SETTINGS: 
+                msg = `${username} has changed server settings. New Settings:\n${JSON.stringify(extras[0])}`
             default: 
                 throw new Error('Unknown type of action:' + type)
         }
@@ -150,6 +172,19 @@ export default class DB {
             [Date.now(), msg],
             null
         )
+        console.info('[Server]', Date.now().toLocaleString(), msg)
         return this;
     }
 }
+
+function getPermissionRole(permissons: number) {
+    switch(permissons) {
+        case 0: return 'Restricted'
+        case 1: return 'Normal'
+        case 2: return 'Admin'
+        case 99: return 'Default Admin'
+        default:
+            return 'Unknown'
+    }
+}
+

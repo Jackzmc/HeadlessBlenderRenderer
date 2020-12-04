@@ -3,9 +3,17 @@ import { restrictedCheck, userCheck } from '../modules/Middlewares';
 const router = Express.Router()
 import { promises, createReadStream } from 'fs';
 import RenderController from '../modules/RenderController';
+import Database, { ActionType } from '../modules/Database.js';
 const {readdir} = promises;
 
 let renderController: RenderController;
+let db: Database;
+
+export default function(_controller: RenderController) {
+    renderController = _controller;
+    this.db = renderController.db;
+    return router;
+}
 router.post(['/cancel','/abort'], userCheck, (req: Request,res: Response) => {
     renderController.cancelRender()
     .then(() => res.json({success: true}))
@@ -27,6 +35,7 @@ router.post('/:blend', userCheck, (req: Request,res: Response) => {
         frames,
         python_scripts: req.body.python_scripts as string[] || []
     }
+    db.LogAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
     renderController.startRender(req.params.blend, options)
     .then((response) => {
         res.json(response)
@@ -65,7 +74,3 @@ router.get('/preview', async(req,res) => {
         return res.json({error: 'No render is currently running.', code: 'RENDER_INACTIVE'})
     }
 })
-export default function(_controller: RenderController) {
-    renderController = _controller;
-    return router;
-}

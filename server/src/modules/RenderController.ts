@@ -3,6 +3,9 @@ import Statistics from './Statistics'
 import {execShellCommand} from './utils'
 import {spawn} from 'child_process'
 import prettyMilliseconds from 'pretty-ms'
+import Databasse, { ActionType } from './Database'
+import { Socket } from 'socket.io'
+import { Database } from 'sqlite3'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS)||30 ) * 1000;
 
@@ -26,11 +29,13 @@ export default class RenderController {
     logs: LogObject[] = [];
     io = null
     blend: string
-    process: any
+    #process: any
     last_stats
     #timer: NodeJS.Timeout
-    constructor(io) {
+    db: Database
+    constructor(io: Socket, db: Database) {
         this.io = io;
+        this.db = db;
         this.startTimer();
     }
     getEventEmitter() {
@@ -129,7 +134,7 @@ export default class RenderController {
                     this.logs = []
                     this.active = false
                 });
-                this.process = renderProcess;
+                this.#process = renderProcess;
             }catch(err) {
                 reject(err)
             }
@@ -149,7 +154,7 @@ export default class RenderController {
     }
     async cancelRender(): Promise<void> {
         if(this.active) {
-            this.process.kill('SIGTERM')
+            this.#process.kill('SIGTERM')
             return null;
         }else{
             throw new Error('Render is not active.')

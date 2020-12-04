@@ -51,7 +51,7 @@ router.get('/', userCheck, async(req: Request, res: Response) => {
             const folders = files.filter(v => v.folder)
             res.json({blends, folders})
         }).catch((err) => {
-            res.status(500).json({error:err.message})
+            res.status(500).json({error: err.message, code: 'LIST_ERROR'})
             console.error('[Error]',err.message)
         })
     }catch(err) {
@@ -80,9 +80,9 @@ router.delete('/:name', userCheck, (req,res) => {
     })
     .catch(err => {
         if(err.code === "ENOENT") {
-            return res.status(500).json({error:"That file does not exist."})
+            return res.status(500).json({error:"That file does not exist.", code: 'FILE_DOES_NOT_EXIST'})
         }
-        return res.status(500).json({error:err.message})
+        return res.status(500).json({error:err.message, code: 'DELETE_ERROR'})
     })
 })
 

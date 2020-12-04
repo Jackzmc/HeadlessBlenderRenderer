@@ -58,7 +58,7 @@ router.post('/:name/token', userCheck, async(req,res) => {
         DL_TOKENS.set(req.params.name, tokens)
         return res.json({token})
     }catch(err) {
-        return res.status(404).json({error: "That zip does not exist."})
+        return res.status(404).json({error: "That zip does not exist.", code:'FILE_NOT_FOUND'})
     }
 })
 router.delete('/:name', userCheck, (req,res) => {
@@ -97,19 +97,19 @@ router.get('/', userCheck, async(req,res) => {
         .then(files => {
             res.json({files})
         }).catch((err) => {
-            res.status(500).json({error:err.message})
+            res.status(500).json({error:err.message, code:'LIST_ERROR'})
             console.error('[Error]',err.message)
         })
     }catch(err) {
         console.log(err)
-        res.status(500).json({error:true})
+        res.status(500).json({error:true, code:'GENERIC_ERROR'})
     }
 })
 
 router.post('/upload', userCheck, (req,res) => {
     //@ts-expect-error
     if (!req.files || Object.keys(req.files).length === 0 || !req.files.file) {
-        return res.json({error:'No file was uploaded.'});
+        return res.json({error:'No file was uploaded.', code:'MISSING_FILES'});
     }
     try {
          //@ts-expect-error

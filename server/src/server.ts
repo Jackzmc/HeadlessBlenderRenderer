@@ -1,6 +1,6 @@
 
 import bodyParser from 'body-parser'
-import Express from 'express'
+import Express, { Request, Response } from 'express'
 const router = Express.Router();
 import Statistics from './modules/Statistics'
 import corsModule from 'cors'
@@ -21,17 +21,17 @@ import render from './routes/render'
 
 router.use('/zips', zips)
 router.use('/blends', blends)
-router.use('/auth', auth)
-router.get(['/stats','/statistics'], (req, res) => {
+router.get(['/stats','/statistics'], (req: Request, res: Response) => {
     Statistics()
     .then(r => res.json(r))
     .catch(err => res.status(500).json({error: err.message}))
 })
 
 
-export default function(_controller: RenderController) {
-    router.use('/render', render(_controller))
-    router.all('*',(req,res) => {
+export default function(controller: RenderController) {
+    router.use('/render', render(controller))
+    router.use('/auth', auth(controller))
+    router.all('*', (req: Request, res: Response) => {
         res.status(404).json({error: '404'})
     })
     return router;
