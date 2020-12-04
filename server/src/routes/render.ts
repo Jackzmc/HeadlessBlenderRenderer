@@ -9,9 +9,9 @@ const {readdir} = promises;
 let renderController: RenderController;
 let db: Database;
 
-export default function(_controller: RenderController) {
-    renderController = _controller;
-    this.db = renderController.db;
+export default function(controller: RenderController) {
+    renderController = controller;
+    db = renderController.getDatabase();
     return router;
 }
 router.post(['/cancel','/abort'], userCheck, (req: Request,res: Response) => {

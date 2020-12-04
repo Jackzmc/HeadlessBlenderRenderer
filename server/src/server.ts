@@ -21,10 +21,13 @@ import render from './routes/render'
 
 router.use('/zips', zips)
 router.use('/blends', blends)
-router.get(['/stats','/statistics'], (req: Request, res: Response) => {
-    Statistics()
-    .then(r => res.json(r))
-    .catch(err => res.status(500).json({error: err.message}))
+router.get(['/stats','/statistics'], async(req: Request, res: Response) => {
+    try {
+        const r = await Statistics();
+        res.json(r)
+    }catch(err) {
+        res.status(500).json({error: err.message, code: 'GENERIC_ERROR'})
+    }
 })
 
 

@@ -20,8 +20,16 @@
     </b-navbar>
     <br>
     <div class="container">
-        <h3 class="title is-3">Server Management</h3>
-        <p class="subtitle is-6">Manage the current users and the server settings.</p>
+        <div class="columns">
+            <div class="column is-10">
+                <h3 class="title is-3">Server Management</h3>
+                <p class="subtitle is-6">Manage the current users and the server settings.</p>
+            </div>
+            <div class="column">
+                <h3 class="title is-3">{{server.name}}</h3>
+                <p class="subtitle is-6">{{server.address}}</p>
+            </div>
+        </div>
         <!-- TODO: add router-view when server settings is ever added -->
         <b-tabs type="is-toggle" @input="onTabChange">
             <b-tab-item label="Users">
@@ -71,7 +79,7 @@
                             </b-field>
                             <b-field label="Permissions" >
                                 <b-tooltip label="The permission the user will have">
-                                <b-select v-model="form.updateUser.permissions" :disabled="form.updateUser.permissions == 99">
+                                <b-select v-model="form.updateUser.permissions" :disabled="form.updateUser.permissions == 99" multiple>
                                     <option value="0">Restricted - View access</option>
                                     <option value="1">Normal - Unrestricted render access</option>
                                     <option value="2">Admin - Can manage users and settings as well</option>
@@ -101,11 +109,16 @@
                                 <b-input type="password" v-model="form.addUser.password" required />
                             </b-field>
                             <b-field label="Permissions">
-                                <b-tooltip label="The permission the user will have">
-                                <b-select v-model="form.addUser.permissions">
-                                    <option value="0">Restricted - View access</option>
-                                    <option value="1">Normal - Unrestricted render access</option>
-                                    <option value="2">Admin - Can manage users and settings as well</option>
+                                <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
+                                <b-select v-model="form.addUser.permissions" multiple expanded>
+                                    <option value="1">Can download ZIPs</option>
+                                    <option value="2">Can upload blends & blend zips</option>
+                                    <option value="3">Can start/stop renders</option>
+                                    <option value="4">Can edit server settings</option>
+                                    <option value="5">View admin logs/info</option>
+                                    <option value="6">Manage Users</option>
+                                    <option value="7">Server admin</option>
+                                    <option value="8">Can edit other admins</option>
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
@@ -207,13 +220,13 @@ export default {
                     username: null,
                     email: null,
                     password: null,
-                    permissions: 0
+                    permissions: []
                 },
                 updateUser: {
                     username: null,
                     email: null,
                     password: null,
-                    permissions: 0
+                    permissions: []
                 },
                 settings: {
                     extraShellArgs: false,

@@ -2,9 +2,14 @@ import RenderController from './modules/RenderController'
 import jwt from 'jsonwebtoken'
 import { Server } from 'http';
 import DB from './modules/Database';
+import { Socket } from 'socket.io';
+declare module 'socket.io' {
+    interface Socket {
+        authorized: boolean
+    }
+}
 
 const SECRET = process.env.JWT_SECRET;
-
 
 
 export default function(server: Server) {
@@ -15,7 +20,7 @@ export default function(server: Server) {
 
     const controller = new RenderController(io, db)
 
-    io.on('connection', socket => {
+    io.on('connection', (socket: Socket) => {
         socket.authorized = false;
         socket.on('login', (token: string, cb: CallableFunction) => {
             jwt.verify(token, SECRET, (err: Error, decoded: string) => {

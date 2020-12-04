@@ -16,7 +16,7 @@ const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 let db: Database;
 
 export default function(controller: RenderController) {
-    this.db = controller.db;
+    db = controller.getDatabase();
     return router;
 }
 

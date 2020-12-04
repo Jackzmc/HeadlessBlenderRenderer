@@ -29,7 +29,8 @@ export default class DB {
             password text,
             permissions integer,
             created integer,
-            last_login integer
+            last_login integer,
+            tokens integer
         );
         CREATE TABLE IF NOT EXISTS logs (
             timestamp integer PRIMARY KEY,
@@ -54,7 +55,8 @@ export default class DB {
                                 username: 'admin',
                                 email: 'admin@localhost',
                                 password: hash,
-                                permissions: 99
+                                permissions: 99,
+                                tokens: -1
                             }
                             this.insert(user, (err: NodeJS.ErrnoException) => {
                                 if(err && err.code != 'SQLITE_CONSTRAINT') {

@@ -4,5 +4,6 @@ export default interface User {
     permissions: number
     password?: string,
     created?: number,
-    last_login?: number
+    last_login?: number,
+    tokens?: number
 }

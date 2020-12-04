@@ -25,22 +25,26 @@ export default class RenderController {
     active: boolean = false;
     current_frame: number = 0;
     max_frames: number = 0;
-    started: number = null;
+    #started: number = null;
     all_frames: boolean | number = false;
-    logs: LogObject[] = [];
-    io = null
+    #logs: LogObject[] = [];
     blend: string
     #process: any
-    last_stats
+    #last_stats
+
+    #io = null
     #timer: NodeJS.Timeout
-    db: DB
+    #db: DB
     constructor(io: Socket, db: DB) {
-        this.io = io;
-        this.db = db;
+        this.#io = io;
+        this.#db = db;
         this.startTimer();
     }
     getEventEmitter() {
-        return this.io
+        return this.#io
+    }
+    getDatabase() {
+        return this.#db;
     }
     startRender(blend: string, options: RenderOptions = {}) {
         return new Promise(async(resolve,reject) => {
@@ -91,9 +95,9 @@ export default class RenderController {
                         timestamp: Date.now()
                     }
                     this.emit('log', logObject)
-                    this.logs.push(logObject)
-                    if(this.logs.length >= 50) {
-                        this.logs.splice(0, this.logs.length - 50)
+                    this.#logs.push(logObject)
+                    if(this.#logs.length >= 50) {
+                        this.#logs.splice(0, this.#logs.length - 50)
                     }
                     return reject(err)
                 })
@@ -110,7 +114,7 @@ export default class RenderController {
                         this.emit('render_start', this.getSettings())
                         resolve(this.getSettings())
                         this.active = true;
-                        this.started = Date.now();
+                        this.#started = Date.now();
                     }
                     this.pushLog(msg)
                 })
@@ -119,20 +123,20 @@ export default class RenderController {
                         this.emit('render_start', this.getSettings())
                         resolve(this.getSettings())
                         this.active = true;
-                        this.started = Date.now();
+                        this.#started = Date.now();
                     }
                     this.pushLog(data.toString())
                 })
                 renderProcess
                 .on('exit', () => {
-                    const time_taken = prettyMilliseconds(Date.now() - this.started);
+                    const time_taken = prettyMilliseconds(Date.now() - this.#started);
                     this.emit('render_stop', {
-                        started: this.started,
+                        started: this.#started,
                         time_taken,
                         blend: this.blend
                     })
                     //clear buffer logs
-                    this.logs = []
+                    this.#logs = []
                     this.active = false
                 });
                 this.#process = renderProcess;
@@ -148,9 +152,9 @@ export default class RenderController {
             timestamp: Date.now()
         }
         this.emit('log', logObject)
-        this.logs.push(logObject)
-        if(this.logs.length >= 50) {
-            this.logs.splice(0, this.logs.length - 50)
+        this.#logs.push(logObject)
+        if(this.#logs.length >= 50) {
+            this.#logs.splice(0, this.#logs.length - 50)
         }
     }
     async cancelRender(): Promise<void> {
@@ -164,12 +168,12 @@ export default class RenderController {
     async startTimer(): Promise<void> {
         try {
             const stats = await Statistics()
-            this.last_stats = stats;
+            this.#last_stats = stats;
             this.emit('stat', stats)
             console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
             this.#timer = setInterval(() => {
                 Statistics().then(stats => {
-                    this.last_stats = stats;
+                    this.#last_stats = stats;
                     this.emit('stat', stats)
                 })
             }, UPDATE_INTERVAL)
@@ -184,7 +188,7 @@ export default class RenderController {
     }
     
     getSettings() {
-        const time_taken = prettyMilliseconds(Date.now() - this.started);
+        const time_taken = prettyMilliseconds(Date.now() - this.#started);
         return {
             active: this.active,
             max_frames: this.max_frames,
@@ -192,22 +196,22 @@ export default class RenderController {
             blend: this.blend,
             duration: this.active ? {
                 formatted: time_taken,
-                raw: Date.now() - this.started,
-                started: this.started
+                raw: Date.now() - this.#started,
+                started: this.#started
             } : null
         }
     }
     getStatistics() {
-        return this.last_stats;
+        return this.#last_stats;
     }
     
     getLogs() {
-        return this.logs
+        return this.#logs
     }
 
     emit(name: string, object: any) {
-        for(const socketId in this.io.sockets.sockets) {
-            const socket = this.io.sockets.sockets[socketId];
+        for(const socketId in this.#io.sockets.sockets) {
+            const socket = this.#io.sockets.sockets[socketId];
             if(socket.authorized) {
                 socket.emit(name, object)
             }
