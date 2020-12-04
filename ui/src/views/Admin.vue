@@ -41,6 +41,9 @@
                                 <b-table-column field="permissions" label="Permissions">
                                     <p>{{formatPermission(props.row.permissions) }}</p>
                                 </b-table-column>
+                                <b-table-column field="last_login" label="Last Login">
+                                    {{props.row.last_login}}
+                                </b-table-column>
                                 <b-table-column label="Edit">
                                     <a v-if="props.row.permissions < 99" @click="editUser(props.row)"><b-icon icon="pencil" /></a>
                                 </b-table-column>
@@ -116,6 +119,16 @@
                     </div>
                 </div>
             </b-tab-item>
+            <b-tab-item label="Render Logs">
+                <VirtualList                    
+                    style="height: 220px; overflow-y: auto;"
+                    :data-key="'timestamp'"
+                    :data-sources="serverLogs"
+                    :keeps="12"
+                    ref="serverlogs"
+                    :data-component="$options.ListComponent"
+                />
+            </b-tab-item>
             <b-tab-item label="Server Settings" v-if="$NODE_ENV !== 'production'">
                 <hr>
                 <b-message label="Notice" type="is-warning">This tab is currently in development. Server-side functionality may not work at this time.</b-message>
@@ -177,7 +190,13 @@
 
 <script>
 import Axios from 'axios'
+import ListComponent from '../components/ListComponent';
+import VirtualList from 'vue-virtual-scroll-list';
 export default {
+    ListComponent,
+    components: {
+        VirtualList
+    },
     data() {
         return {
             users: [],
@@ -201,7 +220,10 @@ export default {
                     statistics: true
                 }
             },
-            serverInfo: null
+            serverInfo: null,
+            serverLogs: [
+                {timestamp: Date.now(), text: 'User \'ezra\' has started a new render: b.blend'}
+            ]
         }
     },
     created() {

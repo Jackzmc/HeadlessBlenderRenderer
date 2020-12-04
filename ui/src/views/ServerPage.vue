@@ -177,17 +177,26 @@
                     <h5 class="title is-5">Socket has been disabled. Re-enable in settings to see console and statistics.</h5>
                     <br>
                 </span>
-                <div class="buttons">
-                    <b-button v-if="options.enable_socket" @click='render.logs = []' type="is-warning" ><b-icon icon='eraser'></b-icon></b-button>
-                    <b-button v-if="options.enable_socket" @click='togglePause' type='is-info'>
-                        <b-icon :icon="options.console.paused?'play':'pause'" />
-                    </b-button>
-                    <b-button @click="openSettingsModal" type="is-info" :size="options.enable_socket?'':'is-large'">
-                        <b-icon icon="cog" :size="options.enable_socket?'':'is-large'"></b-icon>
-                        <span v-if="!options.enable_socket">Settings</span>
-                    </b-button>
-                    <b-button v-if="options.console.paused&&options.enable_socket" disabled type="has-no-background">PAUSED</b-button>
-                </div>
+                <nav class="level">
+                    <div class="level-left">
+                        <div class="buttons">
+                            <b-button v-if="options.enable_socket" @click='render.logs = []' type="is-warning" ><b-icon icon='eraser'></b-icon></b-button>
+                            <b-button v-if="options.enable_socket" @click='togglePause' type='is-info'>
+                                <b-icon :icon="options.console.paused?'play':'pause'" />
+                            </b-button>
+                            <b-button @click="openSettingsModal" type="is-info" :size="options.enable_socket?'':'is-large'">
+                                <b-icon icon="cog" :size="options.enable_socket?'':'is-large'"></b-icon>
+                                <span v-if="!options.enable_socket">Settings</span>
+                            </b-button>
+                            <b-button v-if="options.console.paused&&options.enable_socket" disabled type="has-no-background">PAUSED</b-button>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <b-tooltip label="View the last rendered frame">
+                            <b-button v-if="render.current_frame > 0" type="is-info">Preview</b-button>
+                        </b-tooltip>
+                    </div>
+                </nav>
                 
                 <span v-if="options.enable_socket">
                     <span v-if="isSocketOffline">
