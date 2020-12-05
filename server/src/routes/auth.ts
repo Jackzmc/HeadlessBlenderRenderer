@@ -127,7 +127,6 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
                 return res.status(500).json({error: 'Internal error updating password.'})
             }
         }
-        console.log(user, req.body)
         db.update(user, (err: Error) => {
             if(err) {
                 console.error('[Auth] Update user db error: ', err.message)

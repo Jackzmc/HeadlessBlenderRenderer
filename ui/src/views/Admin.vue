@@ -69,8 +69,8 @@
                         <p class="subtitle is-6">Add all the flag bits together to calculate a permission number</p>
                         <div class="field" v-for="(flag,index) in $options.flags" :key="index">
                             <b-checkbox v-model="selectedFlags"
-                                :native-value="dev(index)" :disabled="selected != null">
-                                {{index+1}}. {{flag.description}} [d={{dev(index)}}]
+                                :native-value="getBit(index)" :disabled="selected != null">
+                                {{index+1}}. {{flag.description}}
                             </b-checkbox>
                         </div>
                         <p><strong>Permission Number: </strong>{{permissionNumber}}</p>
@@ -90,7 +90,7 @@
                             <b-field label="Permissions">
                                 <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
                                 <b-select v-model="form.updateUser.permissions" multiple expanded>
-                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="dev(index)" :value="dev(index)">
+                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="getBit(index)" :value="getBit(index)">
                                         {{flag.description}}
                                     </option>
                                 </b-select>
@@ -390,7 +390,7 @@ export default {
                 }
             })
         },
-        dev(index) {
+        getBit(index) {
             return 1 << index;
         }
     }
