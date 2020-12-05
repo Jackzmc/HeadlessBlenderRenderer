@@ -116,7 +116,7 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
     db.selectUser(req.params.username, async(err: Error, user: User) => {  
         if(err) return res.status(500).json({error: 'Internal error fetching user', code: 'DB_FETCH_ERROR'})
         if(!user) return res.status(404).json({error: 'User not found', code: 'USER_NOT_FOUND'})
-
+        const oldUser = user;
         if(req.body.email) user.email = req.body.email.trim();
         if(req.body.permissions) user.permissions = req.body.permissions;
         if(req.body.password) {
@@ -127,12 +127,13 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
                 return res.status(500).json({error: 'Internal error updating password.'})
             }
         }
+        console.log(user, req.body)
         db.update(user, (err: Error) => {
             if(err) {
                 console.error('[Auth] Update user db error: ', err.message)
                 return res.status(500).json({error: 'Internal error updating user', code: 'DB_UPDATE_ERROR' })
             }
-            db.logAction(res.locals.user, ActionType.EDIT_USER, user)
+            db.logAction(res.locals.user, ActionType.EDIT_USER, oldUser, user)
             return res.json({success: true})
         })
     })

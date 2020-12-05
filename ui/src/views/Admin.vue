@@ -37,7 +37,7 @@
                 <div class="columns">
                     <div class="column is-8">
                         <h4 class="title is-4">Registered Users</h4>
-                        <p class="subtitle is-6">Click on any user to edit</p>
+                        <p class="subtitle is-6">Click on any user to edit. The default user cannot be edited.</p>
                         <b-table :data="users" :selected.sync="selected" @select="editUser" :loading="loading">
                             <template slot-scope="props">
                                 <b-table-column field="username" label="Username">
@@ -47,7 +47,7 @@
                                     <p>{{props.row.email}}</p>
                                 </b-table-column>
                                 <b-table-column field="permissions" label="Permissions">
-                                    <p>{{formatPermission(props.row.permissions) }}</p>
+                                    <p>{{props.row.permissions}}</p>
                                 </b-table-column>
                                 <b-table-column field="last_login" label="Last Login">
                                     {{props.row.last_login}}
@@ -64,15 +64,25 @@
                                 </section>
                             </template>
                         </b-table>
+                        <hr>
+                        <p class="title is-4">Permission Flags Calculator</p>
+                        <p class="subtitle is-6">Add all the flag bits together to calculate a permission number</p>
+                        <div class="field" v-for="(flag,index) in $options.flags" :key="index">
+                            <b-checkbox v-model="selectedFlags"
+                                :native-value="dev(index)" :disabled="selected != null">
+                                {{index+1}}. {{flag.description}} [d={{dev(index)}}]
+                            </b-checkbox>
+                        </div>
+                        <p><strong>Permission Number: </strong>{{permissionNumber}}</p>
                     </div>
-                    <div class="column" v-if="selected && form.updateUser.permissions < 99">
+                    <div class="column" v-if="selected">
                         <h4 class="title is-4 has-text-centered">Edit User Info</h4>
                         <form @submit.prevent="updateUser">
                             <b-field label="Username" message="Username can't be changed.">
                                 <b-input type="text" v-model="form.updateUser.username" disabled readonly />
                             </b-field>
                             <b-field label="Email">
-                                <b-input type="email" v-model="form.updateUser.email" required />
+                                <b-input type="email" v-model="form.updateUser.email" />
                             </b-field>
                             <b-field label="Password (leave blank to keep current)">
                                 <b-input type="password" v-model="form.updateUser.password"  />
@@ -80,14 +90,9 @@
                             <b-field label="Permissions">
                                 <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
                                 <b-select v-model="form.updateUser.permissions" multiple expanded>
-                                    <option value=1>Can download ZIPs</option>
-                                    <option value=2>Can upload blends & blend zips</option>
-                                    <option value=3>Can start/stop renders</option>
-                                    <option value=4>Can edit server settings</option>
-                                    <option value=5>View admin logs/info</option>
-                                    <option value=6>Manage Users</option>
-                                    <option value=7>Server admin</option>
-                                    <option value=8>Can edit other admins</option>
+                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="dev(index)" :value="dev(index)">
+                                        {{flag.description}}
+                                    </option>
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
@@ -115,14 +120,9 @@
                             <b-field label="Permissions">
                                 <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
                                 <b-select v-model="form.addUser.permissions" multiple expanded>
-                                    <option value=1>Can download ZIPs</option>
-                                    <option value=2>Can upload blends & blend zips</option>
-                                    <option value=3>Can start/stop renders</option>
-                                    <option value=4>Can edit server settings</option>
-                                    <option value=5>View admin logs/info</option>
-                                    <option value=6>Manage Users</option>
-                                    <option value=7>Server admin</option>
-                                    <option value=8>Can edit other admins</option>
+                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="++index" :value="index">
+                                        {{flag.description}}
+                                    </option>
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
@@ -209,11 +209,14 @@
 import Axios from 'axios'
 import ListComponent from '../components/ListComponent';
 import VirtualList from 'vue-virtual-scroll-list';
+import {flags} from '../data.json'
+
 export default {
     ListComponent,
     components: {
         VirtualList
     },
+    flags,
     data() {
         return {
             users: [],
@@ -239,7 +242,8 @@ export default {
             },
             serverInfo: null,
             serverLogs: [],
-            serverLogs_Fetched: false
+            serverLogs_Fetched: false,
+            selectedFlags: []
         }
     },
     created() {
@@ -272,6 +276,9 @@ export default {
                 return `${d.toLocaleDateString()} at ${d.toLocaleTimeString()}`
             }
             return null;
+        },
+        permissionNumber() {
+            return this.selectedFlags.reduce((acc, cv) => acc + parseInt(cv), 0)
         }
     },
     methods: {
@@ -290,21 +297,17 @@ export default {
                 })
                 .finally(() => this.serverLogs_Fetched = true)
             }
-        },
-        formatPermission(number) {
-            switch(parseInt(number)) {
-                case 0: return "Restricted"
-                case 1: return "Normal"
-                case 2: return "Admin"
-                case 99: return "Default Admin"
-                default: return number;
-            }
+            //don't need to fetch settings. server should have already have sent them?
         },
         editUser(user) {
             if(user.permissions == 99) {
                 return setTimeout(() => this.selected = null, 1)
             }
-            Object.assign(this.form.updateUser, user)
+            this.selectedFlags = dec2Bits(user.permissions)
+            Object.assign(this.form.updateUser, {
+                ...user,
+                permissions: this.selectedFlags
+            })
         },
         refreshUsers() {
             this.loading = true;
@@ -323,7 +326,7 @@ export default {
         addUser() {
             let user = {...this.form.addUser};
             //Convert array of permissions ex: [0,1, 3] -> 0+1+3
-            user.permissions = user.permissions.reduce((acc, cv) => acc + parseInt(cv), 0)
+            user.permissions = user.permissions.reduce((acc, cv) => acc +parseInt(cv), 0)
             Axios.post(`/api/auth/users/${this.form.addUser.username}`, user)
             .then(() => {
                 this.users.push(user)
@@ -343,10 +346,10 @@ export default {
         updateUser() {
             let updatedUser = {...this.form.updateUser}
             updatedUser.permissions = updatedUser.permissions.reduce((acc, cv) => acc + parseInt(cv), 0)
-            Axios.put(`/api/auth/users/${this.selected.username}`, {updatedUser})
+            Axios.put(`/api/auth/users/${this.selected.username}`, updatedUser)
             .then(() => {
                 const index = this.users.findIndex(user => user.username === updatedUser.username)
-                if(index >= 0 ) Object.assign(this.users[index], this.form.updateUser);
+                if(index >= 0 ) Object.assign(this.users[index], updatedUser);
                 this.$buefy.toast.open({
                     type: 'is-success',
                     duration: 3000,
@@ -386,7 +389,24 @@ export default {
                     })
                 }
             })
+        },
+        dev(index) {
+            return 1 << index;
         }
     }
+}
+function dec2Bits(dec) {
+    const bin = dec.toString(2);
+    const rev = [...bin].reverse().join('')
+    const numbers = [];
+    for (let i = 0; i < bin.length; i++) {
+        // Get the character at position i in the string
+        const char = rev.charAt(i);
+        // Check for a "1"
+        if (char === '1') {
+            numbers.push(1 << i)
+        }
+    }
+    return numbers;
 }
 </script>

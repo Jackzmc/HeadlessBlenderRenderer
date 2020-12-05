@@ -222,11 +222,13 @@ export default class DB {
                 const prevUser = extras[0] as User;
                 const editedUser = extras[1] as User;
                 msg = `${username} has updated user '${editedUser.username}' `
+                break;
             
             case ActionType.UPDATE_SETTINGS: 
                 msg = `${username} has changed server settings. New Settings:\n${JSON.stringify(extras[0])}`
+                break;
             default: 
-                throw new Error('Unknown type of action:' + type)
+                throw new Error('Unknown type of action: ' + ActionType[type])
         }
         this.#db.run(
             'INSERT INTO logs (timestamp, text) VALUES (?, ?)',

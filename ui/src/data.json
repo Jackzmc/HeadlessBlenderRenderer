@@ -1,0 +1,12 @@
+{
+    "flags": [
+        {"id": "Restricted", "description": "Restricted / View Only"},
+        {"id": "Zips", "description": "Can Download Zips"},
+        {"id": "Blends", "description": "Can Upload Blends or Blend Zips"},
+        {"id": "Status", "description": "Can start/stop renders"},
+        {"id": "View", "description": "View admin logs & info"},
+        {"id": "ServerSettings", "description": "Can edit server settings"},
+        {"id": "ManageUsers", "description": "Manage Users"},
+        {"id": "EditOthers", "description": "Can edit other admins"}
+    ]
+}
