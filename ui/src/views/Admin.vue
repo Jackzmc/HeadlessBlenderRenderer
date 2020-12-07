@@ -395,14 +395,13 @@ export default {
         }
     }
 }
+//Converts a decimal number (ex: 7) into its bits (1 + 2 + 4)
 function dec2Bits(dec) {
-    const bin = dec.toString(2);
-    const rev = [...bin].reverse().join('')
+    const bin = dec.toString(2); //convert dec -> bin
+    const rev = [...bin].reverse().join('') //reverse str. could implement backwards for loop but this worked.
     const numbers = [];
     for (let i = 0; i < bin.length; i++) {
-        // Get the character at position i in the string
         const char = rev.charAt(i);
-        // Check for a "1"
         if (char === '1') {
             numbers.push(1 << i)
         }

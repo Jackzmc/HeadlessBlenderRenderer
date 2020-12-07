@@ -1,5 +1,48 @@
 <template>
 <div>
+    <div id="btm_right_box">
+        <div id="btm_right">
+            <p><span style="vertical-align: middle; margin-right: 5px">v{{$VERSION}}</span><b-button @click="settings.active = true" icon-left="cog"></b-button></p>
+        </div>
+    </div>
+    <b-modal 
+        :active.sync="settings.active"
+        trap-focus
+        aria-role="dialog"
+        aria-modal
+    >
+        <div class="modal-card" style="width: auto">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Client Settings</p>
+                <button
+                    type="button"
+                    class="delete"
+                    @click="settings.active = false"/>
+            </header>
+            <section class="modal-card-body">
+                <b-field label="Update Interval (seconds)" message="Zero to disable timer">
+                    <b-slider v-model="settings.updateInterval" lazy :min="0" :max="120" format="raw" :step="10" ticks />
+                </b-field>
+                <hr>
+                <div class="columns">
+                    <div class="column">
+                        <p class="title is-5">Import</p>
+                        <b-field>
+                            <b-input v-model="importPart" maxlength="200" type="textarea"></b-input>
+                        </b-field>
+                        <p><a class="button is-danger" @click="import(importPart)">Import</a></p>
+                    </div>
+                    <div class="column">
+                        <p class="title is-5">Export</p>
+                        <b-field>
+                            <b-input v-model="exportPart" maxlength="200" type="textarea"></b-input>
+                        </b-field>
+                        <p><a class="button is-danger" @click="exportPart = getExport()">Generate Export</a></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </b-modal>
     <br>
     <div class="container">
         <h1 class="title is-1">Headless Blender Render - Servers Dashboard</h1>
@@ -62,6 +105,7 @@
             </div>
         </div>
     </div>
+
 </div>
 </template>
 
@@ -75,12 +119,31 @@ export default {
                 address: null
             },
             localServerStatus: null,
+            settings: { active: false, updateInterval: 15},
+            updateTimer: null,
+            exportPart: null,
+            importPart: null
         }
     },
     created() {
         this.updateServers();
+
+        const settings = JSON.parse(window.localStorage.blender_settings|| {});
+        this.settings = {...this.settings,...settings}
         //TODO: perhaps implement a slower update if its been offline
-        setInterval(this.updateServers, 1000 * 60 * 15)
+        if(this.settings.updateInterval > 0)
+            this.updateTimer = setInterval(this.updateServers, 1000 * 60 * this.settings.updateInterval)
+    },
+    watch: {
+        'settings.updateInterval': function() {
+            let settings = Object.assign({}, this.settings);
+            delete settings.active;
+            window.localStorage.setItem('blender_settings', JSON.stringify(settings))
+
+            clearInterval(this.updateTimer)
+            if(this.settings.updateInterval > 0)
+                this.updateTimer = setInterval(this.updateServers, 1000 * 60 * this.settings.updateInterval)
+        }
     },
     methods: {
         deleteServer(server) {
@@ -137,6 +200,27 @@ export default {
             if(data.active) return `Rendering - ${data.blend}`
             return `Idle`
             
+        },
+        getExport() {
+            let settings = Object.assign({}, this.settings);
+            delete settings.active;
+            return JSON.stringify({
+                settings: {
+                    client: settings,
+                    options: JSON.parse(window.localStorage.getItem('blender_opts')),
+                    servers: JSON.parse(window.localStorage.getItem('blender_servers'))
+                }
+            })
+        },
+        import(str) {
+            const json = JSON.parse(str);
+            const settings = JSON.stringify(json.client)
+            const options = JSON.stringify(json.options)
+            const servers = JSON.stringify(json.servers)
+
+            window.localStorage.setItem('blender_settings', settings)
+            window.localStorage.setItem('blender_opts', options)
+            window.localStorage.setItem('blender_servers', servers)
         }
     },
     computed: {
@@ -161,3 +245,15 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+#btm_right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 20px;
+}
+#btm_right_box {
+    position: relative;
+}
+</style>
