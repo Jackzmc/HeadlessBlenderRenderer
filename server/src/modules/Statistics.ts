@@ -1,10 +1,13 @@
 import si from 'systeminformation'
 import { execShellCommand } from './utils'
 import csv from 'csvtojson'
+import path from 'path'
 
 const SERVER_VERSION = require('../../package.json').version;
 const START_DATE: number = Date.now();
-const NVIDIA_SMI_PATH = process.env.NVIDIA_SMI_PATH || "nvidia-smi";
+const NVIDIA_SMI_PATH = process.env.NVIDIA_SMI_PATH 
+    ? `"${path.normalize(process.env.NVIDIA_SMI_PATH).replace(/\\\\/g, path.sep).replace(/\n/,'\\n')}"` 
+    : "nvidia-smi";
 
 let antispam_stat_inc: number = 0;
 
@@ -16,7 +19,7 @@ export default async function() {
             si.cpuCurrentspeed(),
             si.currentLoad(),
             si.cpuTemperature(),
-            execShellCommand(NVIDIA_SMI_PATH + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
+            execShellCommand(`${NVIDIA_SMI_PATH} --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader`)
         ])
         const gpus = await parseGPUs(nvidia_smi_result as string)
 
