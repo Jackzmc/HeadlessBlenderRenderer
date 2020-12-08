@@ -43,6 +43,10 @@
                             </div>
                         </section>
                     </template>
+
+                    <template slot="footer" v-if="blends.length > 0">
+                        <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></p>
+                    </template>
                 </b-table>
             </b-tab-item>
             <b-tab-item label="Folders">
@@ -76,6 +80,9 @@
                                 <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></p>
                             </div>
                         </section>
+                    </template>
+                    <template slot="footer" v-if="folders.length > 0">
+                        <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></p>
                     </template>
                 </b-table>
             </b-tab-item>
