@@ -20,7 +20,7 @@
                     @click="settings.active = false"/>
             </header>
             <section class="modal-card-body">
-                <b-field label="Update Interval (seconds)" message="Zero to disable timer">
+                <b-field label="Update Interval (minutes)" message="Zero to disable timer">
                     <b-slider v-model="settings.updateInterval" lazy :min="0" :max="120" format="raw" :step="10" ticks />
                 </b-field>
                 <hr>
@@ -113,11 +113,22 @@ export default {
             localServerStatus: null,
             settings: { active: false, updateInterval: 15},
             updateTimer: null,
-            exportPart: null,
-            importPart: null
+            portText: null
         }
     },
     created() {
+        /*if(this.$route.patchMatch === "/add") {
+            const addr = findGetParameter('addr') || findGetParameter('address')
+            const name = findGetParameter('name')
+            if(!addr || !name) {
+                console.warn('Detected /add route, but addr or name parameters are missing')
+            }else{
+                const id = getSafeId(name);
+                console.log(id)
+            }
+        }
+        console.log('add', this.$route.params)*/
+
         this.updateServers();
 
         const settings = JSON.parse(window.localStorage.blender_settings|| {});
@@ -219,7 +230,7 @@ export default {
     computed: {
         safeName() {
             if(!this.form_addserver.name) return ""
-            return this.form_addserver.name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
+            return getSafeId(this.form_addserver.name)
         },
         addServerName() {
             if(!this.form_addserver.name) return ""
@@ -237,6 +248,22 @@ export default {
         }
     },
 }
+function getSafeId(str) {
+    if(!str) return null;
+    return str.toLowerCase().replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
+}
+/*function findGetParameter(parameterName) {
+    var result = null,
+        tmp = [];
+    location.search
+        .substr(1)
+        .split("&")
+        .forEach(function (item) {
+          tmp = item.split("=");
+          if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+        });
+    return result;
+}*/
 </script>
 
 <style scoped>
