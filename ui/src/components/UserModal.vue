@@ -5,12 +5,12 @@
     <div class="columns">
         <div class="column">
         <b-field label="Username">
-            <b-input v-model="user.username" readonly disabled />
+            <b-input :value="user.username" readonly disabled />
         </b-field>
         </div>
         <div class="column">
         <b-field label="Email">
-            <b-input v-model="user.email" readonly disabled />
+            <b-input :value="user.email" readonly disabled />
         </b-field>
         </div>
     </div>

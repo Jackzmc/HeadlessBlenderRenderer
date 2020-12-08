@@ -24,21 +24,13 @@
                     <b-slider v-model="settings.updateInterval" lazy :min="0" :max="120" format="raw" :step="10" ticks />
                 </b-field>
                 <hr>
-                <div class="columns">
-                    <div class="column">
-                        <p class="title is-5">Import</p>
-                        <b-field>
-                            <b-input v-model="importPart" maxlength="200" type="textarea"></b-input>
-                        </b-field>
-                        <p><a class="button is-danger" @click="import(importPart)">Import</a></p>
-                    </div>
-                    <div class="column">
-                        <p class="title is-5">Export</p>
-                        <b-field>
-                            <b-input v-model="exportPart" maxlength="200" type="textarea"></b-input>
-                        </b-field>
-                        <p><a class="button is-danger" @click="exportPart = getExport()">Generate Export</a></p>
-                    </div>
+                <p class="title is-5">Import</p>
+                <b-field>
+                    <b-input v-model="portText" rows="3" type="textarea"></b-input>
+                </b-field>
+                <div class="buttons">
+                    <a class="button is-danger" @click="importStr(portText)">Import</a>
+                    <a class="button is-danger" @click="portText = getExport()">Generate Export</a>
                 </div>
             </section>
         </div>
@@ -208,11 +200,12 @@ export default {
                 settings: {
                     client: settings,
                     options: JSON.parse(window.localStorage.getItem('blender_opts')),
-                    servers: JSON.parse(window.localStorage.getItem('blender_servers'))
+                    servers: JSON.parse(window.localStorage.getItem('blender_servers')),
+                    version: this.$VERSION
                 }
             })
         },
-        import(str) {
+        importStr(str) {
             const json = JSON.parse(str);
             const settings = JSON.stringify(json.client)
             const options = JSON.stringify(json.options)
