@@ -490,9 +490,9 @@ export default {
                     })
                 }
             }else{
-                this.render.active = cb.settings.active;
-                this.render.current_frame = cb.settings.current_frame;
-                this.render.max_frames = cb.settings.max_frames;
+                this.render.active = cb.status.active;
+                this.render.current_frame = cb.status.current_frame;
+                this.render.max_frames = cb.status.max_frames;
             }
         })
     },

@@ -111,8 +111,8 @@ export default class RenderController {
                         //get frame #
                     }
                     if(!this.active) {
-                        this.emit('render_start', this.getSettings())
-                        resolve(this.getSettings())
+                        this.emit('render_start', this.getStatus())
+                        resolve(this.getStatus())
                         this.active = true;
                         this.#started = Date.now();
                     }
@@ -120,8 +120,8 @@ export default class RenderController {
                 })
                 renderProcess.stderr.on('data',data => {
                     if(!this.active) {
-                        this.emit('render_start', this.getSettings())
-                        resolve(this.getSettings())
+                        this.emit('render_start', this.getStatus())
+                        resolve(this.getStatus())
                         this.active = true;
                         this.#started = Date.now();
                     }
@@ -179,7 +179,8 @@ export default class RenderController {
             }, UPDATE_INTERVAL)
         }
         catch(err) {
-
+            console.error("[ERROR] Statistics have been disabled due to an error.\n", err.message)
+            clearInterval(this.#timer);
         }
     }
 
@@ -187,19 +188,25 @@ export default class RenderController {
         return this.active;
     }
     
-    getSettings() {
+    getStatus() {
         const time_taken = prettyMilliseconds(Date.now() - this.#started);
-        return {
-            active: this.active,
-            max_frames: this.max_frames,
-            current_frame: this.current_frame,
-            blend: this.blend,
-            duration: this.active ? {
-                formatted: time_taken,
-                raw: Date.now() - this.#started,
-                started: this.#started
-            } : null
-        }
+        this.#db.getSettings((err, settings) => {
+            if(!err) {
+                return {
+                    active: this.active,
+                    max_frames: this.max_frames,
+                    current_frame: this.current_frame,
+                    blend: this.blend,
+                    duration: this.active ? {
+                        formatted: time_taken,
+                        raw: Date.now() - this.#started,
+                        started: this.#started
+                    } : null,
+                    config: settings
+                }
+            }
+        })
+        
     }
     getStatistics() {
         return this.#last_stats;

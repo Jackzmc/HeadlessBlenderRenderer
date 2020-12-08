@@ -4,12 +4,11 @@ import csv from 'csvtojson'
 
 const SERVER_VERSION = require('../../package.json').version;
 const START_DATE: number = Date.now();
+const NVIDIA_SMI_PATH = process.env.NVIDIA_SMI_PATH || "nvidia-smi";
 
 let antispam_stat_inc: number = 0;
-let statsDisabled = false; 
 
 export default async function() {
-    const SMI = process.platform === "win32" ? "\"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe\"" : "nvidia-smi";
     try {
         const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
             si.cpu(),
@@ -17,7 +16,7 @@ export default async function() {
             si.cpuCurrentspeed(),
             si.currentLoad(),
             si.cpuTemperature(),
-            execShellCommand(SMI + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
+            execShellCommand(NVIDIA_SMI_PATH + " --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader")
         ])
         const gpus = await parseGPUs(nvidia_smi_result as string)
 
@@ -39,8 +38,6 @@ export default async function() {
             gpus
         }
     }catch(err) {
-        statsDisabled = true;
-        console.log("[ERROR] Statistics have been disabled due to an error.\n", err.message)
         throw err;
     }
 }
