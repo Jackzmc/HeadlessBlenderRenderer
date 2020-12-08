@@ -1,144 +1,149 @@
 <template>
-<div class="box">
-    <h3 class='title is-3'>Blend File Chooser</h3>
-    <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh Files</b-button></p>
-    
-    <b-tabs>
-        <b-tab-item label="Blend files">
-            <b-table
-            :data="blends"
-            striped
-            hoverable
-            :loading="loading"
-            >
-                <template slot-scope="props">
-                    <b-table-column field="name" label="Name" sortable>
-                        {{ props.row.file }}
-                    </b-table-column>
-                    <b-table-column field="size" label="Size" sortable>
-                        {{ props.row.size | humanize}}
-                    </b-table-column>
-                    <b-table-column field="timestamp" label="Last Modified" sortable>
-                        {{ props.row.date }}
-                    </b-table-column>
-                    <b-table-column label="Action" >
-                        <div class="buttons">
-                            <a @click="chooseBlend(props.row.file)" class="button is-primary">Use</a>
-                            <b-button @click="deleteBlend(props.row.file)" type="is-danger"  icon-left="delete" />
-                        </div>
-                    </b-table-column>
-                </template>
-
-
-                <template slot="empty">
-                    <section class="section">
-                        <div class="content has-text-grey has-text-centered">
-                            <p><b-icon icon="emoticon-sad" size="is-large" /></p>
-                            <p>No blend files were found.</p>
-                        </div>
-                    </section>
-                </template>
-            </b-table>
-        </b-tab-item>
-        <b-tab-item label="Folders">
-            <b-table
-            :data="folders"
-            detailed
-            striped
-            hoverable
-            :loading="loading"
-            >
-                <template slot-scope="props">
-                    <b-table-column field="name" label="Name">
-                        {{ props.row.folder }}
-                    </b-table-column>
-                    <b-table-column label="Files">
-                        {{ props.row.files.length }}
-                    </b-table-column>
-                </template>
-
-                <template slot="detail" slot-scope="props">
-                    <strong>Contents</strong>
-                    <ul>
-                        <li v-for="file in props.row.files" :key="file">{{file}}</li>
-                    </ul>
-                </template>
-
-                <template slot="empty">
-                    <section class="section">
-                        <div class="content has-text-grey has-text-centered">
-                            <p><b-icon icon="emoticon-sad" size="is-large" /></p>
-                            <p>No folders were found.</p>
-                        </div>
-                    </section>
-                </template>
-            </b-table>
-        </b-tab-item>
-    </b-tabs>
-    <hr>
-    <div class="columns">
-        <div class="column">
-            <h5 class="title is-5">Upload Blend Files</h5>
-            <p>Uploads any .blend files, overwriting existing files.</p>
-            <br>
-            <b-field>
-                <b-upload id="uploader" v-model="blend.uploads"
-                    multiple
-                    accept=".blend"
-                    drag-drop
-                    @input="removeDuplicateBlends"
+<div class="modal-card" style="width: auto; font-size: 20px">
+    <header class="modal-card-head">
+        <h3 class='modal-card-title'>Blend File Chooser</h3>
+        <button
+            type="button"
+            class="delete"
+            @click="$emit('close')"/>
+    </header>
+    <section class="modal-card-body">
+        <b-tabs>
+            <b-tab-item label="Blend files">
+                <b-table
+                :data="blends"
+                striped
+                hoverable
+                :loading="loading"
                 >
-                    <section class="section">
-                        <div class="content has-text-centered">
-                            <p>
-                                <b-icon
-                                    icon="upload"
-                                    size="is-large">
-                                </b-icon>
-                            </p>
-                            <p>Drop your .blend files here or click to upload</p>
-                        </div>
-                    </section>
-                </b-upload>
-            </b-field>
-            <div class="tags">
-                <span v-for="(file, index) in blend.uploads"
-                    :key="file.name"
-                    class="tag is-primary" >
-                    {{file.name}}
-                    <button class="delete is-small"
-                        type="button"
-                        @click="removeBlendUpload(index)">
-                    </button>
-                </span>
-            </div>
-            <progress v-if="blend.uploading" class="progress" :value="blend.progress" max="100" />
-            <b-field>
-                <b-button @click='uploadBlends' :disabled="blend.uploads.length == 0" type="button is-success">Upload Blends</b-button>
-            </b-field>
-        </div>
-        <div class="column">
-            <h5 class="title is-5">Upload ZIP as folder</h5>
-            <p>ZIP will be extracted to a folder with the same name. It will overwrite any existing folder.</p>
-            <br>
-            <b-field class="file">
-                <b-upload v-model="zip.file" accept=".zip" >
-                    <a class="button is-primary">
-                        <b-icon icon="upload" />
-                        <span>Click to upload a .ZIP</span>
-                    </a>
-                </b-upload>
-                <span class="file-name" v-if="zip.file">
-                    {{ zip.file.name }}
-                </span>
-            </b-field>
-             <progress v-if="zip.uploading" class="progress" :value="zip.progress" max="100" />
-            <b-field>
-                <b-button @click='uploadZIP' :disabled="!zip.file" type="button is-success">Upload ZIP</b-button>
-            </b-field>
-        </div>
-    </div>
+                    <template slot-scope="props">
+                        <b-table-column field="name" label="Name" sortable>
+                            {{ props.row.file }}
+                        </b-table-column>
+                        <b-table-column field="size" label="Size" sortable>
+                            {{ props.row.size | humanize}}
+                        </b-table-column>
+                        <b-table-column field="timestamp" label="Last Modified" sortable>
+                            {{ props.row.date }}
+                        </b-table-column>
+                        <b-table-column label="Action" >
+                            <div class="buttons">
+                                <a @click="chooseBlend(props.row.file)" class="button is-primary">Use</a>
+                                <b-button @click="deleteBlend(props.row.file)" type="is-danger"  icon-left="delete" />
+                            </div>
+                        </b-table-column>
+                    </template>
 
+
+                    <template slot="empty">
+                        <section class="section">
+                            <div class="content has-text-grey has-text-centered">
+                                <p>No blend files were found.</p>
+                                <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></p>
+                            </div>
+                        </section>
+                    </template>
+                </b-table>
+            </b-tab-item>
+            <b-tab-item label="Folders">
+                <b-table
+                :data="folders"
+                detailed
+                striped
+                hoverable
+                :loading="loading"
+                >
+                    <template slot-scope="props">
+                        <b-table-column field="name" label="Name">
+                            {{ props.row.folder }}
+                        </b-table-column>
+                        <b-table-column label="Files">
+                            {{ props.row.files.length }}
+                        </b-table-column>
+                    </template>
+
+                    <template slot="detail" slot-scope="props">
+                        <strong>Contents</strong>
+                        <ul>
+                            <li v-for="file in props.row.files" :key="file">{{file}}</li>
+                        </ul>
+                    </template>
+
+                    <template slot="empty">
+                        <section class="section">
+                            <div class="content has-text-grey has-text-centered">
+                                <p>No folders were found.</p>
+                                <p class="subtitle is-6"><b-button @click='refresh()' type="button is-info " size="is-small" icon-left="refresh">Refresh</b-button></p>
+                            </div>
+                        </section>
+                    </template>
+                </b-table>
+            </b-tab-item>
+        </b-tabs>
+        <hr>
+        <div class="columns">
+            <div class="column">
+                <h5 class="title is-5">Upload Blend Files</h5>
+                <p>Upload any .blend files, overwriting existing files.</p>
+                <br>
+                <b-field>
+                    <b-upload id="uploader" v-model="blend.uploads"
+                        multiple
+                        accept=".blend"
+                        drag-drop
+                        @input="removeDuplicateBlends"
+                    >
+                        <section class="section">
+                            <div class="content has-text-centered">
+                                <p>
+                                    <b-icon
+                                        icon="upload"
+                                        size="is-large">
+                                    </b-icon>
+                                </p>
+                                <p>Drop your .blend files here or click to browse</p>
+                            </div>
+                        </section>
+                    </b-upload>
+                </b-field>
+                <div class="tags">
+                    <span v-for="(file, index) in blend.uploads"
+                        :key="file.name"
+                        class="tag is-primary" >
+                        {{file.name}}
+                        <button class="delete is-small"
+                            type="button"
+                            @click="removeBlendUpload(index)">
+                        </button>
+                    </span>
+                </div>
+                <progress v-if="blend.uploading" class="progress" :value="blend.progress" max="100" />
+                <b-field>
+                    <b-button @click='uploadBlends' :disabled="blend.uploads.length == 0" type="button is-success">Upload Blends</b-button>
+                </b-field>
+            </div>
+            <div class="column">
+                <h5 class="title is-5">Upload ZIP to a Folder</h5>
+                <p>ZIP will be extracted to a folder with the same name. It will also overwrite any existing folder.</p>
+                <br>
+                <b-field class="file">
+                    <b-upload v-model="zip.file" accept=".zip" >
+                        <a class="button is-primary">
+                            <b-icon icon="upload" />
+                            <span>Select a ZIP</span>
+                        </a>
+                    </b-upload>
+                    <span class="file-name" v-if="zip.file">
+                        {{ zip.file.name }}
+                    </span>
+                </b-field>
+                <progress v-if="zip.uploading" class="progress" :value="zip.progress" max="100" />
+                <b-field>
+                    <b-button @click='uploadZIP' :disabled="!zip.file" type="button is-success">Upload Selected ZIP</b-button>
+                </b-field>
+            </div>
+        </div>
+    </section>
 </div>
 </template>
 
