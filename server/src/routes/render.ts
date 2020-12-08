@@ -23,7 +23,7 @@ router.get('/logs', hasPermissionBit([0,1]), (req,res) => {
     res.json(renderController.getLogs())
 })
 router.get('/status', hasPermissionBit([0,1]), (req,res) => {
-    res.json(renderController.getSettings()) 
+    res.json(renderController.getStatus()) 
 })
 router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
     if(!req.params.blend) return res.status(400).json({error: 'Missing blend property'})

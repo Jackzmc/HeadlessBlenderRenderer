@@ -1,6 +1,7 @@
 import sqlite3, { RunResult } from 'sqlite3'
 import bcrypt from 'bcrypt'
-import User from '../types';
+import User from '../../types';
+import Users from './Users'
 
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
@@ -15,10 +16,12 @@ export enum ActionType {
 
 export default class DB {
     #db: sqlite3.Database
+    users: Users
     constructor(file: string) {
         this.#db = new sqlite3.Database(file);
         this.createTables()
         this.setupSettings();
+        this.users = new Users(this.#db);
     }
 
     createTables() {
@@ -81,75 +84,6 @@ export default class DB {
         this.#db.exec(sql);
     }
 
-    selectUser(query: string, callback: Function) {
-        this.#db.get(
-            `SELECT * FROM user WHERE email = ? OR username = ?`,
-            [query, query], (err: NodeJS.ErrnoException, row: any) =>{
-                callback(err, row)
-            }
-        )
-        return this;
-    }
-
-    selectAll(callback: Function) {
-        this.#db.all(`SELECT * FROM user`, function(err: NodeJS.ErrnoException, rows: any) {
-            callback(err,rows)
-        })
-        return this;
-    }
-
-    insert(user: User, callback: Function) {
-        this.#db.run(
-            'INSERT INTO user (username,email,password,permissions,created) VALUES (?,?,?,?,?)',
-            [user.username, user.email, user.password, user.permissions, Date.now()], 
-            (err: Error) => {
-                if(callback) callback(err)
-            }
-        )
-        return this;
-    }
-
-    update(user: User, callback: Function) {
-        this.#db.run(
-            'UPDATE user SET username = ?, email = ?, password = ?, permissions = ? WHERE username = ?',
-            [user.username, user.email, user.password, user.permissions, user.username], (err) => {
-                callback(err)
-            }
-        )
-        return this;
-    }
-
-    updateLogin(user: User) {
-        this.#db.run(
-            'UPDATE user set last_login = ? WHERE username = ?',
-            [Date.now(), user.username],
-        )
-        return this;
-    }
-
-    delete(username: string, callback: Function) {
-        this.#db.run(
-            'DELETE FROM user WHERE username = ?',
-            [username],
-            (err) => {
-                callback(err);
-            }
-        )
-        return this;
-    }
-
-    changePassword(username: string, password: string, callback: Function) {
-        bcrypt.hash(password, SALT_ROUNDS, (err: NodeJS.ErrnoException, hash: string) => {
-            if(err) return callback(err);
-            this.#db.run(
-                'UPDATE user SET password = ? WHERE username = ?',
-                [hash, username], (err) => {
-                    callback(err);
-                }
-            )
-        })
-        return this;
-    }
 
     getLogs(callback: Function) {
         this.#db.all(`SELECT timestamp, text FROM logs ORDER BY timestamp desc`, (err: Error, rows: any[]) => {

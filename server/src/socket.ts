@@ -29,7 +29,7 @@ export default function(server: Server) {
                 socket.emit('stat', controller.getStatistics())
                 return cb({
                     valid: true, 
-                    settings: controller.getSettings()
+                    status: controller.getStatus()
                 })
             })
         })
