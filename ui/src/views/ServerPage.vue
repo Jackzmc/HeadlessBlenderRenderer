@@ -19,6 +19,9 @@
                 <b-navbar-item @click="openUserSettings">
                     Settings
                 </b-navbar-item>
+                <b-navbar-item @click="openPermissionsModal">
+                    Permissions
+                </b-navbar-item>
                 <hr class="dropdown-divider" aria-role="menuitem">
                 <b-navbar-item @click="logout" class="has-text-danger">
                     Logout
@@ -217,7 +220,7 @@
 <script>
 import Statistics from '../components/Statistics'
 import ListComponent from '../components/ListComponent';
-import Settings from '../components/Settings'
+import Settings from '../components/modals/Settings'
 
 import io from 'socket.io-client';
 import VirtualList from 'vue-virtual-scroll-list'
@@ -336,8 +339,9 @@ export default {
     openBlendChooser() {
         this.$buefy.modal.open({
             parent: this,
-            component: () => import('../components/BlendChooser'),
+            component: () => import('../components/modals/BlendChooser'),
             trapFocus: true,
+            hasModalCard: true,
             events: {
                 setBlend: (value) => {
                     this.blend_file = value;
@@ -348,7 +352,7 @@ export default {
     openUserSettings() {
         this.$buefy.modal.open({
             parent: this,
-            component: () => import('../components/UserModal'),
+            component: () => import('../components/modals/UserModal'),
             trapFocus: true,
             props: {
                 user: this.$store.state.users[this.server.id],
@@ -359,7 +363,7 @@ export default {
     openZIPModal() {
         this.$buefy.modal.open({
             parent: this,
-            component: () => import('../components/ZIPDownloader'),
+            component: () => import('../components/modals/ZIPDownloader'),
             trapFocus: true,
             props: {
                 server: this.server
@@ -386,6 +390,19 @@ export default {
             }
         })
     },  
+    openPermissionsModal() {
+        this.$buefy.modal.open({
+            parent: this,
+            component: () => import('../components/modals/Permissions'),
+            trapFocus: true,
+            hasModalCard: true,
+            canCancel: ['escape', 'outside'],
+            props: {
+                permissions: this.user.permissions,
+                bits: this.user.permissionBits
+            },
+        })
+    },
     startRender() {
         if(!this.blend_file) {
             return this.$buefy.dialog.alert({
