@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt'
 import User from '../../types';
 import Users from './Users'
 
-const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+export const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
 export enum ActionType {
     CREATE_USER,
@@ -17,8 +17,14 @@ export enum ActionType {
 export default class DB {
     #db: sqlite3.Database
     users: Users
+
     constructor(file: string) {
-        this.#db = new sqlite3.Database(file);
+        this.#db = new sqlite3.Database(file, (err) => {
+            if(err) {
+                console.error('Database initalization error: ', err)
+                process.exit(1)
+            }
+        });
         this.users = new Users(this.#db);
 
         this.createTables()

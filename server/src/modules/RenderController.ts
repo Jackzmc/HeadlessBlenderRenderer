@@ -38,6 +38,7 @@ export default class RenderController {
     constructor(io: Socket, db: DB) {
         this.#io = io;
         this.#db = db;
+
         this.startTimer();
     }
     getEventEmitter() {
@@ -190,24 +191,18 @@ export default class RenderController {
     
     getStatus() {
         const time_taken = prettyMilliseconds(Date.now() - this.#started);
-        this.#db.getSettings((err, settings) => {
-            if(!err) {
-                return {
-                    active: this.active,
-                    max_frames: this.max_frames,
-                    current_frame: this.current_frame,
-                    blend: this.blend,
-                    duration: this.active ? {
-                        formatted: time_taken,
-                        raw: Date.now() - this.#started,
-                        started: this.#started
-                    } : null,
-                    config: settings
-                }
-            }
-        })
-        
-    }
+        return {
+            active: this.active,
+            max_frames: this.max_frames,
+            current_frame: this.current_frame,
+            blend: this.blend,
+            duration: this.active ? {
+                formatted: time_taken,
+                raw: Date.now() - this.#started,
+                started: this.#started
+            } : null,
+        }
+}
     getStatistics() {
         return this.#last_stats;
     }

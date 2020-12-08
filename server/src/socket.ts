@@ -1,7 +1,7 @@
 import RenderController from './modules/RenderController'
 import jwt from 'jsonwebtoken'
 import { Server } from 'http';
-import DB from './modules/Database';
+import DB from './modules/Database/index';
 import { Socket } from 'socket.io';
 declare module 'socket.io' {
     interface Socket {
@@ -27,9 +27,13 @@ export default function(server: Server) {
                 socket.authorized = true;
                 if(err) return cb({error:'Failed to verify authentication.'})
                 socket.emit('stat', controller.getStatistics())
-                return cb({
-                    valid: true, 
-                    status: controller.getStatus()
+
+                db.getSettings((err: Error, settings: any) => {
+                    return cb({
+                        valid: true, 
+                        status: controller.getStatus(),
+                        settings
+                    })
                 })
             })
         })
