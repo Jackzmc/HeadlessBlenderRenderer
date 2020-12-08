@@ -113,12 +113,12 @@
                             type="is-dark">
                         </b-taginput>
                     </b-field>
-                    <!--<b-field label="Extra Command Arguments (Optional)">
+                    <b-field label="Extra Command Arguments (Optional)" v-if="serverSettings.extraShellArgs">
                         <b-input
                         v-model="options.blend.extra_arguments" 
                         disabled 
                         />
-                    </b-field>-->
+                    </b-field>
                     <br>
                 </span>
                 <div class="notification is-dark" v-if="!render.active">
@@ -280,6 +280,10 @@ export default {
         console: {
           paused: false, //Is the console paused (no new lines pushed?)
         }
+      },
+      serverSettings: {
+        extraShellArgs: false,
+        recordStats: true
       }
     }
   },
@@ -510,6 +514,9 @@ export default {
                 this.render.active = cb.status.active;
                 this.render.current_frame = cb.status.current_frame;
                 this.render.max_frames = cb.status.max_frames;
+
+                if(cb.settings) this.serverSettings = cb.settings
+                
             }
         })
     },
