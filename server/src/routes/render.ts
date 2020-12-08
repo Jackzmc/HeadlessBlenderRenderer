@@ -1,5 +1,5 @@
 import Express, { Request, Response } from 'express'
-import { restrictedCheck, userCheck } from '../modules/Middlewares';
+import { restrictedCheck, userCheck, hasPermissionBit } from '../modules/Middlewares';
 const router = Express.Router()
 import { promises, createReadStream } from 'fs';
 import RenderController from '../modules/RenderController';
@@ -14,18 +14,18 @@ export default function(controller: RenderController) {
     db = renderController.getDatabase();
     return router;
 }
-router.post(['/cancel','/abort'], userCheck, (req: Request,res: Response) => {
+router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Response) => {
     renderController.cancelRender()
     .then(() => res.json({success: true}))
     .catch(err => res.status(500).json({error: err.message}))
 })
-router.get('/logs', restrictedCheck, (req,res) => {
+router.get('/logs', hasPermissionBit([0,1]), (req,res) => {
     res.json(renderController.getLogs())
 })
-router.get('/status', (req,res) => {
+router.get('/status', hasPermissionBit([0,1]), (req,res) => {
     res.json(renderController.getSettings()) 
 })
-router.post('/:blend', userCheck, (req: Request,res: Response) => {
+router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
     if(!req.params.blend) return res.status(400).json({error: 'Missing blend property'})
     if(!req.params.blend.endsWith(".blend")) return res.status(400).json({error: 'Specified file is not a valid *.blend file.'})
     const frames = (req.body.frames&&Array.isArray(req.body.frames)) ? req.body.frames : null;
@@ -44,7 +44,7 @@ router.post('/:blend', userCheck, (req: Request,res: Response) => {
         res.status(500).json({error: err.message})
     })
 })
-router.get('/preview', async(req,res) => {
+router.get('/preview', hasPermissionBit([0,1]), async(req,res) => {
     if(renderController.isRenderActive()) {
         try {
             const files = await readdir(process.env.HOME_DIR+"/tmp")

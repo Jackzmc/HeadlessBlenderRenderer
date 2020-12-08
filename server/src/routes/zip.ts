@@ -4,7 +4,7 @@ import {promises as fs, createReadStream} from 'fs'
 import AdmZip from 'adm-zip'
 import path from 'path'
 import prettyMilliseconds from 'pretty-ms';
-import { userCheck } from '../modules/Middlewares';
+import { userCheck, hasPermissionBit } from '../modules/Middlewares';
 const router = Express.Router();
 
 const ZIP_DIR = process.env.ZIP_DIR || `${process.env.HOME_DIR}/zips`
@@ -17,11 +17,7 @@ router.use(fileUpload({
     abortOnLimit: true,
 }));
 
-router.get('/debug', (req,res) => {
-    res.json(DL_TOKENS)
-})
-
-router.get('/:name/download', (req,res) => {
+router.get('/:name/download', hasPermissionBit(2), (req,res) => {
     if(req.query.token) {
         const downloadTokens = DL_TOKENS.get(req.params.name);
         //@ts-expect-error
@@ -46,7 +42,7 @@ router.get('/:name/download', (req,res) => {
         return res.status(403).json({error: 'Missing download token query parameter. Request one with POST /zips/:name/token.', code: 'MSSING_TOKEN'})
     }
 })
-router.post('/:name/token', userCheck, async(req,res) => {
+router.post('/:name/token', hasPermissionBit(2), async(req,res) => {
     try {
         await fs.stat(`${ZIP_DIR}/${req.params.name}`)
         const token = generateUID();
@@ -61,7 +57,7 @@ router.post('/:name/token', userCheck, async(req,res) => {
         return res.status(404).json({error: "That zip does not exist.", code:'FILE_NOT_FOUND'})
     }
 })
-router.delete('/:name', userCheck, (req,res) => {
+router.delete('/:name', hasPermissionBit(2), (req,res) => {
     fs.unlink(`${ZIP_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -73,7 +69,7 @@ router.delete('/:name', userCheck, (req,res) => {
         return res.status(500).json({error:err.message})
     })
 })
-router.get('/', userCheck, async(req,res) => {
+router.get('/', hasPermissionBit(2), async(req,res) => {
     try {
         const files_raw = await fs.readdir(ZIP_DIR);
         const promises = [];
@@ -106,7 +102,7 @@ router.get('/', userCheck, async(req,res) => {
     }
 })
 
-router.post('/upload', userCheck, (req,res) => {
+router.post('/upload', hasPermissionBit(2), (req,res) => {
     //@ts-expect-error
     if (!req.files || Object.keys(req.files).length === 0 || !req.files.file) {
         return res.json({error:'No file was uploaded.', code:'MISSING_FILES'});

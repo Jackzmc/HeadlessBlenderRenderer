@@ -5,7 +5,7 @@ const router = Express.Router();
 import Database, { ActionType } from '../modules/Database'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { restrictedCheck, adminCheck } from '../modules/Middlewares'
+import { restrictedCheck, adminCheck, hasPermissionBit } from '../modules/Middlewares';
 import { RunResult } from 'sqlite3';
 import RenderController from '../modules/RenderController';
 
@@ -45,7 +45,7 @@ router.post('/login', (req: Request, res: Response) => {
     });
 })
 
-router.post('/resetpassword', restrictedCheck, (req: Request, res: Response) => {
+router.post('/resetpassword', hasPermissionBit(0), (req: Request, res: Response) => {
     if(!req.body.current_password) return res.status(400).json({error: 'Missing current_password field', code: 'MISSINg_FIELD', field: 'current_password'})
     if(!req.body.new_password || !req.body.password_confirm) return res.status(400).json({error: 'Missing new_password and/or password_confirm fields.', code: 'MISSING_FIELD', field: 'new_password'})
     if(!res.locals.user.username) return res.status(401).json({error: 'Unauthorized', code: 'UNAUTHORIZED'})
@@ -72,7 +72,7 @@ router.post('/resetpassword', restrictedCheck, (req: Request, res: Response) => 
     });
 })
 
-router.get('/users', adminCheck, (req: Request, res: Response) => {
+router.get('/users', hasPermissionBit(64), (req: Request, res: Response) => {
     db.selectAll((err: Error, rows) => {
         if(err) return res.status(500).json({error: err.message, code: 'SELECT_ERROR'})
         const users = rows.map((user: User) => {
@@ -83,7 +83,7 @@ router.get('/users', adminCheck, (req: Request, res: Response) => {
     })
 })
 
-router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
+router.post('/users/:username', hasPermissionBit(64), (req: Request,res: Response) => {
     if(!req.params.username) return res.status(400).json({error: 'Missing field', field: 'username', code: 'MISSING_FIELD'})
     if(!req.body.password) return res.status(400).json({error: 'Missing field', field: 'password', code: 'MISSING_FIELD'})
     //if(!req.body.email) return res.status(400).json({error: 'Missing field', field: 'email'})
@@ -112,7 +112,7 @@ router.post('/users/:username', adminCheck, (req: Request,res: Response) => {
     
 })
 
-router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
+router.put('/users/:username', hasPermissionBit(64), (req: Request, res: Response) => {
     db.selectUser(req.params.username, async(err: Error, user: User) => {  
         if(err) return res.status(500).json({error: 'Internal error fetching user', code: 'DB_FETCH_ERROR'})
         if(!user) return res.status(404).json({error: 'User not found', code: 'USER_NOT_FOUND'})
@@ -138,7 +138,7 @@ router.put('/users/:username', adminCheck, (req: Request, res: Response) => {
     })
 })
 
-router.delete('/users/:username', adminCheck, (req: Request, res: Response) => {
+router.delete('/users/:username', hasPermissionBit(64), (req: Request, res: Response) => {
     db.selectUser(req.params.username, (err: Error, user: User) => {  
         if(err) return res.status(500).json({error: 'Internal error fetching user', code: 'DB_FETCH_ERROR'})
         if(!user) return res.status(404).json({error: 'User not found'})
@@ -151,7 +151,7 @@ router.delete('/users/:username', adminCheck, (req: Request, res: Response) => {
     })
 })
 
-router.get('/logs', adminCheck, (req: Request, res: Response) => {
+router.get('/logs', hasPermissionBit(16), (req: Request, res: Response) => {
     db.getLogs((result: RunResult, err: Error) => {
         if(err) {
             res.status(500).json({error: err.message, code: 'DB_ERROR'})
@@ -161,7 +161,7 @@ router.get('/logs', adminCheck, (req: Request, res: Response) => {
     })
 })
 
-router.get('/settings', adminCheck, (req: Request, res: Response) => {
+router.get('/settings', hasPermissionBit(32), (req: Request, res: Response) => {
     db.getSettings((err: Error, settings: any) => {
         if(err) {
             res.status(500).json({error: err.message, code: 'DB_ERROR'})

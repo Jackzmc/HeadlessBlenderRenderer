@@ -4,7 +4,7 @@ import fileUpload from 'express-fileupload'
 import {promises as fs, createReadStream} from 'fs'
 import prettyMilliseconds from 'pretty-ms';
 import path from 'path'
-import {userCheck} from '../modules/Middlewares'
+import { userCheck, hasPermissionBit } from '../modules/Middlewares';
 
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
@@ -13,7 +13,7 @@ router.use(fileUpload({
     abortOnLimit: true,
 }));
 
-router.get('/', userCheck, async(req: Request, res: Response) => {
+router.get('/', hasPermissionBit([4,8], true), async(req: Request, res: Response) => {
     try {
         const entries = await fs.readdir(BLENDS_DIR, {withFileTypes: true});
         const promises = [];
@@ -59,7 +59,7 @@ router.get('/', userCheck, async(req: Request, res: Response) => {
         res.status(500).json({error:err.message})
     }
 })
-router.get('/:name', userCheck, (req: Request, res: Response) => {
+router.get('/:name', hasPermissionBit(4), (req: Request, res: Response) => {
     res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
 
     const stream = createReadStream(`${BLENDS_DIR}/${req.params.name}`)
@@ -73,7 +73,7 @@ router.get('/:name', userCheck, (req: Request, res: Response) => {
         res.end();
     })
 })
-router.delete('/:name', userCheck, (req,res) => {
+router.delete('/:name', hasPermissionBit(4), (req,res) => {
     fs.unlink(`${BLENDS_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -86,7 +86,7 @@ router.delete('/:name', userCheck, (req,res) => {
     })
 })
 
-router.post('/upload', userCheck, (req: Request, res: Response) => {
+router.post('/upload', hasPermissionBit(4), (req: Request, res: Response) => {
     //@ts-expect-error
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.json({error:'No files were uploaded.'});
