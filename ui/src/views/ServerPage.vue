@@ -10,7 +10,7 @@
             <b-navbar-item tag="router-link" to="/">
                 Servers Dashboard
             </b-navbar-item>
-            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions >= 2">
+            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissionBits.includes(16)">
                 Admin Panel
             </b-navbar-item>
         </template>
@@ -18,9 +18,6 @@
             <b-navbar-dropdown :label="user.username" right>
                 <b-navbar-item @click="openUserSettings">
                     Settings
-                </b-navbar-item>
-                <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions >= 2">
-                    Admin Panel
                 </b-navbar-item>
                 <hr class="dropdown-divider" aria-role="menuitem">
                 <b-navbar-item @click="logout" class="has-text-danger">
@@ -288,7 +285,7 @@ export default {
         return this.$store.state.servers[this.$route.params.server];
     },
     user() {
-        return this.$store.state.users[this.$route.params.server]
+        return this.$store.getters.getUser(this.$route.params.server)
     },
     baseURL() {
         return this.server.address;

@@ -99,9 +99,28 @@ export default new Vuex.Store({
   getters: {
     servers(state) {
       return state.servers;
+    },
+    getUser: (state) => (serverID) => {
+      let user = state.users[serverID];
+      user.permissionBits = dec2Bits(user.permissions)
+      return user;
     }
   },
   modules: {
 
   }
 })
+
+//Converts a decimal number (ex: 7) into its bits (1 + 2 + 4)
+function dec2Bits(dec) {
+  const bin = dec.toString(2); //convert dec -> bin
+  const rev = [...bin].reverse().join('') //reverse str. could implement backwards for loop but this worked.
+  const numbers = [];
+  for (let i = 0; i < bin.length; i++) {
+      const char = rev.charAt(i);
+      if (char === '1') {
+          numbers.push(1 << i)
+      }
+  }
+  return numbers;
+}
