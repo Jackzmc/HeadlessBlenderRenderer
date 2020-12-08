@@ -19,9 +19,10 @@ export default class DB {
     users: Users
     constructor(file: string) {
         this.#db = new sqlite3.Database(file);
+        this.users = new Users(this.#db);
+
         this.createTables()
         this.setupSettings();
-        this.users = new Users(this.#db);
     }
 
     createTables() {
@@ -61,13 +62,14 @@ export default class DB {
                                 permissions: 99,
                                 tokens: -1
                             }
-                            this.insert(user, (err: NodeJS.ErrnoException) => {
-                                if(err && err.code != 'SQLITE_CONSTRAINT') {
+                            try {
+                                this.users.insert(user)
+                                this.logAction(null, ActionType.CREATE_USER, user);
+                            }catch(err) {
+                                if(err.code != 'SQLITE_CONSTRAINT') {
                                     console.error('[Database] Failed to insert new admin account.\n', err.message)
                                 }
-                                
-                            });
-                            this.logAction(null, ActionType.CREATE_USER, user);
+                            }
                         }
                     })
                 }

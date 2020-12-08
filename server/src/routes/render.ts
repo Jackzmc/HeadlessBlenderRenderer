@@ -3,7 +3,7 @@ import { restrictedCheck, userCheck, hasPermissionBit } from '../modules/Middlew
 const router = Express.Router()
 import { promises, createReadStream } from 'fs';
 import RenderController from '../modules/RenderController';
-import Database, { ActionType } from '../modules/Database.js';
+import Database, { ActionType } from '../modules/Database';
 const {readdir} = promises;
 
 let renderController: RenderController;
