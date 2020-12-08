@@ -43,7 +43,6 @@ export function hasPermissionBit(requiredBits: number | number[], OR: boolean = 
                 if(err) {
                     res.status(401).json({error:'Unauthorized', code: 'UNAUTHORIZED'})
                 }else{
-                    console.log(decoded.username, requiredBits, decoded.permissions)
                     if(decoded.permissions == 99) {
                         res.locals.user = decoded;
                         next();
