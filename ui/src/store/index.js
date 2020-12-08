@@ -49,23 +49,12 @@ export default new Vuex.Store({
       const storedServers = window.localStorage.getItem('blender_servers');
       const userCache = window.sessionStorage.getItem('blender_userCache');
       if(storedServers) {
-          const json = JSON.parse(storedServers);
-          if(Object.keys(json).length > 0) {
-            for(const id in json) {
-              json[id].id = id;
-              commit('loadServer', json[id])
-              dispatch('refreshStatus', json[id])
-            }
-          }else{
-            const server = {
-              id: 'local',
-              name: 'Local Server',
-              address: ''
-            }
-            commit('loadServer', server);
-            dispatch('refreshStatus', server)
-            commit('saveServers')
-          }
+        const json = JSON.parse(storedServers);
+        for(const id in json) {
+          json[id].id = id;
+          commit('loadServer', json[id])
+          dispatch('refreshStatus', json[id])
+        }
       }
       if(userCache) {
         const userJson = JSON.parse(userCache);
@@ -89,10 +78,14 @@ export default new Vuex.Store({
         state.commit('updateServer', server)
       })
       .catch((err) => {
-          console.warn(`Server '${server.id}' status check failed:`,err.message)
-          server.status = (err.message == "Network Error") ? "error" : "offline"
-          state.commit('updateServer', server)
-
+        if(err.response && err.response.status === 401) {
+          server.status = 'logged-out'
+        }else{
+          if(err.message !== "Network Error")
+            console.warn(`Server '${server.id}' status check failed:`, err.message)
+          server.status = "offline"
+        }
+        state.commit('updateServer', server)
       })
     }
   },

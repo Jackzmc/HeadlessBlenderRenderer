@@ -58,13 +58,13 @@
                                 <b-button type="is-success" tag="router-link" to="/server/local">Connect</b-button>
                             </td>
                         </tr> -->
-                        <tr v-for="(server, id) in $store.getters.servers" :key="id" :style="{color: server.status != 'online' ? 'red': null}">
+                        <tr v-for="(server, id) in $store.getters.servers" :key="id" :style="{color: server.status == 'offline' ? 'red': null}">
                             <td>{{server.name}}</td>
                             <td>{{server.address}}</td>
                             <td>{{formatStatus(server)}} </td>
                             <td>
                                 <div class="buttons">
-                                    <b-button v-if="server.status" :type="server.status === 'online' ? 'is-success' : 'is-secondary'" tag="router-link" :to="'/server/' + id">
+                                    <b-button v-if="server.status && server.status !== 'logged-out'" :type="server.status === 'online' ? 'is-success' : 'is-secondary'" tag="router-link" :to="'/server/' + id">
                                         Connect
                                     </b-button>
                                     <b-button v-else type="is-success" tag="router-link" :to="{path: '/login/' + id, query: { redirect: '/server/' + id}} ">
@@ -129,7 +129,6 @@ export default {
         }
         console.log('add', this.$route.params)*/
 
-        this.updateServers();
 
         const settings = JSON.parse(window.localStorage.blender_settings|| {});
         this.settings = {...this.settings,...settings}
@@ -198,7 +197,7 @@ export default {
             }
         },
         formatStatus({ status, data }) {
-            if(!status || status === "loading") return "Not Logged In"
+            if(!status || status === "loading" || status === 'logged-out') return "Not Logged In"
             if(status === "offline" || status === "error") return `Offline`
             if(data.active) return `Rendering - ${data.blend}`
             return `Idle`
