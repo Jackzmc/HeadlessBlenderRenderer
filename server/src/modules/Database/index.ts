@@ -142,8 +142,7 @@ export default class DB {
     }
 
     logAction(user: User, type: ActionType, ...extras: any[]) {
-        const {permissions} = user || {permissions: -1};
-        const username = user ? `${user.username} (${getPermissionRole(user.permissions)})` : null
+        const username = user ? `${user.username} (${user.permissions})` : null
 
         let msg: string;
         switch(type) {
@@ -179,17 +178,6 @@ export default class DB {
         )
         console.info(`[${new Date().toLocaleTimeString()}] [Server] ${msg}`)
         return this;
-    }
-}
-
-function getPermissionRole(permissons: number) {
-    switch(permissons) {
-        case 0: return 'Restricted'
-        case 1: return 'Normal'
-        case 2: return 'Admin'
-        case 99: return 'Default Admin'
-        default:
-            return 'Unknown'
     }
 }
 
