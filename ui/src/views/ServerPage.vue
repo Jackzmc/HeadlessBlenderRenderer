@@ -56,7 +56,7 @@
                             <div class="level-left">
                                 <div class="level-item">
                                     <div class="buttons">
-                                        <b-button type="is-danger" outlined @click="cancelRender()">
+                                        <b-button type="is-danger" outlined @click="cancelRender()" :disabled="!hasPermission">
                                             Stop
                                         </b-button>
                                         <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
@@ -137,7 +137,7 @@
                         <div class="level-left">
                             <div class="level-item">
                                 <div class="buttons">
-                                    <b-button :disabled="blend_file==null" type="is-success" @click="startRender()">
+                                    <b-button :disabled="blend_file==null||!hasPermission" type="is-success" @click="startRender()">
                                         Start Render
                                     </b-button>
                                     <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
@@ -310,8 +310,14 @@ export default {
     consoleName() {
       return `Console Output (${this.render.logs.length} lines)`
     },
+    hasPermission() {
+        return this.user.permissionBits.includes(8)
+    },
     renderStatus() {
-        return !this.blend_file ? 'Select a blend file to start' : 'Idle'
+        if(this.hasPermission)
+            return !this.blend_file ? 'Select a blend file to start' : 'Idle'
+        else 
+            return 'You lack permissions to start/stop renders.'
     },
     socketStatus() {
       return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected from socket server</span>` : `<span class='has-text-success'>Connected to socket server</span>`
