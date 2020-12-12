@@ -14,6 +14,10 @@ export enum ActionType {
     UPDATE_SETTINGS
 }
 
+interface Settings {
+    [key: string]: boolean | string | number;
+}
+
 export default class DB {
     #db: sqlite3.Database
     users: Users
@@ -105,14 +109,16 @@ export default class DB {
             if(err) {
                 callback(err, null);
             }else{
-                let settings = {}
+                let settings: Settings = {}
                 rows.forEach(row => {
                     switch(row.type) {
                         case "boolean": 
-                            settings[row.name] = row.value === "true"
+                            settings[row.name] =  row.value === "true"
+                            break;
                         
-                        case 'integer': 
+                        case "integer": 
                             settings[row.name] = parseInt(row.value)
+                            break;
                         
                         default:
                             settings[row.name] = row.value
