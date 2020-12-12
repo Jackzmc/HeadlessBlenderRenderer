@@ -22,7 +22,7 @@ router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Respon
 router.get('/logs', hasPermissionBit([0,1]), (req,res) => {
     res.json(renderController.getLogs())
 })
-router.get('/status', hasPermissionBit([0,1]), (req,res) => {
+router.get('/status', (req,res) => {
     res.json(renderController.getStatus()) 
 })
 router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
