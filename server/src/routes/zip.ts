@@ -69,7 +69,7 @@ router.delete('/:name', hasPermissionBit(2), (req,res) => {
         return res.status(500).json({error:err.message})
     })
 })
-router.get('/', hasPermissionBit(2), async(req,res) => {
+router.get('/', hasPermissionBit(0), async(req,res) => {
     try {
         const files_raw = await fs.readdir(ZIP_DIR);
         const promises = [];

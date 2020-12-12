@@ -13,7 +13,7 @@ router.use(fileUpload({
     abortOnLimit: true,
 }));
 
-router.get('/', hasPermissionBit([4,8], true), async(req: Request, res: Response) => {
+router.get('/', hasPermissionBit(0), async(req: Request, res: Response) => {
     try {
         const entries = await fs.readdir(BLENDS_DIR, {withFileTypes: true});
         const promises = [];
