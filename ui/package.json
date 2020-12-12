@@ -10,7 +10,7 @@
   "dependencies": {
     "@mdi/font": "^5.3.45",
     "axios": "^0.19.2",
-    "buefy": "^0.8.20",
+    "buefy": "^0.9.4",
     "date-fns": "^2.14.0",
     "humanize-duration": "^3.23.1",
     "pretty-ms": "^7.0.0",
