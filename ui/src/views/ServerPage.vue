@@ -15,6 +15,16 @@
             </b-navbar-item>
         </template>
         <template slot="end">
+            <b-navbar-item tag="div">
+                <b-tooltip position="is-left" multilined>
+                    <div class="tag"><b-icon icon="currency-usd-circle-outline" /><span>{{formatNumber(user.tokens)}}</span></div>
+                    <template v-slot:content>
+                        <br>
+                        The amount of render tokens you have. 
+                        One token is 10 minutes of rendering.
+                    </template>
+                </b-tooltip>
+            </b-navbar-item>
             <b-navbar-dropdown :label="user.username" right>
                 <b-navbar-item @click="openUserSettings">
                     Settings
@@ -526,6 +536,9 @@ export default {
             path: `/login/${this.$route.params.server}`,
             query: {loggedout: true, ret:5}
         })
+    },
+    formatNumber(number) {
+        return number ? number.toLocaleString() : 0
     }
   },
   created() {

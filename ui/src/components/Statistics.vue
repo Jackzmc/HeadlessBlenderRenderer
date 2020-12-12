@@ -139,6 +139,7 @@ export default {
     }, 
     mounted() {
         this.socket.on('stat', (data) => {
+            if(!data) return;
             if(!this.initial && data.ui_version && semvar(data.ui_version,this.$VERSION) == 1) {
                 console.info(`Current Version: ${this.$VERSION} | Latest: ${data.ui_version}`)
                 this.$buefy.snackbar.open({
