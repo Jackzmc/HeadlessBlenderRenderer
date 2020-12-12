@@ -1,25 +1,25 @@
+import { hasPermissionBit } from '../../../../server/src/modules/Middlewares';
 <template>
 <div class="box">
     <h3 class='title is-3'>Download ZIPs <a @click='refresh' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
     <hr>
-    <b-table
-    :data="list"
-    striped
-    hoverable
-    narrowed
-    :loading="loading"
-    >
-
-        <template slot-scope="props">
-            <b-table-column field="name" label="Name">
+    <div v-if="hasPermission">
+        <b-table
+        :data="list"
+        striped
+        hoverable
+        narrowed
+        :loading="loading"
+        >
+            <b-table-column field="name" label="Name" v-slot="props">
                 {{ props.row.name }}
             </b-table-column>
 
-            <b-table-column field="size" label="Size">
+            <b-table-column field="size" label="Size" v-slot="props">
                 {{ props.row.size | humanize }}
             </b-table-column>
 
-            <b-table-column field="date" label="Last Modified">
+            <b-table-column field="date" label="Last Modified" v-slot="props">
                 {{ props.row.date }}
             </b-table-column>
 
@@ -30,34 +30,42 @@
                 </div>
             </b-table-column>
 
-        </template>
-
-
-        <template slot="empty">
-            <section class="section">
-                <div class="content has-text-grey has-text-centered">
-                    <p>
-                        <b-icon
-                            icon="emoticon-sad"
-                            size="is-large">
-                        </b-icon>
-                    </p>
-                    <p>No ZIPs were found.</p>
-                </div>
-            </section>
-        </template>
-    </b-table>
+            <template slot="empty">
+                <section class="section">
+                    <div class="content has-text-grey has-text-centered">
+                        <p>
+                            <b-icon
+                                icon="emoticon-sad"
+                                size="is-large">
+                            </b-icon>
+                        </p>
+                        <p>No ZIPs were found.</p>
+                    </div>
+                </section>
+            </template>
+        </b-table>
+    </div>
+    <div v-else>
+        <b-message title="No Permission" type="is-danger" :closable="false">
+            You do not have permission to download ZIPs.
+        </b-message>
+    </div>
 </div>
 </template>
 
 <script>
 export default {
-    props: ['server'],
+    props: ['server', 'bits'],
     data() {
         return {
             loading: true,
             list: [],
             tokens: {}
+        }
+    },
+    computed: {
+        hasPermission() {
+            return this.bits.includes(2)
         }
     },
     methods: {

@@ -360,6 +360,9 @@ export default {
                 setBlend: (value) => {
                     this.blend_file = value;
                 }
+            },
+            props: {
+                bits: this.user.permissionBits
             }
         })
     },
@@ -370,7 +373,8 @@ export default {
             trapFocus: true,
             props: {
                 user: this.$store.state.users[this.server.id],
-                server: this.server
+                server: this.server,
+                
             }
         })
     },
@@ -380,7 +384,8 @@ export default {
             component: () => import('../components/modals/ZIPDownloader'),
             trapFocus: true,
             props: {
-                server: this.server
+                server: this.server,
+                bits: this.user.permissionBits
             }
         })
     },

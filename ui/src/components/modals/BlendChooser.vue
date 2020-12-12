@@ -16,23 +16,21 @@
                 hoverable
                 :loading="loading"
                 >
-                    <template slot-scope="props">
-                        <b-table-column field="name" label="Name" sortable>
-                            {{ props.row.file }}
-                        </b-table-column>
-                        <b-table-column field="size" label="Size" sortable>
-                            {{ props.row.size | humanize}}
-                        </b-table-column>
-                        <b-table-column field="timestamp" label="Last Modified" sortable>
-                            {{ props.row.date }}
-                        </b-table-column>
-                        <b-table-column label="Action" >
-                            <div class="buttons">
-                                <a @click="chooseBlend(props.row.file)" class="button is-primary">Use</a>
-                                <b-button @click="deleteBlend(props.row.file)" type="is-danger"  icon-left="delete" />
-                            </div>
-                        </b-table-column>
-                    </template>
+                    <b-table-column field="name" label="Name" sortable v-slot="props">
+                        {{ props.row.file }}
+                    </b-table-column>
+                    <b-table-column field="size" label="Size" sortable v-slot="props">
+                        {{ props.row.size | humanize}}
+                    </b-table-column>
+                    <b-table-column field="timestamp" label="Last Modified" sortable v-slot="props">
+                        {{ props.row.date }}
+                    </b-table-column>
+                    <b-table-column label="Action" v-slot="props" :visible="hasPermission">
+                        <div class="buttons">
+                            <a @click="chooseBlend(props.row.file)" class="button is-primary">Use</a>
+                            <b-button @click="deleteBlend(props.row.file)" type="is-danger"  icon-left="delete" />
+                        </div>
+                    </b-table-column>
 
 
                     <template slot="empty">
@@ -57,14 +55,12 @@
                 hoverable
                 :loading="loading"
                 >
-                    <template slot-scope="props">
-                        <b-table-column field="name" label="Name">
-                            {{ props.row.folder }}
-                        </b-table-column>
-                        <b-table-column label="Files">
-                            {{ props.row.files.length }}
-                        </b-table-column>
-                    </template>
+                    <b-table-column field="name" label="Name" v-slot="props">
+                        {{ props.row.folder }}
+                    </b-table-column>
+                    <b-table-column label="Files" v-slot="props">
+                        {{ props.row.files.length }}
+                    </b-table-column>
 
                     <template slot="detail" slot-scope="props">
                         <strong>Contents</strong>
@@ -88,7 +84,7 @@
             </b-tab-item>
         </b-tabs>
         <hr>
-        <div class="columns">
+        <div class="columns" v-if="hasPermission">
             <div class="column">
                 <h5 class="title is-5">Upload Blend Files</h5>
                 <p>Upload any .blend files, overwriting existing files.</p>
@@ -150,6 +146,11 @@
                 </b-field>
             </div>
         </div>
+        <div v-else>
+            <b-message title="No Permission" type="is-danger" :closable="false">
+                You do not have permission to upload blends or blend zips.
+            </b-message>
+        </div>
     </section>
 </div>
 </template>
@@ -157,6 +158,7 @@
 <script>
 export default {
     name: 'BlendChooser',
+    props: ['bits'],
     data() {
         return {
             uploader: null, //SocketIOFileClient
@@ -174,6 +176,11 @@ export default {
                 uploading: false
             },
             loading: false //are the lists loading?
+        }
+    },
+    computed: {
+        hasPermission() {
+            return this.bits.includes(4)
         }
     },
     methods:{
