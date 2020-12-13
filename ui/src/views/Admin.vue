@@ -34,37 +34,38 @@
         <b-tabs type="is-toggle" @input="onTabChange">
             <b-tab-item label="Users">
                 <hr>
+                <h4 class="title is-4">Registered Users</h4>
+                <p class="subtitle is-6">Click on any user to edit. The default user cannot be edited.</p>
+                <b-table :data="users" :selected.sync="selected" @select="editUser" :loading="loading">
+                    <b-table-column field="username" label="Username" v-slot="props">
+                        <p>{{props.row.username}}</p>
+                    </b-table-column>
+                    <b-table-column field="email" label="Email" v-slot="props">
+                        <p>{{props.row.email}}</p>
+                    </b-table-column>
+                    <b-table-column field="permissions" label="Permissions" v-slot="props">
+                        <p>{{props.row.permissions == 99 ? 'Local Admin' : props.row.permissions}}</p>
+                    </b-table-column>
+                    <b-table-column field="last_login" label="Last Login" v-slot="props">
+                        {{props.row.last_login ? getDate(props.row.last_login) : 'Never'}}
+                    </b-table-column>
+                    <b-table-column field="tokens" label="Render Tokens" v-slot="props">
+                        {{props.row.tokens ? props.row.tokens.toLocaleString() : null}}
+                    </b-table-column>
+                    <b-table-column label="Edit" v-slot="props">
+                        <a v-if="props.row.permissions < 99" @click="editUser(props.row)"><b-icon icon="pencil" /></a>
+                    </b-table-column>
+                    <template slot="empty">
+                        <section class="section">
+                            <div class="content has-text-grey has-text-centered">
+                                <p>No registered users were found. Wait, what?</p>
+                            </div>
+                        </section>
+                    </template>
+                </b-table>
+                <hr>
                 <div class="columns">
-                    <div class="column is-8">
-                        <h4 class="title is-4">Registered Users</h4>
-                        <p class="subtitle is-6">Click on any user to edit. The default user cannot be edited.</p>
-                        <b-table :data="users" :selected.sync="selected" @select="editUser" :loading="loading">
-                            <template slot-scope="props">
-                                <b-table-column field="username" label="Username">
-                                    <p>{{props.row.username}}</p>
-                                </b-table-column>
-                                <b-table-column field="email" label="Email">
-                                    <p>{{props.row.email}}</p>
-                                </b-table-column>
-                                <b-table-column field="permissions" label="Permissions">
-                                    <p>{{props.row.permissions}}</p>
-                                </b-table-column>
-                                <b-table-column field="last_login" label="Last Login">
-                                    {{props.row.last_login}}
-                                </b-table-column>
-                                <b-table-column label="Edit">
-                                    <a v-if="props.row.permissions < 99" @click="editUser(props.row)"><b-icon icon="pencil" /></a>
-                                </b-table-column>
-                            </template>
-                            <template slot="empty">
-                                <section class="section">
-                                    <div class="content has-text-grey has-text-centered">
-                                        <p>No registered users were found. Wait, what?</p>
-                                    </div>
-                                </section>
-                            </template>
-                        </b-table>
-                        <hr>
+                    <div class="column">
                         <p class="title is-4">Permission Flags Calculator</p>
                         <p class="subtitle is-6">Add all the flag bits together to calculate a permission number</p>
                         <div class="field" v-for="(flag,index) in $options.flags" :key="index">
@@ -76,7 +77,7 @@
                         <p><strong>Permission Number: </strong>{{permissionNumber}}</p>
                     </div>
                     <div class="column" v-if="selected">
-                        <h4 class="title is-4 has-text-centered">Edit User Info</h4>
+                        <h5 class="title is-5 has-text-centered">Edit User Info</h5>
                         <form @submit.prevent="updateUser">
                             <b-field label="Username" message="Username can't be changed.">
                                 <b-input type="text" v-model="form.updateUser.username" disabled readonly />
@@ -106,7 +107,7 @@
                         </form>
                     </div>
                     <div class="column" v-else>
-                        <h4 class="title is-4 has-text-centered">Add User</h4>
+                        <h5 class="title is-5 has-text-centered">Add User</h5>
                         <form @submit.prevent="addUser">
                             <b-field label="Username">
                                 <b-input type="text" v-model="form.addUser.username" required/>
@@ -282,6 +283,9 @@ export default {
         }
     },
     methods: {
+        getDate(ms) {
+            return new Date(ms).toLocaleString()
+        },
         onTabChange(type) {
             if(type === 'info' && !this.serverInfo) {
                 Axios.get('/api/stats')
