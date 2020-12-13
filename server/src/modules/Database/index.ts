@@ -67,7 +67,7 @@ export default class DB {
                         }else{
                             const user = {
                                 username: 'admin',
-                                email: 'admin@localhost',
+                                email: null,
                                 password: hash,
                                 permissions: 99,
                                 tokens: -1
