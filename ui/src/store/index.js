@@ -95,7 +95,7 @@ export default new Vuex.Store({
     },
     getUser: (state) => (serverID) => {
       let user = state.users[serverID];
-      user.permissionBits = dec2Bits(user.permissions)
+      user.permissionBits = user.permissions !== 99 ? dec2Bits(user.permissions) : [1,2,4,8,16,32,64,128,256]
       return user;
     }
   },
