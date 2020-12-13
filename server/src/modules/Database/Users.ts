@@ -26,7 +26,7 @@ export default class Users {
 
     fetchAll(): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.#db.get(
+            this.#db.all(
                 `SELECT * FROM user`,
                 (err: NodeJS.ErrnoException, rows: any) =>{
                     if(err) 
