@@ -50,7 +50,7 @@ export default class Users {
             )
         })
     }
-    update(user: User) {
+    update(user: User): Promise<void> {
         return new Promise((resolve, reject) => {
             this.#db.run(
                 'UPDATE user SET username = ?, email = ?, password = ?, permissions = ? WHERE username = ?',
@@ -73,7 +73,7 @@ export default class Users {
             )
         });
     }
-    delete(username: string) {
+    delete(username: string): Promise<void> {
         return new Promise((resolve, reject) => {
             this.#db.run(
                 'DELETE FROM user WHERE username = ?',
@@ -86,7 +86,7 @@ export default class Users {
         })
     }
 
-    changePassword(username: string, password: string) {
+    changePassword(username: string, password: string): Promise<void> {
         return new Promise((resolve, reject) => {
             bcrypt.hash(password, SALT_ROUNDS, (err: NodeJS.ErrnoException, hash: string) => {
                 if(err) return reject(err)
