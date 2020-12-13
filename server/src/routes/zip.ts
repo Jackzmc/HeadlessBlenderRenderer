@@ -66,7 +66,7 @@ router.delete('/:name', hasPermissionBit(2), (req,res) => {
         if(err.code === "ENOENT") {
             return res.status(500).json({error:"That zip does not exist."})
         }
-        return res.status(500).json({error:err.message})
+        return res.status(500).json({error: err.message, code: 'DELETE_ERROR'})
     })
 })
 router.get('/', hasPermissionBit(2), async(req,res) => {
@@ -94,7 +94,6 @@ router.get('/', hasPermissionBit(2), async(req,res) => {
             res.json({files})
         }).catch((err) => {
             res.status(500).json({error:err.message, code:'LIST_ERROR'})
-            console.error('[Error]',err.message)
         })
     }catch(err) {
         console.log(err)

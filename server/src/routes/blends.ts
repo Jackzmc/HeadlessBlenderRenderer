@@ -56,7 +56,7 @@ router.get('/', hasPermissionBit(0), async(req: Request, res: Response) => {
         })
     }catch(err) {
         console.log(err)
-        res.status(500).json({error:err.message})
+        res.status(500).json({error: err.message, code: 'GENERIC_ERROR'})
     }
 })
 router.get('/:name', hasPermissionBit(4), (req: Request, res: Response) => {
@@ -73,7 +73,7 @@ router.get('/:name', hasPermissionBit(4), (req: Request, res: Response) => {
         res.end();
     })
 })
-router.delete('/:name', hasPermissionBit(4), (req,res) => {
+router.delete('/:name', hasPermissionBit(4), (req: Request,res: Response) => {
     fs.unlink(`${BLENDS_DIR}/${req.params.name}`)
     .then(() => {
         res.send()
@@ -97,7 +97,7 @@ router.post('/upload', hasPermissionBit(4), (req: Request, res: Response) => {
     .forEach((file: any) => {
         promises.push(new Promise((resolve, reject) => {
             if(!file.name.endsWith(".blend")) return resolve({failed: file.name})
-            file.mv(path.join(BLENDS_DIR, file.name), (err) => {
+            file.mv(path.join(BLENDS_DIR, file.name), (err: Error) => {
                 if(err) {
                     resolve({failed: file.name})
                 }else{
@@ -117,7 +117,7 @@ router.post('/upload', hasPermissionBit(4), (req: Request, res: Response) => {
         res.json({ uploads: successful, failures })
     })
     .catch(err => {
-
+        res.status(500).json({error: err, CODE: 'GENERIC_ERROR'})
     })
 })
 export default router;
