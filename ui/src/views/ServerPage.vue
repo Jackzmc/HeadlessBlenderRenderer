@@ -619,7 +619,7 @@ export default {
         this.render.last_frame_time = Date.now()
           //console.log('FRAME:',data)
       })
-      .on('render_start',({current_frame, max_frames, blend, duration, startedID}) => {
+      .on('render_start',({current_frame, max_frames, blend, duration, startedByID}) => {
           this.render.active = true;
           this.render.current_frame = current_frame || 0;
           this.render.max_frames = max_frames;
@@ -628,7 +628,7 @@ export default {
           this.render.lastFrameTime = null;
           this.render.lastFrameDurations = [];
 
-          this.$buefy.toast.open(`${startedID} has started rendering ${blend}`)
+          this.$buefy.toast.open(`${startedByID} has started rendering ${blend}`)
       })
       .on('render_stop', (data) => {
           this.render.active = false;

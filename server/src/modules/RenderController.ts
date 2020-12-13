@@ -22,6 +22,8 @@ interface LogObject {
     message: string
 }
 
+type StopReason = "CANCELLED" | "OUT_OF_TOKENS" | "ERROR"
+
 export default class RenderController {
     active: boolean = false;
     current_frame: number = 0;
@@ -33,6 +35,8 @@ export default class RenderController {
     #process: any
     #startedByUsername: string;
     #last_stats
+    #stopReason: StopReason
+    #previousRender: any
 
     #io = null
     #timer: NodeJS.Timeout
@@ -88,6 +92,8 @@ export default class RenderController {
                     this.all_frames ? 'all' : this.max_frames.toString()
                     //data.extra_args
                 ].concat(py_scripts)
+                this.#previousRender = null;
+                this.#stopReason = null;
                 const renderProcess = spawn(render_prefix, args, {
                     cwd: process.env.HOME_DIR,
                     stdio: ['ignore', 'pipe', 'pipe']
@@ -139,6 +145,13 @@ export default class RenderController {
                         time_taken,
                         blend: this.blend
                     })
+                    this.#previousRender = {
+                        blend: this.blend,
+                        reason: this.#stopReason,
+                        time_taken,
+                        started: this.#started,
+                        startedByID: this.#startedByUsername
+                    }
                     //clear buffer logs
                     this.#logs = []
                     this.active = false
@@ -161,8 +174,9 @@ export default class RenderController {
             this.#logs.splice(0, this.#logs.length - 50)
         }
     }
-    async cancelRender(): Promise<void> {
+    async cancelRender(reason?: StopReason): Promise<void> {
         if(this.active) {
+            this.#stopReason = reason || "CANCELLED";
             this.#process.kill('SIGTERM')
             return null;
         }else{
@@ -199,12 +213,13 @@ export default class RenderController {
             max_frames: this.max_frames,
             current_frame: this.current_frame,
             blend: this.blend,
-            startedID: this.#startedByUsername,
+            startedByID: this.#startedByUsername,
             duration: this.active ? {
                 formatted: time_taken,
                 raw: Date.now() - this.#started,
                 started: this.#started
             } : null,
+            lastRender: this.#previousRender
         }
 }
     getStatistics() {
