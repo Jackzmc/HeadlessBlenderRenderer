@@ -1,0 +1,36 @@
+todo:
+> render tokens 
+x admin render log
+x user creation and last login dates
+- dash settings: & version btm right
+    x update interval 
+    x im/ex port 
+    > quick add. route? /add/:name/:addr
+- finish preview feature
+x granular permissions: goes with render tokens 
+    0 -> Disabled
+    1 -> Restricted/no perms/ view only 
+    2 -> Can download zips 
+    3 -> Can upload blends & blend zips
+    4 -> Can start/stop renders 
+    5 -> View admin logs/info
+    6 -> Can edit server settings 
+    7 -> Manage Users
+    8 -> Can edit other admins
+    99 -> Default Admin. Untouchable.
+> implement granular perm system (middleware)
+- mySQL support: Allows for linked instances or users
+    - Possibly only users linked
+- top right menu: show permissions
+
+registration 2021
+
+0 -> Disabled
+1 -> Restricted/no perms/ view only 
+2 -> Can download zips 
+4 -> Can upload blends & blend zips
+8 -> Can start/stop renders 
+16 -> View admin logs/info
+32 -> Can edit server settings 
+64 -> Manage Users
+128 -> Can edit other admins

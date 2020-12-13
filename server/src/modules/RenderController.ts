@@ -7,6 +7,7 @@ import Databasse, { ActionType } from './Database'
 import { Socket } from 'socket.io'
 import { Database } from 'sqlite3'
 import DB from './Database';
+import User from '../types';
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 
@@ -30,6 +31,7 @@ export default class RenderController {
     #logs: LogObject[] = [];
     blend: string
     #process: any
+    #startedByUsername: string;
     #last_stats
 
     #io = null
@@ -47,11 +49,12 @@ export default class RenderController {
     getDatabase() {
         return this.#db;
     }
-    startRender(blend: string, options: RenderOptions = {}) {
+    startRender(blend: string, user: User, options: RenderOptions = {}) {
         return new Promise(async(resolve,reject) => {
             if(process.platform === "win32") reject(new Error('Renders cannot be started on windows machines. Sorry.'))
             if(!blend) return reject(new Error('Missing blend property'))
             this.blend = blend;
+            this.#startedByUsername = user.username;
             const render_prefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
             const py_scripts = options.python_scripts||[].map(v => `-P "${v}"`);
             if(!options.frames) {
@@ -196,6 +199,7 @@ export default class RenderController {
             max_frames: this.max_frames,
             current_frame: this.current_frame,
             blend: this.blend,
+            startedID: this.#startedByUsername,
             duration: this.active ? {
                 formatted: time_taken,
                 raw: Date.now() - this.#started,

@@ -19,10 +19,10 @@ router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Respon
     .then(() => res.json({success: true}))
     .catch(err => res.status(500).json({error: err.message}))
 })
-router.get('/logs', hasPermissionBit([0,1]), (req,res) => {
+router.get('/logs', hasPermissionBit([0,1]), (req: Request, res: Response) => {
     res.json(renderController.getLogs())
 })
-router.get('/status', (req,res) => {
+router.get('/status', (req: Request, res: Response) => {
     res.json(renderController.getStatus()) 
 })
 router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
@@ -36,7 +36,7 @@ router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
         python_scripts: req.body.python_scripts as string[] || []
     }
     db.logAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
-    renderController.startRender(req.params.blend, options)
+    renderController.startRender(req.params.blend, res.locals.user, options)
     .then((response) => {
         res.json(response)
     })
@@ -44,7 +44,7 @@ router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
         res.status(500).json({error: err.message})
     })
 })
-router.get('/preview', hasPermissionBit([0,1]), async(req,res) => {
+router.get('/preview', hasPermissionBit([0,1]), async(req: Request,res: Response) => {
     if(renderController.isRenderActive()) {
         try {
             const files = await readdir(process.env.HOME_DIR+"/tmp")
