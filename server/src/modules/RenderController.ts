@@ -30,8 +30,9 @@ export default class RenderController {
     max_frames: number = 0;
     #started: number = null;
     all_frames: boolean | number = false;
-    #logs: LogObject[] = [];
     blend: string
+
+    #logs: LogObject[] = [];
     #process: any
     #startedByUsername: string;
     #last_stats
@@ -39,7 +40,8 @@ export default class RenderController {
     #previousRender: any
 
     #io = null
-    #timer: NodeJS.Timeout
+    #statsTimer: NodeJS.Timeout
+    #tokenTimer: NodeJS.Timeout
     #db: DB
     constructor(io: Socket, db: DB) {
         this.#io = io;
@@ -94,6 +96,14 @@ export default class RenderController {
                 ].concat(py_scripts)
                 this.#previousRender = null;
                 this.#stopReason = null;
+                const tokens = user.tokens || 0;
+                if(tokens != -1 && user.permissions !== 99) {
+                    this.#tokenTimer = setInterval(() => {
+                        user.tokens--;
+                        this.#db.users.update(user);
+                    }, 1000 * 60 * 10);
+                }
+
                 const renderProcess = spawn(render_prefix, args, {
                     cwd: process.env.HOME_DIR,
                     stdio: ['ignore', 'pipe', 'pipe']
@@ -152,6 +162,7 @@ export default class RenderController {
                         started: this.#started,
                         startedByID: this.#startedByUsername
                     }
+                    clearInterval(this.#tokenTimer);
                     //clear buffer logs
                     this.#logs = []
                     this.active = false
@@ -189,7 +200,7 @@ export default class RenderController {
             this.#last_stats = stats;
             this.emit('stat', stats)
             console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
-            this.#timer = setInterval(() => {
+            this.#statsTimer = setInterval(() => {
                 Statistics().then(stats => {
                     this.#last_stats = stats;
                     this.emit('stat', stats)
@@ -198,7 +209,7 @@ export default class RenderController {
         }
         catch(err) {
             console.error("[ERROR] Statistics have been disabled due to an error.\n", err.message)
-            clearInterval(this.#timer);
+            clearInterval(this.#statsTimer);
         }
     }
 
