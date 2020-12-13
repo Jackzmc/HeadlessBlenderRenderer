@@ -619,7 +619,7 @@ export default {
         this.render.last_frame_time = Date.now()
           //console.log('FRAME:',data)
       })
-      .on('render_start',({current_frame, max_frames, blend, duration}) => {
+      .on('render_start',({current_frame, max_frames, blend, duration, startedID}) => {
           this.render.active = true;
           this.render.current_frame = current_frame || 0;
           this.render.max_frames = max_frames;
@@ -627,6 +627,8 @@ export default {
           this.render.started = duration.started || Date.now()
           this.render.lastFrameTime = null;
           this.render.lastFrameDurations = [];
+
+          this.$buefy.toast.open(`${startedID} has started rendering ${blend}`)
       })
       .on('render_stop', (data) => {
           this.render.active = false;
@@ -638,6 +640,7 @@ export default {
               hasIcon: true,
               icon: 'alert-circle'
           })
+          this.$buefy.toast.open(`The render for ${this.blend_file} has ended.`)
           this.blend_file = null;
       })
       /*const arr = ["test","error: blah", "warning. sRGB","frame: blah. ", "Saved: 'file/0035.png'"]
