@@ -670,4 +670,7 @@ export default {
     height: .1em !important;
     padding: 0 !important
 }
+html, body {
+    background-color: rgb(240, 240, 240);
+}
 </style>
