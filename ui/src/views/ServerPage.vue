@@ -48,8 +48,8 @@
                     <div v-if="render.active" class="notification is-dark">
                         <h6 class="title is-6">Rendering <span class="has-text-success">{{blend_file}}</span></h6>
                         <progress class="progress is-small renderprogress is-success" :value='render.current_frame' :max='render.max_frames'>{{framePercent}}</progress>
-                        <p><strong>ETA: </strong>{{eta | formatDuration}}</p>
-                        <p><strong>Average time per frame: </strong>{{averageTimePerFrame | formatDuration }}</p>
+                        <p><strong>ETA: </strong>{{formatDuration(eta)}}</p>
+                        <p><strong>Average time per frame: </strong>{{formatDuration(averageTimePerFrame)}}</p>
                         <br>
                         <nav class="level" > 
                         <!-- Left side -->
@@ -203,7 +203,7 @@
                     </div>
                     <div class="level-right">
                         <b-tooltip label="View the last rendered frame">
-                            <b-button v-if="render.current_frame > 0" type="is-info">Preview</b-button>
+                            <b-button v-if="render.current_frame > 0 && render.active" type="is-info" @click="openPreview">Preview</b-button>
                         </b-tooltip>
                     </div>
                 </nav>
@@ -342,6 +342,11 @@ export default {
     
   },
   methods:{
+    formatDuration(str) {
+        if(str == -1) return "Calculating..."
+        if(str <= 1000) return shortEnglishHumanizer(str, { units: ['s', 'ms'], round: true})
+        return humanizeDuration(str, {largest: 2, maxDecimalPoints: 1})
+    },
     togglePause() {
         //if currently paused, to be resumed, fill backlog
         if(this.options.console.paused) {
@@ -427,6 +432,35 @@ export default {
                 bits: this.user.permissionBits
             },
         })
+    },
+    async openPreview() {
+        const res = await fetch(`${this.server.address}/api/render/preview`, {headers: {
+            Authorization: this.server.jwt
+        }});
+        const frame = res.headers.get('x-frame')
+        if(res.headers.has('x-frame')) {
+            const blob = await res.blob()
+            const h = this.$createElement
+            const vnode = h('p', { class: "image is-4by3" }, [
+                h('img', { attrs: { src:  URL.createObjectURL(blob), alt: frame }})
+            ])
+            this.$buefy.modal.open({
+                content: [ vnode ]
+            })
+        }else{
+            try {
+                const json = await res.json();
+                this.$buefy.snackbar.open({
+                    type: 'is-danger',
+                    message: `Could not get a preview: ${json.code}`,
+                })
+            }catch(err) {
+                this.$buefy.snackbar.open({
+                    type: 'is-danger',
+                    message: `Could not get a preview: ${err.message}`,
+                })
+            }
+        }
     },
     startRender() {
         if(!this.blend_file) {
@@ -624,7 +658,7 @@ export default {
           this.render.current_frame = current_frame || 0;
           this.render.max_frames = max_frames;
           this.blend_file = blend
-          this.render.started = duration.started || Date.now()
+          this.render.started = duration ? duration.started : Date.now()
           this.render.lastFrameTime = null;
           this.render.lastFrameDurations = [];
 
@@ -632,7 +666,7 @@ export default {
       })
       .on('render_stop', (data) => {
           this.render.active = false;
-          const duration = this.filters.formatDuration(data.timestmap);
+          const duration = this.formatDuration(data.timestmap);
           this.$buefy.dialog.alert({
               title: 'Render Complete',
               message: `<b>${this.blend_file}</b> has been successfully rendered. Took <b>${duration}</b>`,
@@ -650,13 +684,6 @@ export default {
         if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
       }, 1000)*/
   },
-  filters: {
-    formatDuration(str) {
-        if(str == -1) return "Calculating..."
-        if(str <= 1000) return shortEnglishHumanizer(str, { units: ['s', 'ms'], round: true})
-        return humanizeDuration(str, {largest: 2, maxDecimalPoints: 1})
-    }
-  }
 }
 </script>
 
