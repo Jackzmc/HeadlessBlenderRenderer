@@ -6,7 +6,8 @@ import Statistics from './modules/Statistics'
 import corsModule from 'cors'
 import RenderController from './modules/RenderController';
 const cors = corsModule({
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    exposedHeaders: ['x-frame']
 })
 
 router.use(bodyParser.urlencoded({ extended: false, limit: '500mb'}))
