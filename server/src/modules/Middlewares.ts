@@ -48,6 +48,7 @@ export function hasPermissionBit(requiredBits: number | number[], OR: boolean = 
                         next();
                     }else{
                         const bits: number[] = dec2Bits(decoded.permissions);
+                        decoded.permissionBits = bits;
                         if(Array.isArray(requiredBits)) {
                             const hasPermission = OR ? bits.find(v => requiredBits.includes(v)) : bits.every(v => requiredBits.includes(v))
                             if(hasPermission) {
