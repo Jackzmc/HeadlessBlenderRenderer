@@ -7,6 +7,7 @@
         {"id": "View", "description": "View admin logs & info"},
         {"id": "ServerSettings", "description": "Can edit server settings"},
         {"id": "ManageUsers", "description": "Manage Users"},
-        {"id": "EditOthers", "description": "Can edit other admins"}
+        {"id": "EditOthers", "description": "Can edit other admins"},
+        {"id": "UnlimitedTokens", "description": "Has unlimited tokens"}
     ]
 }
