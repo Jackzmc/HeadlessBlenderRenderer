@@ -50,7 +50,7 @@
                         {{props.row.last_login ? getDate(props.row.last_login) : 'Never'}}
                     </b-table-column>
                     <b-table-column field="tokens" label="Render Tokens" v-slot="props">
-                        {{props.row.tokens ? props.row.tokens.toLocaleString() : null}}
+                        {{getRenderTokens(props.row)}}
                     </b-table-column>
                     <b-table-column label="Edit" v-slot="props">
                         <a v-if="props.row.permissions < 99" @click="editUser(props.row)"><b-icon icon="pencil" /></a>
@@ -97,6 +97,9 @@
                                 </b-select>
                                 </b-tooltip>
                             </b-field>
+                            <b-field label="Render Tokens">
+                                <b-numberinput v-model="form.updateUser.tokens" step="1" exponential />
+                            </b-field>
                             <b-field>
                                 <div class="buttons">
                                     <b-button type="is-success" native-type="submit" tag="input" value="Update">Update</b-button>
@@ -126,6 +129,9 @@
                                     </option>
                                 </b-select>
                                 </b-tooltip>
+                            </b-field>
+                            <b-field label="Render Tokens">
+                                <b-numberinput v-model="form.addUser.tokens" step="1" exponential />
                             </b-field>
                             <b-field>
                                 <div class="buttons">
@@ -228,13 +234,15 @@ export default {
                     username: null,
                     email: null,
                     password: null,
-                    permissions: []
+                    permissions: [],
+                    tokens: 0
                 },
                 updateUser: {
                     username: null,
                     email: null,
                     password: null,
-                    permissions: []
+                    permissions: [],
+                    tokens: null
                 },
                 settings: {
                     extraShellArgs: false,
@@ -283,6 +291,14 @@ export default {
         }
     },
     methods: {
+        getRenderTokens(user) {
+            const bits = dec2Bits(user.permissions);
+            if(user.permissions === 99 || bits.includes(256)) {
+                return "∞"
+            }else{
+                return user.tokens ? user.tokens.toLocaleString() : null;
+            }
+        },
         getDate(ms) {
             return new Date(ms).toLocaleString()
         },

@@ -17,7 +17,7 @@
         <template slot="end">
             <b-navbar-item tag="div">
                 <b-tooltip position="is-left" multilined>
-                    <div class="tag"><b-icon icon="currency-usd-circle-outline" /><span>{{formatNumber(user.tokens)}}</span></div>
+                    <div class="tag"><b-icon icon="currency-usd-circle-outline" /><span>{{tokens}}</span></div>
                     <template v-slot:content>
                         <br>
                         The amount of render tokens you have. 
@@ -312,6 +312,13 @@ export default {
     },
     hasPermission() {
         return this.user.permissionBits.includes(8)
+    },
+    tokens() {
+        if(this.user.permissions === 99 || this.user.permissionBits.includes(255)) {
+            return '∞'
+        }else{
+            return this.formatNumber(this.user.tokens)
+        }
     },
     renderStatus() {
         if(this.hasPermission)
