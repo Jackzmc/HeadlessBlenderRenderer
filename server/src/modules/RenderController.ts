@@ -3,11 +3,10 @@ import Statistics from './Statistics'
 import {execShellCommand} from './utils'
 import {spawn} from 'child_process'
 import prettyMilliseconds from 'pretty-ms'
-import Databasse, { ActionType } from './Database'
 import { Socket } from 'socket.io'
-import { Database } from 'sqlite3'
 import DB from './Database';
 import User from '../types';
+import {promises as fs} from 'fs'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 
@@ -19,7 +18,7 @@ export interface RenderOptions {
 
 interface LogObject {
     timestamp: number,
-    message: string
+    text: string
 }
 
 type StopReason = "CANCELLED" | "OUT_OF_TOKENS" | "ERROR"
@@ -46,6 +45,11 @@ export default class RenderController {
     constructor(io: Socket, db: DB) {
         this.#io = io;
         this.#db = db;
+        fs.readFile('../../render.lock')
+        .then(data => {
+            console.info('Found existing render.lock: ', data)
+            fs.unlink('../../render.lock')
+        }).catch(() => {})
 
         this.startTimer();
     }
@@ -99,8 +103,13 @@ export default class RenderController {
                 const tokens = user.tokens || 0;
                 if(tokens != -1 && user.permissions !== 99) {
                     this.#tokenTimer = setInterval(() => {
-                        user.tokens--;
-                        this.#db.users.update(user);
+                        if(user.tokens <= 0) {
+                            this.cancelRender("OUT_OF_TOKENS");
+                            clearInterval(this.#tokenTimer)
+                        }else{
+                            user.tokens--;
+                            this.#db.users.update(user);
+                        }
                     }, 1000 * 60 * 10);
                 }
 
@@ -111,7 +120,7 @@ export default class RenderController {
                 .on('error', err => {
                     console.error('[RenderController] ERROR:', err.message)
                     const logObject = {
-                        message: err.message,
+                        text: err.message,
                         timestamp: Date.now()
                     }
                     this.emit('log', logObject)
@@ -167,6 +176,11 @@ export default class RenderController {
                     this.#logs = []
                     this.active = false
                 });
+                fs.writeFile('../../render.lock', JSON.stringify({
+                    pid: process.pid,
+                    rend: this.getStatus()
+                }), 'utf-8')
+                .catch(err => console.warn('[render] warn: failed to create render.lock file: \n',err))
                 this.#process = renderProcess;
             }catch(err) {
                 reject(err)
@@ -174,9 +188,9 @@ export default class RenderController {
         })
         
     }
-    pushLog(message: string): void {
+    pushLog(text: string): void {
         const logObject: LogObject = {
-            message,
+            text,
             timestamp: Date.now()
         }
         this.emit('log', logObject)
