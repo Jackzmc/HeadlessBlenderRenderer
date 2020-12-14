@@ -64,20 +64,26 @@
                     </template>
                 </b-table>
                 <hr>
+                <h5 v-if="selected != null" class="title is-5 has-text-centered">Edit User</h5>
+                <h5 v-else class="title is-5 has-text-centered">Add User</h5>
                 <div class="columns">
                     <div class="column">
-                        <p class="title is-4">Permission Flags Calculator</p>
-                        <p class="subtitle is-6">Add all the flag bits together to calculate a permission number</p>
+                        <p v-if="selected != null" class="title is-4">Edit User Permissions</p>
+                        <p v-else class="title is-4">Permission Flags Calculator</p>
+                        <p class="subtitle is-6">Add all the flag bits together to calculate a permission number. Having zero bits marks an account as disabled.</p>
                         <div class="field" v-for="(flag,index) in $options.flags" :key="index">
-                            <b-checkbox v-model="selectedFlags"
-                                :native-value="getBit(index)" :disabled="selected != null">
-                                {{index+1}}. {{flag.description}}
+                            <b-checkbox v-if="selected != null" v-model="form.updateUser.permissions"
+                                :native-value="getBit(index)" >
+                                {{getBit(index)}}. {{flag.description}}
+                            </b-checkbox>
+                            <b-checkbox v-else v-model="form.addUser.permissions"
+                                :native-value="getBit(index)" >
+                                {{getBit(index)}}. {{flag.description}}
                             </b-checkbox>
                         </div>
                         <p><strong>Permission Number: </strong>{{permissionNumber}}</p>
                     </div>
                     <div class="column" v-if="selected">
-                        <h5 class="title is-5 has-text-centered">Edit User Info</h5>
                         <form @submit.prevent="updateUser">
                             <b-field label="Username" message="Username can't be changed.">
                                 <b-input type="text" v-model="form.updateUser.username" disabled readonly />
@@ -87,15 +93,6 @@
                             </b-field>
                             <b-field label="Password (leave blank to keep current)">
                                 <b-input type="password" v-model="form.updateUser.password"  />
-                            </b-field>
-                            <b-field label="Permissions">
-                                <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
-                                <b-select v-model="form.updateUser.permissions" multiple expanded>
-                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="getBit(index)" :value="getBit(index)">
-                                        {{flag.description}}
-                                    </option>
-                                </b-select>
-                                </b-tooltip>
                             </b-field>
                             <b-field label="Render Tokens">
                                 <b-numberinput v-model="form.updateUser.tokens" step="1" exponential />
@@ -110,7 +107,6 @@
                         </form>
                     </div>
                     <div class="column" v-else>
-                        <h5 class="title is-5 has-text-centered">Add User</h5>
                         <form @submit.prevent="addUser">
                             <b-field label="Username">
                                 <b-input type="text" v-model="form.addUser.username" required/>
@@ -120,15 +116,6 @@
                             </b-field>
                             <b-field label="Password">
                                 <b-input type="password" v-model="form.addUser.password" required />
-                            </b-field>
-                            <b-field label="Permissions">
-                                <b-tooltip label="The permission the user will have. None will give the user restricted / view only.">
-                                <b-select v-model="form.addUser.permissions" multiple expanded>
-                                    <option v-for="(flag,index) in $options.flags.slice(1)" :key="++index" :value="index">
-                                        {{flag.description}}
-                                    </option>
-                                </b-select>
-                                </b-tooltip>
                             </b-field>
                             <b-field label="Render Tokens">
                                 <b-numberinput v-model="form.addUser.tokens" step="1" exponential />
@@ -142,6 +129,7 @@
                         </form>
                     </div>
                 </div>
+                <br>
             </b-tab-item>
             <b-tab-item label="Render Logs" value="logs" v-if="user.permissionBits.includes(16)">
                 <VirtualList                    
@@ -206,7 +194,6 @@
                 </span>
             </b-tab-item>
         </b-tabs>
-        
     </div>
 
 </div>
@@ -277,7 +264,7 @@ export default {
             return this.$store.state.servers[this.$route.params.server];
         },
         user() {
-            return this.$store.state.users[this.$route.params.server]
+            return this.$store.getters.getUser(this.$route.params.server)
         },
         startDate() {
             if(this.serverInfo.started) {
@@ -287,7 +274,8 @@ export default {
             return null;
         },
         permissionNumber() {
-            return this.selectedFlags.reduce((acc, cv) => acc + parseInt(cv), 0)
+            const arr = this.selected == null ? this.form.addUser.permissions : this.form.updateUser.permissions;
+            return arr.reduce((acc, cv) => acc + parseInt(cv), 0)
         }
     },
     methods: {
