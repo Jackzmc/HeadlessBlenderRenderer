@@ -100,8 +100,8 @@ export default class RenderController {
                 ].concat(py_scripts)
                 this.#previousRender = null;
                 this.#stopReason = null;
-                const tokens = user.tokens || 0;
-                if(tokens != -1 && user.permissions !== 99) {
+                if(user.permissions !== 99 && !user.permissionBits?.includes(255)) {
+                    if(!user.tokens) user.tokens = 0;
                     this.#tokenTimer = setInterval(() => {
                         if(user.tokens <= 0) {
                             this.cancelRender("OUT_OF_TOKENS");
