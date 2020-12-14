@@ -23,7 +23,7 @@ import { hasPermissionBit } from '../../../../server/src/modules/Middlewares';
                 {{ props.row.date }}
             </b-table-column>
 
-            <b-table-column label="Action">
+            <b-table-column label="Action" v-slot="props">
                 <div class="buttons">
                 <b-button @click="downloadZip(props.row.name)" type="is-primary"  icon-left="download" icon-size="large" />
                 <b-button  @click="deleteZip(props.row.name)" type="is-danger"  icon-left="delete" />
