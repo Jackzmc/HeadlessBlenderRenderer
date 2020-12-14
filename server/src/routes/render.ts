@@ -25,24 +25,28 @@ router.get('/logs', hasPermissionBit([0,1]), (req: Request, res: Response) => {
 router.get('/status', (req: Request, res: Response) => {
     res.json(renderController.getStatus()) 
 })
-router.post('/:blend', hasPermissionBit(8), (req: Request,res: Response) => {
+router.post('/:blend', hasPermissionBit(8), async(req: Request,res: Response) => {
     if(!req.params.blend) return res.status(400).json({error: 'Missing blend property'})
     if(!req.params.blend.endsWith(".blend")) return res.status(400).json({error: 'Specified file is not a valid *.blend file.'})
     const frames = (req.body.frames&&Array.isArray(req.body.frames)) ? req.body.frames : null;
     if(frames && req.body.frames.length !== 2) return res.status(400).json({error: 'Frames property needs to be an array of two numbers: [start, end]'})
-    const options = {
-        useGPU: req.body.useGPU === true || req.body.useGPU === "true" || req.body.mode === 'gpu',
-        frames,
-        python_scripts: req.body.python_scripts as string[] || []
+    if(res.locals.user.permissions == 99 || res.locals.user.permissionBits.includes(8)) {
+        const options = {
+            useGPU: req.body.useGPU === true || req.body.useGPU === "true" || req.body.mode === 'gpu',
+            frames,
+            python_scripts: req.body.python_scripts as string[] || []
+        }
+        db.logAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
+        try {
+            const response = await renderController.startRender(req.params.blend, res.locals.user, options)
+            res.json(response)
+        }catch(err) {
+            res.status(500).json({error: err.message, code: 'RENDER_ERROR'})
+        }
     }
-    db.logAction(res.locals.user, ActionType.START_RENDER, req.params.blend)
-    renderController.startRender(req.params.blend, res.locals.user, options)
-    .then((response) => {
-        res.json(response)
-    })
-    .catch(err => {
-        res.status(500).json({error: err.message})
-    })
+    
+    
+    
 })
 router.get('/preview', hasPermissionBit([0,1]), async(req: Request,res: Response) => {
     if(renderController.isRenderActive()) {
