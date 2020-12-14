@@ -1,4 +1,4 @@
-import { Database } from 'sqlite3'
+import { Database, RunResult } from 'sqlite3'
 import bcrypt from 'bcrypt'
 import User from '../../types';
 
@@ -53,8 +53,8 @@ export default class Users {
     update(user: User): Promise<void> {
         return new Promise((resolve, reject) => {
             this.#db.run(
-                'UPDATE user SET username = ?, email = ?, password = ?, permissions = ? WHERE username = ?',
-                [user.username, user.email, user.password, user.permissions, user.username], (err) => {
+                'UPDATE user SET username = ?, email = ?, password = ?, permissions = ?, tokens = ? WHERE username = ?',
+                [user.username, user.email, user.password, user.permissions, user.username, user.tokens || 0], (err) => {
                     if(err) reject(err)
                     else resolve();
                 }
@@ -66,7 +66,7 @@ export default class Users {
         return new Promise((resolve, reject) => {
             this.#db.run(
                 'UPDATE user set last_login = ? WHERE username = ?',
-                [Date.now(), user.username], (result, err) => {
+                [Date.now(), user.username], (result: RunResult, err: Error) => {
                     if(err) reject(err)
                     else resolve(result)
                 }
