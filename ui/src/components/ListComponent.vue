@@ -32,7 +32,7 @@ export default {
     filters: {
         timestamp(inp) {
             const date = new Date(inp)
-            return `[${date.toLocaleDateString()} [${date.toLocaleTimeString()}]`
+            return `[${date.toLocaleDateString()}] [${date.toLocaleTimeString()}]`
         }
     }
 }
