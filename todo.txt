@@ -6,7 +6,7 @@ x user creation and last login dates
     x update interval 
     x im/ex port 
     > quick add. route? /add/:name/:addr
-- finish preview feature
+x finish preview feature
 x granular permissions: goes with render tokens 
     0 -> Disabled
     1 << 0 -> Restricted/no perms/ view only 
@@ -22,6 +22,7 @@ x implement granular perm system (middleware). Just need UI for admins done
 - mySQL support: Allows for linked instances or users
     - Possibly only users linked
 x top right menu: show permissions
+- render.lock | detached process | re-attach
 
 0 0 -> Disabled
 0 1 -> Restricted/no perms/ view only 

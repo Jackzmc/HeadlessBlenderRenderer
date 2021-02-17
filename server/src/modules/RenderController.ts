@@ -169,8 +169,13 @@ export default class RenderController {
                         reason: this.#stopReason,
                         time_taken,
                         started: this.#started,
-                        startedByID: this.#startedByUsername
+                        startedByID: this.#startedByUsername,
+                        frame: this.current_frame
                     }
+                    this.blend = null;
+                    this.current_frame = 0;
+                    this.max_frames = 0;
+                    this.#startedByUsername = null;
                     clearInterval(this.#tokenTimer);
                     //clear buffer logs
                     this.#logs = []
