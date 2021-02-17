@@ -47,7 +47,7 @@ export default class RenderController {
         this.#db = db;
         fs.readFile('../../render.lock')
         .then(data => {
-            console.info('Found existing render.lock: ', data)
+            console.info('Found existing render.lock: ', data.toString())
             fs.unlink('../../render.lock')
         }).catch(() => {})
 

@@ -25,9 +25,10 @@ router.post('/login', async(req: Request, res: Response) => {
     try {
         const user = await db.users.select(req.body.email || req.body.username);
         if (!user) return res.status(404).json({error:'No user found.'});
+        if(!user.password) return res.status(500).json({error: 'Internal Server Error', code: 'USER_HAS_NO_PASSWORD'})
         bcrypt.compare(req.body.password, user.password, (err: Error, passwordValid: boolean) => {
             delete user.password;
-            if(err) return res.status(500).json({error: 'Internal Server Error'})
+            if(err) return res.status(500).json({error: 'Internal Server Error', code: 'TEST_FAILURE'})
             if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null });
             jwt.sign({ 
                 username: user.username,
@@ -117,7 +118,7 @@ router.post('/users/:username', hasPermissionBit(64), (req: Request,res: Respons
 
 router.put('/users/:username', hasPermissionBit(64), async(req: Request, res: Response) => {
     try {
-        const user = await db.users.select(req.params.username);
+        let user = await db.users.select(req.params.username);
         if(!user) res.status(404).json({error: 'User not found', code: 'USER_NOT_FOUND'})
         const oldUser = user;
 
