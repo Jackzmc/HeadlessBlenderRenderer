@@ -130,7 +130,7 @@ export default {
         console.log('add', this.$route.params)*/
 
 
-        const settings = JSON.parse(window.localStorage.blender_settings|| {});
+        const settings = JSON.parse(window.localStorage.blender_settings|| "{}");
         this.settings = {...this.settings,...settings}
         //TODO: perhaps implement a slower update if its been offline
         if(this.settings.updateInterval > 0)
