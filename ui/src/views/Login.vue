@@ -75,7 +75,7 @@ export default {
                 }
             })
             .catch(err => {
-                this.login = {username: null, password: null}
+                this.login.password = null
                 this.$refs.user.focus()
                 if(err.response) {
                     if(err.response.status === 404) {
