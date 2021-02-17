@@ -182,7 +182,8 @@ export default class DB {
             [Date.now(), msg],
             null
         )
-        console.info(`[${new Date().toLocaleTimeString()}] [Server] ${msg}`)
+        const date = new Date();
+        console.info(`[${date.toLocaleDateString()}] [${date.toLocaleTimeString()}] [Server] ${msg}`)
         return this;
     }
 }

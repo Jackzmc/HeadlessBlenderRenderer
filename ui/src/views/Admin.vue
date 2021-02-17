@@ -353,6 +353,7 @@ export default {
         },
         updateUser() {
             let updatedUser = {...this.form.updateUser}
+            this.form.updateUser.password = null;
             updatedUser.permissions = updatedUser.permissions.reduce((acc, cv) => acc + parseInt(cv), 0)
             Axios.put(`/api/auth/users/${this.selected.username}`, updatedUser)
             .then(() => {

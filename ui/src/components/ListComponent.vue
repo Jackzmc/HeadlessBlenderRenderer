@@ -1,5 +1,5 @@
 <template>
-  <div :class="classname">[{{source.timestamp | timestamp}}] {{ source.text }}</div>
+  <div :class="classname">{{source.timestamp | timestamp}} {{ source.text }}</div>
 </template>
 
 <script>
@@ -31,7 +31,8 @@ export default {
     },
     filters: {
         timestamp(inp) {
-            return new Date(inp).toLocaleTimeString();
+            const date = new Date(inp)
+            return `[${date.toLocaleDateString()} [${date.toLocaleTimeString()}]`
         }
     }
 }

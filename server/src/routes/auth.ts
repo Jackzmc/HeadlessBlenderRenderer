@@ -126,12 +126,12 @@ router.put('/users/:username', hasPermissionBit(64), async(req: Request, res: Re
         if(req.body.permissions) user.permissions = req.body.permissions;
         if(req.body.password) {
             try {
-                const hash = await bcrypt.hash(req.body.password, SALT_ROUNDS);
-                user.password = hash;
+                user.password = await bcrypt.hash(req.body.password, SALT_ROUNDS);
             }catch(err) {
                 return res.status(500).json({error: 'Internal error updating password.'})
             }
         }
+        
         try {
             await db.users.update(user);
             db.logAction(res.locals.user, ActionType.EDIT_USER, oldUser, user)

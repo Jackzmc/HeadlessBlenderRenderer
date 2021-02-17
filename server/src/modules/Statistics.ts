@@ -11,6 +11,8 @@ const NVIDIA_SMI_PATH = process.env.NVIDIA_SMI_PATH
 
 let antispam_stat_inc: number = 0;
 
+console.info('[STATISTICS] Running for version v' + SERVER_VERSION)
+
 export default async function() {
     try {
         const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
