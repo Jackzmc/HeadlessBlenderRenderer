@@ -124,6 +124,7 @@ router.put('/users/:username', hasPermissionBit(64), async(req: Request, res: Re
 
         if(req.body.email) user.email = req.body.email.trim();
         if(req.body.permissions) user.permissions = req.body.permissions;
+        if(req.body.tokens) user.tokens = req.body.tokens
         if(req.body.password) {
             try {
                 user.password = await bcrypt.hash(req.body.password, SALT_ROUNDS);

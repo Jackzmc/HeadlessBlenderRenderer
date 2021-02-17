@@ -54,7 +54,7 @@ export default class Users {
         return new Promise((resolve, reject) => {
             this.#db.run(
                 'UPDATE user SET username = ?, email = ?, password = ?, permissions = ?, tokens = ? WHERE username = ?',
-                [user.username, user.email, user.password, user.permissions, user.username, user.tokens || 0], (err) => {
+                [user.username, user.email, user.password, user.permissions, user.tokens || 0, user.username], (err) => {
                     if(err) reject(err)
                     else resolve();
                 }
