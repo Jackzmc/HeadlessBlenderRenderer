@@ -237,7 +237,6 @@ import VirtualList from 'vue-virtual-scroll-list'
 import humanizeDuration from "humanize-duration";
 import Axios from 'axios'
 
-const AVG_TIME_PER_FRAME_VALUES = 20;
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
   languages: {
