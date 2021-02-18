@@ -15,7 +15,7 @@ export default function(controller: RenderController) {
     return router;
 }
 router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Response) => {
-    renderController.cancelRender()
+    renderController.cancelRender(res.locals.user)
     .then(() => res.json({success: true}))
     .catch(err => res.status(500).json({error: err.message}))
 })

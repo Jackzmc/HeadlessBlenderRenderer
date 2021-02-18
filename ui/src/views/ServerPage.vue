@@ -94,23 +94,22 @@
                     </b-field>
                     <div v-if="!options.blend.frames.all" class="columns">
                         <div class="column">
-                            <b-field :disabled="render.active" label="Starting Frame">
+                            <b-field label="Starting Frame">
                                 <b-numberinput 
                                 :min="0" 
-                                :max="options.blend.frames.start" 
-                                :disabled="options.blend.frames.all" 
+                                :disabled="render.active || options.blend.frames.all" 
                                 controls-position="compact"
                                 v-model="options.blend.frames.start"
                             />
                             </b-field>
                         </div>
                         <div class="column">
-                            <b-field :disabled="render.active" label="Ending Frame">
+                            <b-field label="Ending Frame">
                                 <b-numberinput 
                                 :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
-                                :disabled="options.blend.frames.all" 
+                                :disabled="render.active || options.blend.frames.all" 
                                 controls-position="compact"
-                                v-model="options.blend.frames.end" 
+                                v-model="options.blend.frames.stop" 
                             />
                             </b-field>
                         </div>
@@ -677,6 +676,13 @@ export default {
         if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
       }, 1000)*/
   },
+  watch: {
+      "options.blend.frames.start": function(val) {
+          if(val > this.options.blend.frames.stop) {
+              this.options.blend.frames.stop = val;
+          }
+      }
+  }
 }
 </script>
 
