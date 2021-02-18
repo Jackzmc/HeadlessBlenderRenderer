@@ -9,11 +9,27 @@ import User from '../types';
 import {promises as fs} from 'fs'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
+const MAX_FRAMETIME_COUNT = 20;
 
 export interface RenderOptions {
     useGPU?: boolean,
     python_scripts?: string[],
     frames?: string[],
+}
+
+export interface Render {
+    currentFrame: number;
+    maximumFrames: number;
+    started: number;
+    blend: string,
+    startedById: string,
+}
+
+type FrameDuration = number
+
+export interface StoppedRender extends Render {
+    reason: StopReason,
+    timeTaken: string
 }
 
 interface LogObject {
@@ -22,21 +38,21 @@ interface LogObject {
 }
 
 type StopReason = "CANCELLED" | "OUT_OF_TOKENS" | "ERROR"
+type EventName = "render_start" | "render_stop" | "frame" | "log" | "stat"
 
 export default class RenderController {
     active: boolean = false;
-    current_frame: number = 0;
-    max_frames: number = 0;
-    #started: number = null;
-    all_frames: boolean | number = false;
-    blend: string
+    #render: Render
+
+    #frameTimes: FrameDuration[]
+    #lastFrameTime: FrameDuration
 
     #logs: LogObject[] = [];
     #process: any
     #startedByUsername: string;
     #last_stats
     #stopReason: StopReason
-    #previousRender: any
+    #previousRender: StoppedRender
 
     #io = null
     #statsTimer: NodeJS.Timeout
@@ -63,43 +79,46 @@ export default class RenderController {
         return new Promise(async(resolve,reject) => {
             if(process.platform === "win32") reject(new Error('Renders cannot be started on windows machines. Sorry.'))
             if(!blend) return reject(new Error('Missing blend property'))
-            this.blend = blend;
-            this.#startedByUsername = user.username;
-            const render_prefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
-            const py_scripts = options.python_scripts||[].map(v => `-P "${v}"`);
+            let allFrames: boolean, render = {
+                blend,
+                startedByID: user.username,
+            };
+            const renderPrefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
+            const pythonScripts = options.python_scripts||[].map(v => `-P "${v}"`);
             if(!options.frames) {
-                this.all_frames = true;
+                allFrames = true;
                 //Find the maximum amount of frames
                 try {
                     const scriptResponse: string = await execShellCommand(`python3 python_scripts/blend_render_info.py "blends/${blend}"`,{
                         cwd:process.env.HOME_DIR
                     })
                     const csv = scriptResponse.trim().split(" ");
-                    this.max_frames = parseInt(csv[1]);
-                    this.current_frame = 0;
+                    this.#render.maximumFrames = parseInt(csv[1]);
+                    this.#render.currentFrame = 0;
                 }catch(err) {
                     console.error('[renderStart] Finding frame count of blend file failed:', err.message)
                     return reject(err)
                 }
             }else{
-                this.all_frames = 0;
+                allFrames = false
                 if(Array.isArray(options.frames) && options.frames.length !== 2) {
                     return reject(new Error('Invalid frame specification. Please provide array of start and end frame or null for all'))
                 }
-                this.current_frame = parseInt(options.frames[0])
-                this.max_frames = parseInt(options.frames[1])
+                this.#render.currentFrame =  parseInt(options.frames[0])
+                this.#render.maximumFrames = parseInt(options.frames[1])
             }
-            const frame_string = this.all_frames? 'all': this.current_frame + " " + this.all_frames? 'all': this.max_frames
-            console.log(`[renderStart] mode=${options.useGPU?'gpu':'cpu'} blend="${blend}" frames=${frame_string} ${py_scripts.join(" ")}`);
+            const frameString = allFrames ? 'all': this.#render.currentFrame + " " + allFrames ? 'all': this.#render.maximumFrames
+            console.log(`[renderStart] mode=${options.useGPU?'gpu':'cpu'} blend="${blend}" frames=${frameString} ${pythonScripts.join(" ")}`);
             try {
                 const args: string[] = [
                     `"${blend}"`,
-                    this.all_frames ? 'all' : this.current_frame.toString(),
-                    this.all_frames ? 'all' : this.max_frames.toString()
+                    allFrames ? 'all' : this.#render.currentFrame.toString(),
+                    allFrames ? 'all' : this.#render.maximumFrames.toString()
                     //data.extra_args
-                ].concat(py_scripts)
+                ].concat(pythonScripts)
                 this.#previousRender = null;
                 this.#stopReason = null;
+                //FIXME: Seems to be failing even with unlimited tokens
                 if(user.permissions !== 99 && !user.permissionBits?.includes(255)) {
                     if(!user.tokens) user.tokens = 0;
                     this.#tokenTimer = setInterval(() => {
@@ -112,8 +131,7 @@ export default class RenderController {
                         }
                     }, 1000 * 60 * 10);
                 }
-
-                const renderProcess = spawn(render_prefix, args, {
+                const renderProcess = spawn(renderPrefix, args, {
                     cwd: process.env.HOME_DIR,
                     stdio: ['ignore', 'pipe', 'pipe']
                 })
@@ -132,18 +150,32 @@ export default class RenderController {
                 })
                 renderProcess.stdout.on('data',(data) => {
                     const msg = data.toString();
-                    const frame_match = msg.match(/(Saved:)(.*\/)(\d+.png)/)
-                    if(frame_match && frame_match.length == 4) {
-                        const frame = parseInt(frame_match[3]);
-                        this.emit('frame', frame);
-                        this.current_frame = frame + 1;
-                        //get frame #
-                    }
                     if(!this.active) {
                         this.emit('render_start', this.getStatus())
                         resolve(this.getStatus())
                         this.active = true;
-                        this.#started = Date.now();
+                        this.#render.started = Date.now();
+                    }
+                    const frameMatch = msg.match(/(Saved:)(.*\/)(\d+.png)/)
+                    if(frameMatch && frameMatch.length == 4) {
+                        const frame = parseInt(frameMatch[3]);
+                        this.emit('frame', {
+                            frame,
+                            eta: this.eta,
+                            averageTimePerFrame: this.averageTimePerFrame
+                        });
+                        this.#render.currentFrame = frame + 1;
+
+                        if(this.#lastFrameTime > 0) {
+                            const difference = Date.now() - this.#lastFrameTime;
+                            this.#frameTimes.push(difference)
+                            if(this.#frameTimes.length > MAX_FRAMETIME_COUNT) {
+                                this.#frameTimes.shift()
+                            }
+                        }else{
+                            this.#lastFrameTime = Date.now()
+                        }
+                        //get frame #
                     }
                     this.pushLog(msg)
                 })
@@ -152,34 +184,24 @@ export default class RenderController {
                         this.emit('render_start', this.getStatus())
                         resolve(this.getStatus())
                         this.active = true;
-                        this.#started = Date.now();
+                        this.#render.started = Date.now();
                     }
                     this.pushLog(data.toString())
                 })
                 renderProcess
                 .on('exit', () => {
-                    const time_taken = prettyMilliseconds(Date.now() - this.#started);
-                    this.emit('render_stop', {
-                        started: this.#started,
-                        time_taken,
-                        blend: this.blend
-                    })
+                    const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
                     this.#previousRender = {
-                        blend: this.blend,
-                        reason: this.#stopReason,
-                        time_taken,
-                        started: this.#started,
-                        startedByID: this.#startedByUsername,
-                        frame: this.current_frame
+                        ...this.#render,
+                        timeTaken,
+                        reason: this.#stopReason
                     }
-                    this.blend = null;
-                    this.current_frame = 0;
-                    this.max_frames = 0;
-                    this.#startedByUsername = null;
-                    clearInterval(this.#tokenTimer);
-                    //clear buffer logs
+                    this.emit('render_stop', this.#previousRender)
+                    this.#render = null;
                     this.#logs = []
                     this.active = false
+                    fs.unlink('../../render.lock')
+                    clearInterval(this.#tokenTimer);
                 });
                 fs.writeFile('../../render.lock', JSON.stringify({
                     pid: process.pid,
@@ -193,7 +215,7 @@ export default class RenderController {
         })
         
     }
-    pushLog(text: string): void {
+    private pushLog(text: string): void {
         const logObject: LogObject = {
             text,
             timestamp: Date.now()
@@ -231,41 +253,46 @@ export default class RenderController {
             clearInterval(this.#statsTimer);
         }
     }
-
-    isRenderActive() {
-        return this.active;
-    }
     
     getStatus() {
-        const time_taken = prettyMilliseconds(Date.now() - this.#started);
+        const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
         return {
-            active: this.active,
-            max_frames: this.max_frames,
-            current_frame: this.current_frame,
-            blend: this.blend,
-            startedByID: this.#startedByUsername,
+            render: this.#render,
             duration: this.active ? {
-                formatted: time_taken,
-                raw: Date.now() - this.#started,
-                started: this.#started
+                formatted: timeTaken,
+                raw: Date.now() - this.#render.started,
+                started: this.#render.started
             } : null,
+            eta: this.eta,
+            averageTimePerFrame: this.averageTimePerFrame,
             lastRender: this.#previousRender
         }
-}
-    getStatistics() {
-        return this.#last_stats;
-    }
-    
-    getLogs() {
-        return this.#logs
     }
 
-    emit(name: string, object: any) {
+    private emit(name: EventName, object: any) {
         for(const socketId in this.#io.sockets.sockets) {
             const socket = this.#io.sockets.sockets[socketId];
             if(socket.authorized) {
                 socket.emit(name, object)
             }
         }
+    }
+
+    get eta() {
+        return this.averageTimePerFrame * (this.#render.maximumFrames - this.#render.currentFrame)
+    }
+
+    get averageTimePerFrame() {
+        if(this.#frameTimes.length == 0) return 0;
+        const sum = this.#frameTimes.reduce((a,b) => a+b, 0)
+        return Math.round(sum / this.#frameTimes.length)
+    }
+
+    get logs() {
+        return this.#logs
+    }
+
+    get statistics() {
+        return this.#last_stats
     }
 }

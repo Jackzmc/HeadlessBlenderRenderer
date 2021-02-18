@@ -20,7 +20,7 @@ router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Respon
     .catch(err => res.status(500).json({error: err.message}))
 })
 router.get('/logs', hasPermissionBit([0,1]), (req: Request, res: Response) => {
-    res.json(renderController.getLogs())
+    res.json(renderController.logs)
 })
 router.get('/status', (req: Request, res: Response) => {
     res.json(renderController.getStatus()) 
@@ -49,7 +49,7 @@ router.post('/:blend', hasPermissionBit(8), async(req: Request,res: Response) =>
     
 })
 router.get('/preview', hasPermissionBit([0,1]), async(req: Request,res: Response) => {
-    if(renderController.isRenderActive()) {
+    if(renderController.active) {
         try {
             const files = await readdir(process.env.HOME_DIR+"/tmp")
             if(files.length > 0) {

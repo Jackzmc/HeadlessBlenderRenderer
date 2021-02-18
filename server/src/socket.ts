@@ -26,7 +26,7 @@ export default function(server: Server) {
             jwt.verify(token, SECRET, (err: Error, decoded: string) => {
                 socket.authorized = true;
                 if(err) return cb({error:'Failed to verify authentication.'})
-                socket.emit('stat', controller.getStatistics())
+                socket.emit('stat', controller.statistics)
 
                 db.getSettings((err: Error, settings: any) => {
                     return cb({
