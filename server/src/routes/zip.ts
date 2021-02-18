@@ -10,18 +10,18 @@ const router = Express.Router();
 const ZIP_DIR = process.env.ZIP_DIR || `${process.env.HOME_DIR}/zips`
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
-const DL_TOKENS = new Map(); //<filename,{token:<expires>}>
+let DL_TOKENS = {}; //<filename,{token:<expires>}>
 
 router.use(fileUpload({
     limits: { fileSize: 500 * 1024 * 1024 }, //MB
     abortOnLimit: true,
 }));
 
-router.get('/:name/download', hasPermissionBit(2), (req,res) => {
-    if(req.query.token) {
-        const downloadTokens = DL_TOKENS.get(req.params.name);
-        //@ts-expect-error
-        if(downloadTokens && downloadTokens[req.query.token] && downloadTokens[req.query.token] >= Date.now()) {
+router.get('/:name/download',(req,res) => {
+    const token = req.query.token as string
+    if(token) {
+        const downloadTokens = DL_TOKENS[req.params.name] || {};
+        if(downloadTokens && downloadTokens[token] && downloadTokens[token] >= Date.now()) {
             res.set('Content-Type', 'application/zip')
             res.set('Content-Disposition', `attachment; filename="${req.params.name}"`);
 
@@ -47,11 +47,11 @@ router.post('/:name/token', hasPermissionBit(2), async(req,res) => {
         await fs.stat(`${ZIP_DIR}/${req.params.name}`)
         const token = generateUID();
         const expires = new Date();
-        expires.setDate(expires.getHours() + 4)
+        expires.setHours(expires.getHours() + 4)
 
-        let tokens = DL_TOKENS.has(req.params.name) || {};
-        tokens[token] = expires.getTime();
-        DL_TOKENS.set(req.params.name, tokens)
+        let tokens = DL_TOKENS[req.params.name] || {};
+        tokens[token] = expires.valueOf()
+        DL_TOKENS[req.params.name] = tokens
         return res.json({token})
     }catch(err) {
         return res.status(404).json({error: "That zip does not exist.", code:'FILE_NOT_FOUND'})
@@ -131,16 +131,17 @@ function generateUID(): string {
 
 setInterval(() => {
     const now = Date.now()
-    DL_TOKENS.forEach((tokens, file) => {
+    for(const file in DL_TOKENS) {
+        const tokens = DL_TOKENS[file];
         for(const token in tokens) {
             if(now >= tokens[token]) {
                 delete tokens[token];
             }
         }
         if(Object.keys(tokens).length == 0) {
-            DL_TOKENS.delete(file)
+            delete DL_TOKENS[file]
         }else{
-            DL_TOKENS.set(file, tokens)
+            DL_TOKENS[file] = tokens
         }
-    })
+    }
 }, 1000 * 60 * 30) //run every 30 minutes, clear up any expired tokens
