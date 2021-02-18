@@ -4,7 +4,7 @@ import {execShellCommand} from './utils'
 import {spawn} from 'child_process'
 import prettyMilliseconds from 'pretty-ms'
 import { Socket } from 'socket.io'
-import DB from './Database';
+import DB, { ActionType } from './Database';
 import User from '../types';
 import {promises as fs} from 'fs'
 
@@ -42,9 +42,9 @@ type EventName = "render_start" | "render_stop" | "frame" | "log" | "stat"
 
 export default class RenderController {
     active: boolean = false;
-    #render: Render
+    #render: Render = null
 
-    #frameTimes: FrameDuration[]
+    #frameTimes: FrameDuration[] = []
     #lastFrameTime: FrameDuration
 
     #logs: LogObject[] = [];
@@ -79,10 +79,10 @@ export default class RenderController {
         return new Promise(async(resolve,reject) => {
             if(process.platform === "win32") reject(new Error('Renders cannot be started on windows machines. Sorry.'))
             if(!blend) return reject(new Error('Missing blend property'))
-            let allFrames: boolean, render = {
+            let allFrames: boolean, render: Partial<Render> = {
                 blend,
-                startedByID: user.username,
-            };
+            }
+
             const renderPrefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
             const pythonScripts = options.python_scripts||[].map(v => `-P "${v}"`);
             if(!options.frames) {
@@ -93,8 +93,8 @@ export default class RenderController {
                         cwd:process.env.HOME_DIR
                     })
                     const csv = scriptResponse.trim().split(" ");
-                    this.#render.maximumFrames = parseInt(csv[1]);
-                    this.#render.currentFrame = 0;
+                    render.maximumFrames = parseInt(csv[1]);
+                    render.currentFrame = 0;
                 }catch(err) {
                     console.error('[renderStart] Finding frame count of blend file failed:', err.message)
                     return reject(err)
@@ -104,16 +104,16 @@ export default class RenderController {
                 if(Array.isArray(options.frames) && options.frames.length !== 2) {
                     return reject(new Error('Invalid frame specification. Please provide array of start and end frame or null for all'))
                 }
-                this.#render.currentFrame =  parseInt(options.frames[0])
-                this.#render.maximumFrames = parseInt(options.frames[1])
+                render.currentFrame =  parseInt(options.frames[0])
+                render.maximumFrames = parseInt(options.frames[1])
             }
-            const frameString = allFrames ? 'all': this.#render.currentFrame + " " + allFrames ? 'all': this.#render.maximumFrames
-            console.log(`[renderStart] mode=${options.useGPU?'gpu':'cpu'} blend="${blend}" frames=${frameString} ${pythonScripts.join(" ")}`);
+            const frameString = allFrames ? 'all': (`${render.currentFrame}..${render.maximumFrames}`)
+            console.log(`[renderStart] mode=${renderPrefix} blend="${blend}" frames=${frameString} ${pythonScripts.join(" ")}`);
             try {
                 const args: string[] = [
                     `"${blend}"`,
-                    allFrames ? 'all' : this.#render.currentFrame.toString(),
-                    allFrames ? 'all' : this.#render.maximumFrames.toString()
+                    allFrames ? 'all' : render.currentFrame.toString(),
+                    allFrames ? 'all' : render.maximumFrames.toString()
                     //data.extra_args
                 ].concat(pythonScripts)
                 this.#previousRender = null;
@@ -151,10 +151,17 @@ export default class RenderController {
                 renderProcess.stdout.on('data',(data) => {
                     const msg = data.toString();
                     if(!this.active) {
+                        this.#render = {
+                            blend: render.blend,
+                            currentFrame: render.currentFrame,
+                            maximumFrames: render.maximumFrames,
+                            started: Date.now(),
+                            startedById: user.username,
+                        }
                         this.emit('render_start', this.getStatus())
                         resolve(this.getStatus())
                         this.active = true;
-                        this.#render.started = Date.now();
+                        
                     }
                     const frameMatch = msg.match(/(Saved:)(.*\/)(\d+.png)/)
                     if(frameMatch && frameMatch.length == 4) {
@@ -181,10 +188,10 @@ export default class RenderController {
                 })
                 renderProcess.stderr.on('data',data => {
                     if(!this.active) {
+                        this.#render.started = Date.now();
                         this.emit('render_start', this.getStatus())
                         resolve(this.getStatus())
                         this.active = true;
-                        this.#render.started = Date.now();
                     }
                     this.pushLog(data.toString())
                 })
@@ -199,6 +206,8 @@ export default class RenderController {
                     this.emit('render_stop', this.#previousRender)
                     this.#render = null;
                     this.#logs = []
+                    this.#frameTimes = []
+                    this.#lastFrameTime = 0;
                     this.active = false
                     fs.unlink('../../render.lock')
                     clearInterval(this.#tokenTimer);
@@ -226,9 +235,13 @@ export default class RenderController {
             this.#logs.splice(0, this.#logs.length - 50)
         }
     }
-    async cancelRender(reason?: StopReason): Promise<void> {
+    async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<void> {
         if(this.active) {
-            this.#stopReason = reason || "CANCELLED";
+            //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
+            this.#stopReason = reason
+            if(user) {
+                this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.startedById)
+            }
             this.#process.kill('SIGTERM')
             return null;
         }else{
@@ -255,7 +268,7 @@ export default class RenderController {
     }
     
     getStatus() {
-        const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
+        const timeTaken = this.active ? prettyMilliseconds(Date.now() - this.#render.started) : null;
         return {
             render: this.#render,
             duration: this.active ? {
@@ -279,7 +292,10 @@ export default class RenderController {
     }
 
     get eta() {
-        return this.averageTimePerFrame * (this.#render.maximumFrames - this.#render.currentFrame)
+        if(this.active)
+            return this.averageTimePerFrame * (this.#render.maximumFrames - this.#render.currentFrame)
+        else
+            return 0
     }
 
     get averageTimePerFrame() {
