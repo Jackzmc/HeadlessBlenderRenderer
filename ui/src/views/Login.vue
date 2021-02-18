@@ -59,6 +59,7 @@ export default {
         loginUser() {
             this.$http.post(`${this.server.address}/api/auth/login`, {...this.login})
             .then(response => {
+                
                 this.$store.commit('loginUser', {
                     user: response.data.user,
                     jwt: response.data.token,

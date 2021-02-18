@@ -269,7 +269,9 @@ export default {
         max_frames: 5, //Current active render's maximum frames,
         lastFrameDurations: [], //Cache last X frames to get AVG seconds/frame
         started: null,
-        last_frame_time: null
+        last_frame_time: null,
+        eta: 0,
+        averageTimerPerFrame: 0
       },
       //OPTIONS
       options: {
@@ -338,15 +340,6 @@ export default {
       if(!this.render.active) return 0;
       return (this.render.current_frame / this.render.max_frames * 100).toFixed(1)
     },
-    averageTimePerFrame() {
-        if(this.render.lastFrameDurations.length == 0) return 0;
-        const sum = this.render.lastFrameDurations.reduce((a,b) => a+b, 0)
-        return Math.round(sum / this.render.lastFrameDurations.length)
-    },
-    eta() {
-        return this.averageTimePerFrame * (this.render.max_frames - this.render.current_frame)
-    },
-    
   },
   methods:{
     formatDuration(str) {
@@ -643,33 +636,27 @@ export default {
             if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
           }
       })
-      .on('frame',data => {
-        this.render.current_frame = data;
+      .on('frame',({frame, eta, averageTimePerFrame}) => {
+        this.render.current_frame = frame
         //clean up logs, keep only last 200. only on frame
         const length = this.render.logs.length ;
         if(length >= 200) {
             this.render.logs.splice(0,length-200)
         }
-        if(this.render.last_frame_time > 0) {
-            const difference = Date.now() - this.render.last_frame_time;
-            this.render.lastFrameDurations.push(difference)
-            if(this.render.lastFrameDurations.length > AVG_TIME_PER_FRAME_VALUES) {
-                this.render.lastFrameDurations.shift()
-            }
-        }
-        this.render.last_frame_time = Date.now()
+        this.render.eta = eta;
+        this.render.averageTimePerFrame = averageTimePerFrame;
           //console.log('FRAME:',data)
       })
-      .on('render_start',({current_frame, max_frames, blend, duration, startedByID}) => {
+      .on('render_start', ({render, duration}) => {
           this.render.active = true;
-          this.render.current_frame = current_frame || 0;
-          this.render.max_frames = max_frames;
-          this.blend_file = blend
+          this.render.current_frame = render.currentFrame || 0;
+          this.render.max_frames = render.maximumFrames;
+          this.blend_file = render.blend
           this.render.started = duration ? duration.started : Date.now()
-          this.render.lastFrameTime = null;
-          this.render.lastFrameDurations = [];
+          this.render.eta = render.eta;
+          this.render.averageTimePerFrame = render.averageTimePerFrame
 
-          this.$buefy.toast.open(`${startedByID} has started rendering ${blend}`)
+          this.$buefy.toast.open(`${render.startedByID} has started rendering ${render.blend}`)
       })
       .on('render_stop', (data) => {
           this.render.active = false;
