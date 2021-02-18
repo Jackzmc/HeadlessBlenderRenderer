@@ -158,11 +158,11 @@ export default class DB {
                 break;
             
             case ActionType.START_RENDER: 
-                msg = `${username} has started a new render. File: ${extras[0]}, Mode: ${extras[1]}`
+                msg = `${username} has started a new render. File: "${extras[0]}"`
                 break;
             
             case ActionType.CANCEL_RENDER: 
-                msg = `${username} has cancelled a render. File: ${extras[0]}. Started by: ${extras[1]}`
+                msg = `${username} has cancelled a render. Reason: ${extras[0]} | File: "${extras[1]}" | Started by: "${extras[2]}"`
                 break;
             
             case ActionType.EDIT_USER:
