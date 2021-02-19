@@ -2,6 +2,7 @@ import si from 'systeminformation'
 import { execShellCommand } from './utils'
 import csv from 'csvtojson'
 import path from 'path'
+import { ServerStats } from '../ts/interfaces/Statistics_interfaces.js';
 
 const SERVER_VERSION = require('../../package.json').version;
 const START_DATE: number = Date.now();
@@ -13,7 +14,8 @@ let antispam_stat_inc: number = 0;
 
 console.info('[STATISTICS] Running for version v' + SERVER_VERSION)
 
-export default async function() {
+
+export default async function(): Promise<ServerStats> {
     try {
         const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
             si.cpu(),

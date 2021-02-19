@@ -11,7 +11,7 @@ let db: Database;
 
 export default function(controller: RenderController) {
     renderController = controller;
-    db = renderController.getDatabase();
+    db = renderController.db
     return router;
 }
 router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Response) => {

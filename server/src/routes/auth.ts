@@ -1,21 +1,21 @@
 import { Request, Response } from 'express';
 import User from '../types';
 import Express from 'express'
-const router = Express.Router();
 import DB, { ActionType } from '../modules/Database'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { restrictedCheck, adminCheck, hasPermissionBit } from '../modules/Middlewares';
+import {  hasPermissionBit } from '../modules/Middlewares';
 import { RunResult } from 'sqlite3';
 import RenderController from '../modules/RenderController';
 
+const router = Express.Router();
 const SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
 let db: DB;
 
 export default function(controller: RenderController) {
-    db = controller.getDatabase();
+    db = controller.db
     return router;
 }
 

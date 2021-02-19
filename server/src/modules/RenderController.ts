@@ -7,38 +7,12 @@ import { Socket } from 'socket.io'
 import DB, { ActionType } from './Database';
 import User from '../types';
 import {promises as fs} from 'fs'
+import { Render, StoppedRender, RenderOptions } from '../ts/interfaces/RenderController_interfaces.js'
+import { ServerStats, LogObject } from '../ts/interfaces/Statistics_interfaces.js'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 const MAX_FRAMETIME_COUNT = 20;
 
-export interface RenderOptions {
-    useGPU?: boolean,
-    python_scripts?: string[],
-    frames?: string[],
-}
-
-export interface Render {
-    currentFrame: number;
-    maximumFrames: number;
-    started: number;
-    blend: string,
-    startedById: string,
-}
-
-type FrameDuration = number
-
-export interface StoppedRender extends Render {
-    reason: StopReason,
-    timeTaken: string
-}
-
-interface LogObject {
-    timestamp: number,
-    text: string
-}
-
-type StopReason = "CANCELLED" | "OUT_OF_TOKENS" | "ERROR"
-type EventName = "render_start" | "render_stop" | "frame" | "log" | "stat"
 
 export default class RenderController {
     active: boolean = false;
@@ -49,8 +23,7 @@ export default class RenderController {
 
     #logs: LogObject[] = [];
     #process: any
-    #startedByUsername: string;
-    #last_stats
+    #last_stats: ServerStats
     #stopReason: StopReason
     #previousRender: StoppedRender
 
@@ -66,13 +39,41 @@ export default class RenderController {
             console.info('Found existing render.lock: ', data.toString())
             fs.unlink('../../render.lock')
         }).catch(() => {})
-
         this.startTimer();
     }
-    getEventEmitter() {
+    private pushLog(text: string): void {
+        const logObject: LogObject = {
+            text,
+            timestamp: Date.now()
+        }
+        this.emit('log', logObject)
+        this.#logs.push(logObject)
+        if(this.#logs.length >= 50) {
+            this.#logs.splice(0, this.#logs.length - 50)
+        }
+    }
+    private async startTimer(): Promise<void> {
+        try {
+            const stats = await Statistics()
+            this.#last_stats = stats;
+            this.emit('stat', stats)
+            console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
+            this.#statsTimer = setInterval(() => {
+                Statistics().then(stats => {
+                    this.#last_stats = stats;
+                    this.emit('stat', stats)
+                })
+            }, UPDATE_INTERVAL)
+        }
+        catch(err) {
+            console.error("[ERROR] Statistics have been disabled due to an error.\n", err.message)
+            clearInterval(this.#statsTimer);
+        }
+    }
+    get eventEmitter() {
         return this.#io
     }
-    getDatabase() {
+    get db() {
         return this.#db;
     }
     startRender(blend: string, user: User, options: RenderOptions = {}) {
@@ -224,17 +225,6 @@ export default class RenderController {
         })
         
     }
-    private pushLog(text: string): void {
-        const logObject: LogObject = {
-            text,
-            timestamp: Date.now()
-        }
-        this.emit('log', logObject)
-        this.#logs.push(logObject)
-        if(this.#logs.length >= 50) {
-            this.#logs.splice(0, this.#logs.length - 50)
-        }
-    }
     async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<void> {
         if(this.active) {
             //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
@@ -248,24 +238,7 @@ export default class RenderController {
             throw new Error('Render is not active.')
         }
     }
-    async startTimer(): Promise<void> {
-        try {
-            const stats = await Statistics()
-            this.#last_stats = stats;
-            this.emit('stat', stats)
-            console.info('[RenderController] Starting statistics timer, running every', UPDATE_INTERVAL, "ms")
-            this.#statsTimer = setInterval(() => {
-                Statistics().then(stats => {
-                    this.#last_stats = stats;
-                    this.emit('stat', stats)
-                })
-            }, UPDATE_INTERVAL)
-        }
-        catch(err) {
-            console.error("[ERROR] Statistics have been disabled due to an error.\n", err.message)
-            clearInterval(this.#statsTimer);
-        }
-    }
+    
     
     getStatus() {
         const timeTaken = this.active ? prettyMilliseconds(Date.now() - this.#render.started) : null;
