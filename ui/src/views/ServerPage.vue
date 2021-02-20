@@ -244,6 +244,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
     },
   },
 });
+
 export default {
   name: 'ServerPanel',
   ListComponent,
@@ -601,10 +602,17 @@ export default {
             return response;
         }, (error)  =>{
             if (error.response  && 401 === error.response.status) {
-                this.$router.push({
-                    path: `/login/${id}`,
-                    query: { redirect: `/server/${id}`, expired: true, ret: 6}
-                })
+                if(error.response.data?.code === "TOKEN_EXPIRED") {
+                    this.$router.push({
+                        path: `/login/${id}`,
+                        query: { redirect: `/server/${id}`, expired: true, ret: 6}
+                    })
+                }else{
+                    this.$router.push({
+                        path: `/login/${id}`,
+                        query: { redirect: `/server/${id}`, unauthorized: true, ret: 7}
+                    })
+                }
             } else {
                 return Promise.reject(error);
             }
