@@ -180,9 +180,8 @@ export default class RenderController {
                             if(this.#frameTimes.length > MAX_FRAMETIME_COUNT) {
                                 this.#frameTimes.shift()
                             }
-                        }else{
-                            this.#lastFrameTime = Date.now()
                         }
+                        this.#lastFrameTime = Date.now()
                         //get frame #
                     }
                     this.pushLog(msg)
