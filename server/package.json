@@ -1,7 +1,7 @@
 {
   "name": "blender-render-server",
   "author": "jackzmc",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "private": true,
   "main": "dist/index.js",
   "scripts": {

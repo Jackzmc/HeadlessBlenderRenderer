@@ -537,8 +537,8 @@ export default {
         Axios.get('/api/render/status')
         .then(response => {
             this.render.active = response.data.active;
-            this.render.current_frame = response.data.current_frame;
-            this.render.max_frames = response.data.max_frames;
+            this.render.current_frame = response.data.render.currentFrame;
+            this.render.max_frames = response.data.render.maximumFrames;
         })
         .catch(err => {
             this.$buefy.snackbar.open({

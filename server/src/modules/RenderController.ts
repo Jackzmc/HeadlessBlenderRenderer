@@ -244,6 +244,7 @@ export default class RenderController {
         const timeTaken = this.active ? prettyMilliseconds(Date.now() - this.#render.started) : null;
         return {
             render: this.#render,
+            active: this.active,
             duration: this.active ? {
                 formatted: timeTaken,
                 raw: Date.now() - this.#render.started,
