@@ -270,7 +270,7 @@ export default {
         started: null,
         last_frame_time: null,
         eta: 0,
-        averageTimerPerFrame: 0
+        averageTimePerFrame: 0
       },
       //OPTIONS
       options: {
@@ -534,11 +534,13 @@ export default {
         })
     },
     fetchStatus() {
-        Axios.get('/api/render/status')
+        Axios.get('/api/render/status?src=dash&v=' + this.$VERSION)
         .then(response => {
             this.render.active = response.data.active;
             this.render.current_frame = response.data.render.currentFrame;
             this.render.max_frames = response.data.render.maximumFrames;
+            this.render.eta = response.data.eta
+            this.render.averageTimePerFrame = response.data.averageTimePerFrame
         })
         .catch(err => {
             this.$buefy.snackbar.open({
@@ -566,9 +568,10 @@ export default {
                 }
             }else{
                 this.render.active = cb.status.active;
-                this.render.current_frame = cb.status.current_frame;
-                this.render.max_frames = cb.status.max_frames;
-
+                this.render.current_frame = cb.status.render.currentFrame
+                this.render.max_frames = cb.status.render.maximumFrames
+                this.render.eta = cb.status.eta
+                this.render.averageTimePerFrame = cb.status.averageTimePerFrame
                 if(cb.settings) this.serverSettings = cb.settings
                 
             }
