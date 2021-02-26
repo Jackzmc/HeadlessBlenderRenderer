@@ -48,8 +48,8 @@
                     <div v-if="render.active" class="notification is-dark">
                         <h6 class="title is-6">Rendering <span class="has-text-success">{{blend_file}}</span></h6>
                         <progress class="progress is-small renderprogress is-success" :value='render.current_frame' :max='render.max_frames'>{{framePercent}}</progress>
-                        <p><strong>ETA: </strong>{{formatDuration(eta)}}</p>
-                        <p><strong>Average time per frame: </strong>{{formatDuration(averageTimePerFrame)}}</p>
+                        <p><strong>ETA: </strong>{{formatDuration(render.eta)}}</p>
+                        <p><strong>Average time per frame: </strong>{{formatDuration(render.averageTimePerFrame)}}</p>
                         <br>
                         <nav class="level" > 
                         <!-- Left side -->
@@ -68,7 +68,7 @@
 
                             <!-- Right side -->
                             <div class="level-right">
-                                <p class="level-item">{{render.current_frame}}/{{this.render.max_frames}} frames complete</p>
+                                <p class="level-item">{{framesRendered}} frames complete</p>
                                 <p class="level-item">{{framePercent}}%</p>
                             </div>
                         </nav>
@@ -265,7 +265,8 @@ export default {
         backlog: [], //The backlog of logs if paused
         active: false, //Is the render active
         current_frame: 0, //Current active render frame
-        max_frames: 5, //Current active render's maximum frames,
+        max_frames: 0, //Current active render's maximum frames,
+        start_frame: 0,
         lastFrameDurations: [], //Cache last X frames to get AVG seconds/frame
         started: null,
         last_frame_time: null,
@@ -334,10 +335,13 @@ export default {
         if(this.render.max_frames == null) return "- Frame #" + this.render.current_frame;
         return `()`;
     },
+    framesRendered() {
+        return `${this.render.current_frame - this.render.start_frame} / ${this.render.max_frames - this.render.start_frame}`
+    },
     framePercent() {
       if(this.render.max_frames == null) return "";
       if(!this.render.active) return 0;
-      return (this.render.current_frame / this.render.max_frames * 100).toFixed(1)
+      return ((this.render.current_frame - this.render.start_frame) / (this.render.max_frames - this.render.start_frame) * 100).toFixed(1)
     },
   },
   methods:{
@@ -479,10 +483,8 @@ export default {
             python_scripts: this.options.blend.python_scripts,
             extra_arguments: this.options.blend.extra_arguments
         })
-        .then((r) => {
+        .then(() => {
             this.render.active = true;
-            this.render.current_frame = r.data.current_frame
-            this.render.max_frames = r.data.max_frames;
             this.$buefy.toast.open({
                 type: 'is-success',
                 message: `Render of ${this.blend_file} has been started`
@@ -539,6 +541,7 @@ export default {
             this.render.active = response.data.active;
             this.render.current_frame = response.data.render.currentFrame;
             this.render.max_frames = response.data.render.maximumFrames;
+            this.render.start_frame = response.data.render.startFrame
             this.render.eta = response.data.eta
             this.render.averageTimePerFrame = response.data.averageTimePerFrame
         })
@@ -660,6 +663,7 @@ export default {
           this.render.active = true;
           this.render.current_frame = render.currentFrame || 0;
           this.render.max_frames = render.maximumFrames;
+          this.render.start_frame = render.startFrame || 0
           this.blend_file = render.blend
           this.render.started = duration ? duration.started : Date.now()
           this.render.eta = render.eta;
