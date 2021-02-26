@@ -583,7 +583,7 @@ export default {
                 }
             }else{
                 this.render.active = cb.status.active;
-                this.render.start_frame = cb.status.render.start_frame || 1
+                this.render.start_frame = cb.status.render.start_frame || 0
                 this.render.current_frame = cb.status.render.currentFrame
                 this.render.max_frames = cb.status.render.maximumFrames
                 if(this.render.start_frame > 0) {
