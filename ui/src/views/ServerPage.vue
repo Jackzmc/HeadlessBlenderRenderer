@@ -92,12 +92,12 @@
                             Render all frames
                         </b-checkbox>
                     </b-field>
-                    <div v-if="!options.blend.frames.all" class="columns">
+                    <div v-if="!options.blend.frames.all && !render.active" class="columns">
                         <div class="column">
                             <b-field label="Starting Frame">
                                 <b-numberinput 
                                 :min="0" 
-                                :disabled="render.active || options.blend.frames.all" 
+                                :disabled="render.active" 
                                 controls-position="compact"
                                 v-model="options.blend.frames.start"
                             />
@@ -107,13 +107,25 @@
                             <b-field label="Ending Frame">
                                 <b-numberinput 
                                 :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
-                                :disabled="render.active || options.blend.frames.all" 
+                                :disabled="render.active" 
                                 controls-position="compact"
                                 v-model="options.blend.frames.stop" 
                             />
                             </b-field>
                         </div>
                         <br>
+                    </div>
+                    <div v-else-if="render.active" class="columns">
+                        <div class="column">
+                            <b-field label="Starting Frame">
+                                <b-input disabled :value="options.blend.frames.start" />
+                            </b-field>
+                        </div>
+                        <div class="column">
+                            <b-field label="Ending Frame">
+                                <b-input disabled :value="options.blend.frames.stop" />
+                            </b-field>
+                        </div>
                     </div>
                     <b-field label="Python Scripts (Optional)">
                         <b-taginput :disabled="render.active"
@@ -571,10 +583,19 @@ export default {
                 }
             }else{
                 this.render.active = cb.status.active;
+                this.render.start_frame = cb.status.render.start_frame || 1
                 this.render.current_frame = cb.status.render.currentFrame
                 this.render.max_frames = cb.status.render.maximumFrames
+                if(this.render.start_frame > 0) {
+                    this.options.blend.frames.all = false,
+                    this.options.blend.frames.start = this.render.start_frame
+                    this.options.blend.frames.stop = this.render.max_frames
+                }
+
                 this.render.eta = cb.status.eta
                 this.render.averageTimePerFrame = cb.status.averageTimePerFrame
+                this.blend_file = cb.status.render.blend
+
                 if(cb.settings) this.serverSettings = cb.settings
                 
             }
