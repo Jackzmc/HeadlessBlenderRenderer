@@ -108,6 +108,7 @@ export default class RenderController {
                 render.currentFrame =  parseInt(options.frames[0])
                 render.maximumFrames = parseInt(options.frames[1])
             }
+            render.startFrame = render.currentFrame
             const frameString = allFrames ? 'all': (`${render.currentFrame}..${render.maximumFrames}`)
             console.log(`[renderStart] mode=${renderPrefix} blend="${blend}" frames=${frameString} ${pythonScripts.join(" ")}`);
             try {
@@ -156,6 +157,7 @@ export default class RenderController {
                             blend: render.blend,
                             currentFrame: render.currentFrame,
                             maximumFrames: render.maximumFrames,
+                            startFrame: render.startFrame,
                             started: Date.now(),
                             startedById: user.username,
                         }

@@ -7,6 +7,7 @@ export interface RenderOptions {
 export interface Render {
     currentFrame: number;
     maximumFrames: number;
+    startFrame: number
     started: number;
     blend: string,
     startedById: string,
