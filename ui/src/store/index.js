@@ -72,7 +72,7 @@ export default new Vuex.Store({
       .then(response => {
         server.status = "online"
         server.data = {
-            blend: response.data.blend,
+            blend: response.data.render.blend,
             active: response.data.active,
         }
         state.commit('updateServer', server)

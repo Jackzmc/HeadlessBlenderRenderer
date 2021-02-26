@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="container is-fluid">
     <div id="btm_right_box">
         <div id="btm_right">
             <p><span style="vertical-align: middle; margin-right: 5px">v{{$VERSION}}</span><b-button @click="settings.active = true" icon-left="cog"></b-button></p>
@@ -39,7 +39,7 @@
     <div class="container">
         <h1 class="title is-1">Headless Blender Render - Servers Dashboard</h1>
         <div class="columns">
-            <div class="column is-8">
+            <div class="column is-9">
                 <table class="table is-fullwidth">
                     <thead>
                         <tr>

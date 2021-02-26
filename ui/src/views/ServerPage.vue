@@ -92,41 +92,43 @@
                             Render all frames
                         </b-checkbox>
                     </b-field>
-                    <div v-if="!options.blend.frames.all && !render.active" class="columns">
-                        <div class="column">
-                            <b-field label="Starting Frame">
-                                <b-numberinput 
-                                :min="0" 
-                                :disabled="render.active" 
-                                controls-position="compact"
-                                v-model="options.blend.frames.start"
-                            />
-                            </b-field>
+                    <span v-if="!options.blend.frames.all">
+                        <div v-if="!render.active" class="columns">
+                            <div class="column">
+                                <b-field label="Starting Frame">
+                                    <b-numberinput 
+                                    :min="0" 
+                                    :disabled="render.active" 
+                                    controls-position="compact"
+                                    v-model="options.blend.frames.start"
+                                />
+                                </b-field>
+                            </div>
+                            <div class="column">
+                                <b-field label="Ending Frame">
+                                    <b-numberinput 
+                                    :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
+                                    :disabled="render.active" 
+                                    controls-position="compact"
+                                    v-model="options.blend.frames.stop" 
+                                />
+                                </b-field>
+                            </div>
+                            <br>
                         </div>
-                        <div class="column">
-                            <b-field label="Ending Frame">
-                                <b-numberinput 
-                                :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
-                                :disabled="render.active" 
-                                controls-position="compact"
-                                v-model="options.blend.frames.stop" 
-                            />
-                            </b-field>
+                        <div v-else class="columns">
+                            <div class="column">
+                                <b-field label="Starting Frame">
+                                    <b-input disabled :value="options.blend.frames.start" />
+                                </b-field>
+                            </div>
+                            <div class="column">
+                                <b-field label="Ending Frame">
+                                    <b-input disabled :value="options.blend.frames.stop" />
+                                </b-field>
+                            </div>
                         </div>
-                        <br>
-                    </div>
-                    <div v-else-if="render.active" class="columns">
-                        <div class="column">
-                            <b-field label="Starting Frame">
-                                <b-input disabled :value="options.blend.frames.start" />
-                            </b-field>
-                        </div>
-                        <div class="column">
-                            <b-field label="Ending Frame">
-                                <b-input disabled :value="options.blend.frames.stop" />
-                            </b-field>
-                        </div>
-                    </div>
+                    </span>
                     <b-field label="Python Scripts (Optional)">
                         <b-taginput :disabled="render.active"
                             v-model="options.blend.python_scripts"
@@ -214,7 +216,9 @@
                     </div>
                     <div class="level-right">
                         <b-tooltip label="View the last rendered frame">
-                            <b-button v-if="render.current_frame > 0 && render.active" type="is-info" @click="openPreview">Preview</b-button>
+                            <b-button v-if="render.current_frame > 0 && render.active" type="is-info" :loading="previewPending" @click="openPreview">
+                                Generate Preview
+                            </b-button>
                         </b-tooltip>
                     </div>
                 </nav>
@@ -270,6 +274,7 @@ export default {
       socket_first_inital: false, //if this is the first connection
       server_version: null,
       isSocketOffline: true,
+      previewPending: false,
       //STATES
       blend_file: null, //Choosen blend file
       render: {
@@ -449,9 +454,11 @@ export default {
         })
     },
     async openPreview() {
+        this.previewPending = true;
         const res = await fetch(`${this.server.address}/api/render/preview`, {headers: {
             Authorization: this.server.jwt
         }});
+        this.previewPending = false
         const frame = res.headers.get('x-frame')
         if(res.headers.has('x-frame')) {
             const blob = await res.blob()
