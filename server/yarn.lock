@@ -1513,10 +1513,10 @@ strip-json-comments@~2.0.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha1-PFMZQukIwml8DsNEhYwobHygpgo=
 
-systeminformation@^4.26.9:
-  version "4.26.9"
-  resolved "https://registry.yarnpkg.com/systeminformation/-/systeminformation-4.26.9.tgz#ecc725a162c0c7d8d48226f97637a5f590042ffd"
-  integrity sha512-69MTIX9j//wnteJzQWuGL6FiMxlfS3wTWyhROI6pNUaQALYqJb3W9VtLVcEcKFOjO1vrGRgilJVFzJeRRi//Pg==
+systeminformation@^5.6.4:
+  version "5.6.4"
+  resolved "https://registry.yarnpkg.com/systeminformation/-/systeminformation-5.6.4.tgz#5f32fcb05a5849e2a0e71b182c1f56ce32219310"
+  integrity sha512-b2tvW1R+qjNEoAGgh734EGLgqbDMghjsHRaWo36skAC6JM1tw1pitcGz/REt+qSIRSXbE4PKECojhaSrBRrEmw==
 
 tar@^2.0.0:
   version "2.2.2"
