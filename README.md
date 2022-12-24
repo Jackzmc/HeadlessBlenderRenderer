@@ -11,6 +11,10 @@ This project is split into two parts: UI, and the Server.
 The server runs independently of the UI, and exposes public HTTP routes that you could hook up any client to to check or render.
 The UI uses the API routes, but also a socket.io connection for any realtime data (current frame status, render logs, statistics). 
 
+## Preview
+![image](https://user-images.githubusercontent.com/4030546/209415690-53965f04-df2c-4917-a456-0d5d8476dced.png)
+(Old development screenshot)
+
 # Server Setup
 
 The server setup is a bit messy, but on start the server should generate the necessary folders if you do a full clone of this repository.
