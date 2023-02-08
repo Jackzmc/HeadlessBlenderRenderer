@@ -75,6 +75,7 @@ export default class DB {
                             try {
                                 this.users.insert(user)
                                 this.logAction(null, ActionType.CREATE_USER, user);
+                                console.log("Generated a new default account with username \"admin\" and password \"admin\"")
                             }catch(err) {
                                 if(err.code != 'SQLITE_CONSTRAINT') {
                                     console.error('[Database] Failed to insert new admin account.\n', err.message)

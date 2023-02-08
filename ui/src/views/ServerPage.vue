@@ -181,8 +181,22 @@
             </div>
             <div class="column">
                 <br>
-                <p class="title is-3">Server: <span class="has-text-info">{{$route.params.server}}</span></p>
-                <p class="subtitle is-5" v-html="socketStatus"></p>
+                <p class="title is-3">
+                    <b-field grouped group-multiline>
+                        <div class="control">
+                            <b-taglist attached>
+                                <b-tag type="is-dark">Server</b-tag>
+                                <b-tag type="is-info">{{ $route.params.server }}</b-tag>
+                            </b-taglist>
+                        </div>
+                        <div class="control">
+                            <b-taglist attached>
+                                <b-tag type="is-dark">Live View</b-tag>
+                                <b-tag :type="isSocketOffline ? 'is-danger':'is-success'">{{ isSocketOffline ? 'Offline' : ' Connected' }}</b-tag>
+                            </b-taglist>
+                        </div>
+                    </b-field>
+                </p>
                 <b-field v-if="options.enable_socket" :label="consoleName" >
                   <div :class="['box',{'disconnected': isSocketOffline}]">
                     <VirtualList                    
@@ -346,7 +360,7 @@ export default {
             return 'You lack permissions to start/stop renders.'
     },
     socketStatus() {
-      return this.isSocketOffline ? `<span class='has-text-danger'>Disconnected from socket server</span>` : `<span class='has-text-success'>Connected to socket server</span>`
+      return this.isSocketOffline ? `<span class='has-text-danger'>Live View Unavailable</span>` : `<span class='has-text-success'>Live View Active</span>`
     },
     frameValue() {
         if(this.render.max_frames == null) return "- Frame #" + this.render.current_frame;
@@ -590,9 +604,9 @@ export default {
                 }
             }else{
                 this.render.active = cb.status.active;
-                this.render.start_frame = cb.status.render.start_frame || 0
-                this.render.current_frame = cb.status.render.currentFrame
-                this.render.max_frames = cb.status.render.maximumFrames
+                this.render.start_frame = cb.status?.render.start_frame || 0
+                this.render.current_frame = cb.status?.render.currentFrame
+                this.render.max_frames = cb.status?.render.maximumFrames
                 if(this.render.start_frame > 0) {
                     this.options.blend.frames.all = false,
                     this.options.blend.frames.start = this.render.start_frame

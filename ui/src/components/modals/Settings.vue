@@ -14,7 +14,7 @@
             </b-radio-button>
         </b-field>
     </b-field>
-    <b-field label="Socket" message="Socket is responsibile for showing logs, statistics, current frame information, and uploading files. Only disable to save bandwidth.">
+    <b-field label="Live View" message="Live view is responsibile for showing logs, statistics, current frame information, and uploading files. Only disable to save bandwidth.">
         <b-tooltip label="Currently not implemented for Web UI." position="is-right">
         <b-switch disabled v-model="socket_enabled">
             {{socket_enabled?"Enabled":"Disabled"}}

@@ -29,8 +29,8 @@ app.use('/api', WebServer(renderController))
 process.on('SIGTERM', () => gracefulShutdown)
 process.on('SIGINT', () => gracefulShutdown)
 
-server.listen(process.env.WEBPORT||8080,() => {
-    console.info(`Listening on :${process.env.WEBPORT||8080}`)
+server.listen(process.env.WEB_PORT||8081,() => {
+    console.info(`Listening on :${process.env.WEB_PORT||8081}`)
 })
 
 async function gracefulShutdown() {

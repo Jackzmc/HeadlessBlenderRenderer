@@ -30,7 +30,7 @@
                     </b-field>
                     <b-field>
                         <div class="buttons">
-                            <b-button tag="input" native-type="submit" type="is-success" value="Login to Server" />
+                            <input type="submit" class="button is-success" value="Login To Server" />
                             <b-button value="Cancel" tag="router-link" to="/">Cancel</b-button>
                         </div>
                     </b-field>

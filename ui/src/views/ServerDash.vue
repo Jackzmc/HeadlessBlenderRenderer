@@ -91,7 +91,7 @@
                         <b-input v-model="form_addserver.address" type="text" placeholder="https://blender.mysite.com/" required pattern="(https?:\/\/)(.*)" />
                     </b-field>
                     <b-field>
-                        <b-button tag="input" native-type="submit" type="is-success" value="Add Server" />
+                        <input type="submit" class="button is-success" value="Add Server" />
                     </b-field>
                 </form>
             </div>

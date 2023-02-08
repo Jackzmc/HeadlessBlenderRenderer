@@ -68,7 +68,7 @@
             <p class="title"><span v-html="cm_temp(stat.temp)"></span></p>
             </div>
         </div>
-        <div class="level-item has-text-centered">
+        <div class="level-item has-text-centered" v-if="stat.fan_speed">
             <div>
             <p class="heading">Fan %</p>
             <p class="title">{{ stat.fan_speed | addSuffix("%") }}</p>
