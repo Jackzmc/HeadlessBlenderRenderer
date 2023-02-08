@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import User from '../types';
+import { User } from '../ts/interfaces/RenderController_interfaces.js';
 import Express from 'express'
 import DB, { ActionType } from '../modules/Database'
 import bcrypt from 'bcrypt'

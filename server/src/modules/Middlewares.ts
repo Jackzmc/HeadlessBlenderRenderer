@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import User from '../types.js'
+import { User } from '../ts/interfaces/RenderController_interfaces.js'
 
 export function restrictedCheck(req: Request,res: Response, next: NextFunction) {
     return checkPermission(0, req, res, next)

@@ -1,6 +1,6 @@
 import { Database, RunResult } from 'sqlite3'
 import bcrypt from 'bcrypt'
-import User from '../../types';
+import { User } from '../../ts/interfaces/RenderController_interfaces.js';
 
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 

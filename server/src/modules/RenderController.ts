@@ -1,17 +1,21 @@
 
 import Statistics from './Statistics'
-import {execShellCommand} from './utils'
-import {spawn} from 'child_process'
+import { execShellCommand } from './utils'
+import { exec, spawn } from 'child_process'
 import prettyMilliseconds from 'pretty-ms'
 import { Socket } from 'socket.io'
 import DB, { ActionType } from './Database';
-import User from '../types';
+import { User } from '../ts/interfaces/RenderController_interfaces.js'
 import {promises as fs} from 'fs'
 import { Render, StoppedRender, RenderOptions } from '../ts/interfaces/RenderController_interfaces.js'
 import { ServerStats, LogObject } from '../ts/interfaces/Statistics_interfaces.js'
+import { tmpdir } from 'os'
+import path from 'path'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 const MAX_FRAMETIME_COUNT = 20;
+
+const BLENDER_PATH = process.env.BLENDER_PATH ?? "blender"
 
 
 export default class RenderController {
@@ -31,6 +35,9 @@ export default class RenderController {
     #statsTimer: NodeJS.Timeout
     #tokenTimer: NodeJS.Timeout
     #db: DB
+
+    #blenderVersion: string
+
     constructor(io: Socket, db: DB) {
         this.#io = io;
         this.#db = db;
@@ -40,7 +47,28 @@ export default class RenderController {
             fs.unlink('../../render.lock')
         }).catch(() => {})
         this.startTimer();
+
+        this.getBlenderVersion().then((out: {stdout: string, stderr: string}) => {
+            const match = out.stdout.match(/Blender ((\d+).(\d+).(\d)+)/)
+            if(match) {
+                this.#blenderVersion = match[1]
+                console.info("Blender Version:", this.#blenderVersion)
+            } else {
+                console.error("Could not get blender version.\n", out.stderr)
+            }
+        })
     }
+
+    private async getBlenderVersion() {
+        return new Promise((resolve, reject) => {
+            exec(`"${BLENDER_PATH}" -b --version`, (error, stdout, stderr) => {
+                if(error) return reject(error)
+                return resolve({ stdout, stderr })
+            })
+        })
+        
+    }
+
     private pushLog(text: string): void {
         const logObject: LogObject = {
             text,
@@ -78,10 +106,11 @@ export default class RenderController {
     }
     startRender(blend: string, user: User, options: RenderOptions = {}) {
         return new Promise(async(resolve,reject) => {
-            if(process.platform === "win32") reject(new Error('Renders cannot be started on windows machines. Sorry.'))
+            // if(process.platform === "win32") return reject(new Error('Renders cannot be started on windows machines. Sorry.'))
             if(!blend) return reject(new Error('Missing blend property'))
             let allFrames: boolean, render: Partial<Render> = {
                 blend,
+                user
             }
 
             const renderPrefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
@@ -133,87 +162,7 @@ export default class RenderController {
                         }
                     }, 1000 * 60 * 10);
                 }
-                const renderProcess = spawn(renderPrefix, args, {
-                    cwd: process.env.HOME_DIR,
-                    stdio: ['ignore', 'pipe', 'pipe']
-                })
-                .on('error', err => {
-                    console.error('[RenderController] ERROR:', err.message)
-                    const logObject = {
-                        text: err.message,
-                        timestamp: Date.now()
-                    }
-                    this.emit('log', logObject)
-                    this.#logs.push(logObject)
-                    if(this.#logs.length >= 50) {
-                        this.#logs.splice(0, this.#logs.length - 50)
-                    }
-                    return reject(err)
-                })
-                renderProcess.stdout.on('data',(data) => {
-                    const msg = data.toString();
-                    if(!this.active) {
-                        this.#render = {
-                            blend: render.blend,
-                            currentFrame: render.currentFrame,
-                            maximumFrames: render.maximumFrames,
-                            startFrame: render.startFrame,
-                            started: Date.now(),
-                            startedById: user.username,
-                        }
-                        this.emit('render_start', this.getStatus())
-                        resolve(this.getStatus())
-                        this.active = true;
-                        
-                    }
-                    const frameMatch = msg.match(/(Saved:)(.*\/)(\d+.png)/)
-                    if(frameMatch && frameMatch.length == 4) {
-                        const frame = parseInt(frameMatch[3]);
-                        this.emit('frame', {
-                            frame,
-                            eta: this.eta,
-                            averageTimePerFrame: this.averageTimePerFrame
-                        });
-                        this.#render.currentFrame = frame + 1;
-
-                        if(this.#lastFrameTime > 0) {
-                            const difference = Date.now() - this.#lastFrameTime;
-                            this.#frameTimes.push(difference)
-                            if(this.#frameTimes.length > MAX_FRAMETIME_COUNT) {
-                                this.#frameTimes.shift()
-                            }
-                        }
-                        this.#lastFrameTime = Date.now()
-                        //get frame #
-                    }
-                    this.pushLog(msg)
-                })
-                renderProcess.stderr.on('data',data => {
-                    if(!this.active) {
-                        this.#render.started = Date.now();
-                        this.emit('render_start', this.getStatus())
-                        resolve(this.getStatus())
-                        this.active = true;
-                    }
-                    this.pushLog(data.toString())
-                })
-                renderProcess
-                .on('exit', () => {
-                    const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
-                    this.#previousRender = {
-                        ...this.#render,
-                        timeTaken,
-                        reason: this.#stopReason
-                    }
-                    this.emit('render_stop', this.#previousRender)
-                    this.#render = null;
-                    this.#logs = []
-                    this.#frameTimes = []
-                    this.#lastFrameTime = 0;
-                    this.active = false
-                    fs.unlink('../../render.lock')
-                    clearInterval(this.#tokenTimer);
-                });
+                const renderProcess = await this.spawn(blend, options, render)
                 fs.writeFile('../../render.lock', JSON.stringify({
                     pid: process.pid,
                     rend: this.getStatus()
@@ -224,14 +173,128 @@ export default class RenderController {
                 reject(err)
             }
         })
-        
     }
+
+    private async spawn(blendFile: string, options: RenderOptions, render: Partial<Render>) {
+        return new Promise((resolve, reject) => {
+            const args = [
+                `blends/${blendFile}`,
+                '-b',
+                '-noaudio',
+                `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
+                '-P', 'python_scripts/settings.py',
+                '-y'
+            ]
+    
+            // if(options.frames !== null) {
+            //     args.push('-a')
+            // } else {
+            //     args.push('--render-frame', `${options.frames[0]}..${options.frames[1]}`)
+            // }
+            args.push('--render-frame', `${render.startFrame}..${render.maximumFrames}`)
+    
+            if(options.useGPU) {
+                args.push('-E', 'CYCLES')
+                args.push('-P', 'python_scripts/render_gpu.py')
+            }
+    
+            if(options.python_scripts) {
+                for(const script of options.python_scripts) {
+                    args.push('-P', script)
+                }
+            }
+            //blender -b "$blend_file" -noaudio --render-output "/home/ezra/tmp/" -E CYCLES -P python_scripts/settings.py -P python_scripts/render_gpu.py -y ${framearg} > >(tee logs/blender.log) 2> >(tee logs/blender_errors.log >&2) &
+            const renderProcess = spawn(BLENDER_PATH, args, {
+                cwd: path.resolve(process.env.HOME_DIR),
+                stdio: ['ignore', 'pipe', 'pipe']
+            }).on('error', err => {
+                console.error('[RenderController] ERROR:', err.message)
+                const logObject = {
+                    text: err.message,
+                    timestamp: Date.now()
+                }
+                this.emit('log', logObject)
+                this.#logs.push(logObject)
+                if(this.#logs.length >= 50) {
+                    this.#logs.splice(0, this.#logs.length - 50)
+                }
+                return reject(err)
+            })
+            renderProcess.stdout.on('data',(data) => {
+                const msg = data.toString();
+                if(!this.active) {
+                    this.#render = {
+                        blend: render.blend,
+                        currentFrame: render.currentFrame,
+                        maximumFrames: render.maximumFrames,
+                        startFrame: render.startFrame,
+                        started: Date.now(),
+                        user: render.user
+                    }
+                    this.emit('render_start', this.getStatus())
+                    resolve(this.getStatus())
+                    this.active = true;
+                    
+                }
+                const frameMatch = msg.match(/Saved: .*[\\\/]((\d+).png)/)
+                if(frameMatch && frameMatch.length == 3) {
+                    const frame = parseInt(frameMatch[2]);
+                    console.log('frame', frame, frameMatch)
+                    this.emit('frame', {
+                        frame,
+                        eta: this.eta,
+                        averageTimePerFrame: this.averageTimePerFrame
+                    });
+                    this.#render.currentFrame = frame + 1;
+    
+                    if(this.#lastFrameTime > 0) {
+                        const difference = Date.now() - this.#lastFrameTime;
+                        this.#frameTimes.push(difference)
+                        if(this.#frameTimes.length > MAX_FRAMETIME_COUNT) {
+                            this.#frameTimes.shift()
+                        }
+                    }
+                    this.#lastFrameTime = Date.now()
+                    //get frame #
+                }
+                this.pushLog(msg)
+            })
+            renderProcess.stderr.on('data',data => {
+                if(!this.active) {
+                    this.#render.started = Date.now();
+                    this.emit('render_start', this.getStatus())
+                    resolve(this.getStatus())
+                    this.active = true;
+                }
+                this.pushLog(data.toString())
+            })
+            renderProcess
+            .on('exit', () => {
+                const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
+                this.#previousRender = {
+                    ...this.#render,
+                    timeTaken,
+                    reason: this.#stopReason
+                }
+                this.emit('render_stop', this.#previousRender)
+                this.#render = null;
+                this.#logs = []
+                this.#frameTimes = []
+                this.#lastFrameTime = 0;
+                this.active = false
+                fs.unlink('../../render.lock')
+                clearInterval(this.#tokenTimer);
+            });
+            resolve(renderProcess)
+        })
+    }
+
     async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<void> {
         if(this.active) {
             //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
             this.#stopReason = reason
             if(user) {
-                this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.startedById)
+                this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
             }
             this.#process.kill('SIGTERM')
             return null;

@@ -703,13 +703,11 @@ export default {
       .on('frame',({frame, eta, averageTimePerFrame}) => {
         this.render.current_frame = frame
         //clean up logs, keep only last 200. only on frame
-        const length = this.render.logs.length ;
-        if(length >= 200) {
-            this.render.logs.splice(0,length-200)
+        if(this.render.logs.length >= 200) {
+            this.render.logs.splice(0, length - 200)
         }
         this.render.eta = eta;
         this.render.averageTimePerFrame = averageTimePerFrame;
-          //console.log('FRAME:',data)
       })
       .on('render_start', ({render, duration}) => {
           this.render.active = true;
@@ -726,14 +724,25 @@ export default {
       .on('render_stop', (data) => {
           this.render.active = false;
           const duration = this.formatDuration(data.timestmap);
-          this.$buefy.dialog.alert({
-              title: 'Render Complete',
-              message: `<b>${this.blend_file}</b> has been successfully rendered. Took <b>${duration}</b>`,
-              type: 'is-success',
-              hasIcon: true,
-              icon: 'alert-circle'
-          })
-          this.$buefy.toast.open(`The render for ${this.blend_file} has ended.`)
+          if(data.reason) {
+            this.$buefy.dialog.alert({
+                title: 'Render Complete',
+                message: `<b>${this.blend_file}</b> has been aborted for ${data.reason}. Took <b>${duration}</b>`,
+                type: 'is-warning',
+                hasIcon: true,
+                icon: 'alert-circle'
+            })
+            this.$buefy.toast.open({ message: `The render for ${this.blend_file} has been aborted`, type: 'is-warning' })
+          } else {
+            this.$buefy.dialog.alert({
+                title: 'Render Complete',
+                message: `<b>${this.blend_file}</b> has been successfully rendered. Took <b>${duration}</b>`,
+                type: 'is-success',
+                hasIcon: true,
+                icon: 'alert-circle'
+            })
+            this.$buefy.toast.open(`The render for ${this.blend_file} has completed`)
+          }
           this.blend_file = null;
       })
       /*const arr = ["test","error: blah", "warning. sRGB","frame: blah. ", "Saved: 'file/0035.png'"]
