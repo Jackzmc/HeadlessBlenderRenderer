@@ -66,7 +66,7 @@ export default class RenderController {
             }, UPDATE_INTERVAL)
         }
         catch(err) {
-            console.error("[ERROR] Statistics have been disabled due to an error.\n", err.message)
+            console.error("[ERROR] Statistics have been disabled due to an error:\n", err.message)
             clearInterval(this.#statsTimer);
         }
     }

@@ -69,7 +69,7 @@ async function parseGPUs(result: string) {
             })
         })
         return gpus;
-    }catch(err) {
+    } catch(err) {
         if(antispam_stat_inc == 0) {
             antispam_stat_inc = 15;
             console.warn("[Statistics:WARN] Could not get nvidia gpu information:", err.message)
