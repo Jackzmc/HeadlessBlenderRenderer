@@ -1,5 +1,4 @@
 
-import bodyParser from 'body-parser'
 import Express, { Request, Response } from 'express'
 const router = Express.Router();
 import Statistics from './modules/Statistics'
@@ -10,8 +9,8 @@ const cors = corsModule({
     exposedHeaders: ['x-frame']
 })
 
-router.use(bodyParser.urlencoded({ extended: false, limit: '500mb'}))
-router.use(bodyParser.json())
+router.use(Express.urlencoded({ extended: false, limit: '500mb'}))
+router.use(Express.json())
 router.options('*', cors)
 router.use(cors)
 

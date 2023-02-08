@@ -4,7 +4,7 @@ import Buefy from 'buefy'
 import 'buefy/dist/buefy.css'
 import '@mdi/font/css/materialdesignicons.css'
 
-import {version} from '../package.json'
+import { version } from '../package.json'
 import router from './router'
 import Axios from 'axios'
 import store from './store'

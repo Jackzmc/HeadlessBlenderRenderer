@@ -20,7 +20,7 @@ export default async function(): Promise<ServerStats> {
         const [si_cpu,si_mem,cpu_speed,cpu_load,cpu_temp,nvidia_smi_result] = await Promise.all([
             si.cpu(),
             si.mem(),
-            si.cpuCurrentspeed(),
+            si.cpuCurrentSpeed(),
             si.currentLoad(),
             si.cpuTemperature(),
             execShellCommand(`${NVIDIA_SMI_PATH} --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader`)
@@ -33,7 +33,7 @@ export default async function(): Promise<ServerStats> {
             started: START_DATE,
             cpu: {
                 name: si_cpu.brand,
-                usage: Math.round(cpu_load.currentload  * 1e1) / 1e1,
+                usage: Math.round(cpu_load.currentLoad  * 1e1) / 1e1,
                 speed: cpu_speed.avg,
                 temp: cpu_temp.main,
             },

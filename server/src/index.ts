@@ -8,7 +8,6 @@ dotenv.config()
 const app = Express()
 const server = new Server(app);
 
-
 if(!process.env.HOME_DIR) {
     console.error('Missing environment variable: \'HOME_DIR\', exiting')
     process.exit(1)
@@ -25,6 +24,7 @@ import WebServer from './server'
 const renderController = Socket(server);
 
 app.use('/api', WebServer(renderController))
+
 
 process.on('SIGTERM', () => gracefulShutdown)
 process.on('SIGINT', () => gracefulShutdown)
