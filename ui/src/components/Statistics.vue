@@ -124,7 +124,7 @@ export default {
             if(val === -1) return "n/a";
             let color = "";
             if(val >= 40 && val < 95) {
-                color = "has-text-warning"
+                color = "has-text-orange"
             }else if(val >= 203 ) {
                 color = "has-text-danger"
             }
@@ -171,3 +171,9 @@ export default {
     }
 }
 </script>
+
+<style>
+.has-text-orange {
+    color: orange;
+}
+</style>
