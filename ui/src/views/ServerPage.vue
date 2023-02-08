@@ -83,9 +83,19 @@
                         </span>
                     </b-field>
                     <b-field label="Render Mode">
-                        <b-checkbox :disabled="render.active" v-model="options.blend.use_gpu">
-                            Rendering with {{options.blend.use_gpu? "GPU" : "CPU"}}
-                        </b-checkbox>
+                        <b-radio-button v-model="options.blend.use_gpu"
+                            :native-value="false"
+                            type="is-primary is-light is-outlined">
+                            <b-icon icon="server"></b-icon>
+                            <span>CPU</span>
+                        </b-radio-button>
+
+                        <b-radio-button v-model="options.blend.use_gpu"
+                            :native-value="true"
+                            type="is-primary is-light is-outlined">
+                            <b-icon icon="expansion-card"></b-icon>
+                            <span>GPU</span>
+                        </b-radio-button>
                     </b-field>
                     <b-field label="Frame Options">
                         <b-checkbox :disabled="render.active" v-model="options.blend.frames.all">
@@ -192,7 +202,7 @@
                         <div class="control">
                             <b-taglist attached>
                                 <b-tag type="is-dark">Live View</b-tag>
-                                <b-tag :type="isSocketOffline ? 'is-danger':'is-success'">{{ isSocketOffline ? 'Offline' : ' Connected' }}</b-tag>
+                                <b-tag :type="isSocketOffline ? 'is-danger':'is-success'">{{ isSocketOffline ? (options.enable_socket ? 'Offline' : 'Disabled') : ' Connected' }}</b-tag>
                             </b-taglist>
                         </div>
                     </b-field>
@@ -604,9 +614,9 @@ export default {
                 }
             }else{
                 this.render.active = cb.status.active;
-                this.render.start_frame = cb.status?.render.start_frame || 0
-                this.render.current_frame = cb.status?.render.currentFrame
-                this.render.max_frames = cb.status?.render.maximumFrames
+                this.render.start_frame = cb.status.render?.start_frame || 0
+                this.render.current_frame = cb.status.render?.currentFrame
+                this.render.max_frames = cb.status.render?.maximumFrames
                 if(this.render.start_frame > 0) {
                     this.options.blend.frames.all = false,
                     this.options.blend.frames.start = this.render.start_frame
@@ -615,7 +625,7 @@ export default {
 
                 this.render.eta = cb.status.eta
                 this.render.averageTimePerFrame = cb.status.averageTimePerFrame
-                this.blend_file = cb.status.render.blend
+                this.blend_file = cb.status.render?.blend
 
                 if(cb.settings) this.serverSettings = cb.settings
                 
