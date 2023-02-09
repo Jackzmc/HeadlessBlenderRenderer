@@ -81,7 +81,7 @@ export default class RenderController {
             this.#blenderVersion = match[1]
             console.info("Blender Version:", this.#blenderVersion)
         } else {
-            console.error("Could not get blender version.\n", out.stderr)
+            console.error("Could not get blender version:\n", out.stdout)
         }
     }
 
