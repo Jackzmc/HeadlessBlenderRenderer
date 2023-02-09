@@ -781,11 +781,11 @@ export default {
       })
       .on('render_stop', (data) => {
           this.render.active = false;
-          const duration = this.formatDuration(data.timestmap);
+          const duration = this.formatDuration(data.timestamp);
           if(data.reason) {
             this.$buefy.dialog.alert({
-                title: 'Render Complete',
-                message: `<b>${this.blend_file}</b> has been aborted for ${data.reason}. Took <b>${duration}</b>`,
+                title: 'Render Aborted',
+                message: `<b>${this.blend_file}</b> was aborted for: ${data.reason}. Took <b>${duration}</b>`,
                 type: 'is-warning',
                 hasIcon: true,
                 icon: 'alert-circle'
@@ -797,7 +797,7 @@ export default {
                 message: `<b>${this.blend_file}</b> has been successfully rendered. Took <b>${duration}</b>`,
                 type: 'is-success',
                 hasIcon: true,
-                icon: 'alert-circle'
+                icon: 'checkmark'
             })
             this.$buefy.toast.open(`The render for ${this.blend_file} has completed`)
           }
