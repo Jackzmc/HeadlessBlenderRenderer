@@ -777,7 +777,7 @@ export default {
           this.render.averageTimePerFrame = render.averageTimePerFrame
           this.preview = { frame: 0, lastPreview: 0 }
 
-          this.$buefy.toast.open(`${render.startedByID} has started rendering ${render.blend}`)
+          this.$buefy.toast.open(`${render.startedByName} has started rendering ${render.blend}`)
       })
       .on('render_stop', (data) => {
           this.render.active = false;

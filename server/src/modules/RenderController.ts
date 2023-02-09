@@ -233,7 +233,7 @@ export default class RenderController {
                         started: Date.now(),
                         user: render.user
                     }
-                    this.emit('render_start', this.getStatus())
+                    this.emit('render_start', { ... this.getStatus(), startedByName: render.user.username })
                     this.active = true;
                     
                 }
@@ -316,7 +316,7 @@ export default class RenderController {
                         if(err) reject(err)
                     })
                     this.#stopReason = "TERMINATED"
-                    this.pushLog(`Render has been force terminated"`)
+                    this.pushLog(`Render has been forcefully terminated`)
                     console.info("Render forcefully terminated")
                 }, 1000 * 60)
                 return resolve(true)
