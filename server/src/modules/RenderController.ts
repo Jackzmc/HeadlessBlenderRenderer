@@ -250,7 +250,14 @@ export default class RenderController {
             })
             renderProcess.stderr.on('data',data => {
                 if(!this.active) {
-                    this.#render.started = Date.now();
+                    this.#render = {
+                        blend: render.blend,
+                        currentFrame: render.currentFrame,
+                        maximumFrames: render.maximumFrames,
+                        startFrame: render.startFrame,
+                        started: Date.now(),
+                        user: render.user
+                    }
                     this.emit('render_start', this.getStatus())
                     this.active = true;
                 }
