@@ -76,7 +76,7 @@ export default class RenderController {
 
     private async fetchBlenderVersion() {
         const out = await execPromise(`"${BLENDER_PATH}" -b --version`)
-        const match = out.stdout.match(/Blender ((\d+).(\d+).(\d)+)/)
+        const match = out.stdout.match(/Blender ((\d+).(\d+).?(\d)+)?/)
         if(match) {
             this.#blenderVersion = match[1]
             console.info("Blender Version:", this.#blenderVersion)
