@@ -22,6 +22,7 @@
     "socket.io": "^2.3.0",
     "sqlite3": "^5.0.0",
     "systeminformation": "^5.17.8",
+    "tree-kill": "^1.2.2",
     "treeify": "^1.1.0"
   },
   "devDependencies": {

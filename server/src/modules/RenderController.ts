@@ -12,6 +12,7 @@ import { ServerStats, LogObject } from '../ts/interfaces/Statistics_interfaces.j
 import { tmpdir } from 'os'
 import path from 'path'
 import internal from 'stream'
+import TreeKill from 'tree-kill'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 const MAX_FRAMETIME_COUNT = 20;
@@ -305,14 +306,24 @@ export default class RenderController {
                 this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
             }
             console.info("Render cancelled: " + reason)
-            this.#process.kill('SIGINT')
+            this.pushLog(`Render has been cancelled for reason "${reason}"`)
+            TreeKill(this.#process.pid, 'SIGINT', (err) => {
+                throw err
+            })
+            setTimeout(() => {
+                TreeKill(this.#process.pid, (err) => {
+                    throw err
+                })
+                this.#stopReason = "TERMINATED"
+                this.pushLog(`Render has been force terminated"`)
+                console.info("Render forcefully terminated")
+            }, 1000 * 60)
             return true
         }
         return false
     }
     
     private async cleanup() {
-        await this.setLock(null)
 
         const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
         try {
@@ -325,6 +336,8 @@ export default class RenderController {
             else
                 throw err
         }
+
+        await this.setLock(null)
     }
 
     private async getLockData(): Promise<LockData> {
@@ -394,6 +407,7 @@ export default class RenderController {
     }
 
     get averageTimePerFrame() {
+        if(!this.#render) return 0
         if(this.#frameTimes.length == 0) return Date.now() - this.#render.started;
         const sum = this.#frameTimes.reduce((a,b) => a+b, 0)
         return Math.round(sum / this.#frameTimes.length)
