@@ -1,5 +1,5 @@
 import si from 'systeminformation'
-import { execShellCommand } from './utils'
+import { execCombinedPromise } from './utils'
 import csv from 'csvtojson'
 import path from 'path'
 import { ServerStats } from '../ts/interfaces/Statistics_interfaces.js';
@@ -23,7 +23,7 @@ export default async function(): Promise<ServerStats> {
             si.cpuCurrentSpeed(),
             si.currentLoad(),
             si.cpuTemperature(),
-            execShellCommand(`${NVIDIA_SMI_PATH} --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader`)
+            execCombinedPromise(`${NVIDIA_SMI_PATH} --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader`)
         ])
         const gpus = await parseGPUs(nvidia_smi_result as string)
 

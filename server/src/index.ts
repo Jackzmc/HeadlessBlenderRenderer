@@ -21,20 +21,21 @@ require('./modules/SetupDirectory');
 
 import Socket from './socket.js'
 import WebServer from './server'
-const renderController = Socket(server);
 
-app.use('/api', WebServer(renderController))
+(async() => {
+    const renderController = await Socket(server);
+    app.use('/api', WebServer(renderController))
 
+    process.on('SIGTERM', () => gracefulShutdown())
+    process.on('SIGINT', () => gracefulShutdown())
+    
+    server.listen(process.env.WEB_PORT||8081,() => {
+        console.info(`Listening on :${process.env.WEB_PORT||8081}`)
+    })
 
-process.on('SIGTERM', () => gracefulShutdown)
-process.on('SIGINT', () => gracefulShutdown)
-
-server.listen(process.env.WEB_PORT||8081,() => {
-    console.info(`Listening on :${process.env.WEB_PORT||8081}`)
-})
-
-async function gracefulShutdown() {
-    console.info('Received shutdown signal. Cancelling any active renders...')
-    await renderController.cancelRender()
-    process.exit(0)
-}
+    async function gracefulShutdown() {
+        console.info('Received shutdown signal. Cancelling any active renders...')
+        await renderController.cancelRender()
+        process.exit(0)
+    }
+})()

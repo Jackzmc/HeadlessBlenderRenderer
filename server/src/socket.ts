@@ -12,13 +12,16 @@ declare module 'socket.io' {
 const SECRET = process.env.JWT_SECRET;
 
 
-export default function(server: Server) {
+export default async function(server: Server) {
     const io = require('socket.io')({ cookie: false, serveClient: false });
     io.attach(server)
     
     const db = new DB('data.db')
 
     const controller = new RenderController(io, db)
+
+    await controller.initalize()
+
 
     io.on('connection', (socket: Socket) => {
         socket.authorized = false;

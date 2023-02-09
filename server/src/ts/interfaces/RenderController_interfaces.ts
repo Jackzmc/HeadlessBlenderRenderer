@@ -2,6 +2,7 @@ export interface RenderOptions {
     useGPU?: boolean,
     python_scripts?: string[],
     frames?: string[],
+    renderQuality?: number
 }
 
 export interface Render {
