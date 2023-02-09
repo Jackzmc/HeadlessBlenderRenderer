@@ -298,29 +298,31 @@ export default class RenderController {
         })
     }
 
-    async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<boolean> {
-        if(this.active) {
-            //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
-            this.#stopReason = reason
-            if(user) {
-                this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
-            }
-            console.info("Render cancelled: " + reason)
-            this.pushLog(`Render has been cancelled for reason "${reason}"`)
-            TreeKill(this.#process.pid, 'SIGINT', (err) => {
-                throw err
-            })
-            setTimeout(() => {
-                TreeKill(this.#process.pid, (err) => {
-                    throw err
+    cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if(this.active) {
+                //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
+                this.#stopReason = reason
+                if(user) {
+                    this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
+                }
+                console.info("Render cancelled: " + reason)
+                this.pushLog(`Render has been cancelled for reason "${reason}"`)
+                TreeKill(this.#process.pid, 'SIGINT', (err) => {
+                    if(err) reject(err)
                 })
-                this.#stopReason = "TERMINATED"
-                this.pushLog(`Render has been force terminated"`)
-                console.info("Render forcefully terminated")
-            }, 1000 * 60)
-            return true
-        }
-        return false
+                setTimeout(() => {
+                    TreeKill(this.#process.pid, (err) => {
+                        if(err) reject(err)
+                    })
+                    this.#stopReason = "TERMINATED"
+                    this.pushLog(`Render has been force terminated"`)
+                    console.info("Render forcefully terminated")
+                }, 1000 * 60)
+                return resolve(true)
+            }
+            resolve(false)
+        })
     }
     
     private async cleanup() {
