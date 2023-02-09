@@ -112,6 +112,7 @@ export default class RenderController {
         catch(err) {
             console.error("[ERROR] Statistics have been disabled due to an error:\n", err.message)
             clearInterval(this.#statsTimer);
+            this.#statsTimer = null
         }
     }
     get eventEmitter() {
@@ -119,6 +120,9 @@ export default class RenderController {
     }
     get db() {
         return this.#db;
+    }
+    get statsAvailable() {
+        return this.#statsTimer !== null
     }
     async startRender(blend: string, user: User, options: RenderOptions = {}) {
         // if(process.platform === "win32") return reject(new Error('Renders cannot be started on windows machines. Sorry.'))
@@ -322,10 +326,18 @@ export default class RenderController {
 
     private async setLock(obj: LockData) {
         const lockPath = path.join(process.env.HOME_DIR, "render.lock")
-        if(obj === null) {
-            return fs.rm(lockPath, { force: true })
-        } else {
-            return fs.writeFile(lockPath, JSON.stringify(obj))
+        try {
+            if(obj === null) {
+                return fs.rm(lockPath, { force: true })
+            } else {
+                return fs.writeFile(lockPath, JSON.stringify(obj))
+            }
+        } catch(err) {
+            if(err.code == "EACCESS") {
+                console.warn("Warn: Could not create render.lock due to missing permissions")
+            } else {
+                throw err
+            }
         }
     }
     

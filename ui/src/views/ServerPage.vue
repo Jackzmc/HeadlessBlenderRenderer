@@ -177,6 +177,12 @@
                                 <b-tag :type="isSocketOffline ? 'is-danger':'is-success'">{{ isSocketOffline ? (options.enable_socket ? 'Offline' : 'Disabled') : ' Connected' }}</b-tag>
                             </b-taglist>
                         </div>
+                        <div class="control" v-if="!stats_available">
+                            <b-taglist attached>
+                                <b-tag type="is-dark">Statistics</b-tag>
+                                <b-tag type="is-warning">Unavailable</b-tag>
+                            </b-taglist>
+                        </div>
                     </b-field>
                 </p>
                 <b-field v-if="options.enable_socket" :label="consoleName" >
@@ -219,7 +225,7 @@
                     </div>
                 </nav>
                 
-                <span v-if="options.enable_socket">
+                <span v-if="options.enable_socket && stats_available">
                     <span v-if="isSocketOffline">
                         <div v-if="isSocketOffline" class="notification is-danger">
                             Stats are disabled: Disconnected from live view
@@ -320,7 +326,8 @@ export default {
         lastPreview: 0,
         frame: 0,
         fetching: false
-      }
+      },
+      stats_available: false
     }
   },
   computed: {
@@ -644,6 +651,7 @@ export default {
                     })
                 }
             }else{
+                this.stats_available = cb.statsAvailable
                 this.render.active = cb.status.active;
                 this.render.start_frame = cb.status.render?.start_frame || 0
                 this.render.current_frame = cb.status.render?.currentFrame

@@ -33,15 +33,17 @@ export default async function(server: Server) {
                     return;
                 }
                 socket.authorized = true;
-                socket.emit('stat', controller.statistics)
 
                 db.getSettings((err: Error, settings: any) => {
                     return cb({
+                        statsAvailable: controller.statsAvailable,
                         valid: true, 
                         status: controller.getStatus(),
                         settings
                     })
                 })
+                socket.emit('stat', controller.statistics)
+
             })
         })
         
