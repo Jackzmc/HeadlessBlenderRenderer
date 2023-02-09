@@ -796,12 +796,6 @@ export default {
           }
           this.blend_file = null;
       })
-      /*const arr = ["test","error: blah", "warning. sRGB","frame: blah. ", "Saved: 'file/0035.png'"]
-      setInterval(() => {
-        const element = arr[Math.floor(Math.random() * arr.length)];
-        this.render.logs.push({text: element, timestamp: Date.now()})
-        if(this.$refs.renderlog) this.$refs.renderlog.scrollToBottom();
-      }, 1000)*/
   },
   watch: {
       "options.blend.frames.start": function(val) {

@@ -18,13 +18,14 @@ export default {
     },
     computed:{
         classname() {
-            if(this.source.text.includes("warn")) {
+            const text = this.source.text.toLowerCase();
+            if(text.includes("warn")) {
                 return 'warning'
-            }else if(this.source.text.includes("error")) {
+            } else if(text.includes("error")) {
                 return 'has-text-danger'
-            }else if(this.source.text.includes("Saved: ")) {
+            } else if(text.includes("Saved: ")) {
                 return "has-text-success"
-            }else{
+            } else{
                 return ""
             }
         }
