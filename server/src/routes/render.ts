@@ -53,7 +53,8 @@ router.get('/preview', hasPermissionBit([0,1]), async(req: Request,res: Response
     if(renderController.active) {
         try {
             const files = await readdir(process.env.HOME_DIR+"/tmp")
-            if(files.length > 0) {
+            if(files.length > 1) {
+                // Grab 2nd last frame
                 const lastFile = files[files.length - 2];
                 if(lastFile) {
                     res.setHeader('X-Frame', parseInt(lastFile));

@@ -50,7 +50,7 @@ export default class RenderController {
     #previousRender: StoppedRender
 
     #io = null
-    #statsTimer: NodeJS.Timeout
+    #statsTimer: NodeJS.Timeout = null
     #tokenTimer: NodeJS.Timeout
     #db: DB
 
@@ -127,6 +127,12 @@ export default class RenderController {
     async startRender(blend: string, user: User, options: RenderOptions = {}) {
         // if(process.platform === "win32") return reject(new Error('Renders cannot be started on windows machines. Sorry.'))
         if(!blend) throw new Error('Missing blend property')
+
+        const blendFilePath = path.join(process.env.HOME_DIR, "blends", blend)
+        if(!await fs.stat(blendFilePath)) {
+            throw new Error("Cannot find blend file: " + blendFilePath)
+        }
+
         let render: Partial<Render> = {
             blend,
             user
@@ -156,7 +162,7 @@ export default class RenderController {
                 }
             }, 1000 * 60 * 10);
         }
-        const renderProcess = await this.spawn(blend, options, render)
+        const renderProcess = await this.spawn(blendFilePath, options, render)
         await this.setLock({
             pid: renderProcess.pid,
             data: this.getStatus()
@@ -164,15 +170,18 @@ export default class RenderController {
         this.#process = renderProcess;
     }
 
-    private async spawn(blendFile: string, options: RenderOptions, render: Partial<Render>) : Promise<ChildProcessByStdio<null, internal.Readable, internal.Readable>> {
+    private async spawn(blendPath: string, options: RenderOptions, render: Partial<Render>) : Promise<ChildProcessByStdio<null, internal.Readable, internal.Readable>> {
+        const pythonScriptsParent = path.join(process.env.HOME_DIR, "python_scripts/")
         return new Promise((resolve, reject) => {
             const args = [
-                `blends/${blendFile}`,
                 '-b',
+                `"${blendPath}"`,
                 '-noaudio',
                 `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
-                '-P', 'python_scripts/settings.py',
-                '-y'
+                // '-P', path.join(pythonScriptsParent, 'settings.py'),
+                '-y',
+                '--render-format', options.renderFormat ?? 'PNG',
+                '--render-frame', `${render.startFrame}..${render.maximumFrames}`,
             ]
     
             // if(options.frames !== null) {
@@ -180,26 +189,27 @@ export default class RenderController {
             // } else {
             //     args.push('--render-frame', `${options.frames[0]}..${options.frames[1]}`)
             // }
-            args.push('--render-frame', `${render.startFrame}..${render.maximumFrames}`)
     
             if(options.useGPU) {
                 args.push('-E', 'CYCLES')
-                args.push('-P', 'python_scripts/render_gpu.py')
+                args.push('-P', path.join(pythonScriptsParent, 'render_gpu.py'))
             }
     
             if(options.python_scripts) {
                 for(const script of options.python_scripts) {
-                    args.push('-P', script)
+                    args.push('-P', path.join(pythonScriptsParent, path.normalize(script)))
                 }
             }
 
-            if(options.renderQuality) {
+            if(options.renderQuality && options.renderQuality !== 100) {
                 args.push('--python-expr', `bpy.data.scenes[0].render.resolution_percentage = ${options.renderQuality}`)
             }
+            console.log(BLENDER_PATH, args.join(" "))
             //blender -b "$blend_file" -noaudio --render-output "/home/ezra/tmp/" -E CYCLES -P python_scripts/settings.py -P python_scripts/render_gpu.py -y ${framearg} > >(tee logs/blender.log) 2> >(tee logs/blender_errors.log >&2) &
             const renderProcess = spawn(BLENDER_PATH, args, {
                 cwd: path.resolve(process.env.HOME_DIR),
-                stdio: ['ignore', 'pipe', 'pipe']
+                stdio: ['ignore', 'pipe', 'pipe'],
+                shell: true
             }).on('error', err => {
                 console.error('[RenderController] ERROR:', err.message)
                 const logObject = {
@@ -297,8 +307,7 @@ export default class RenderController {
                 this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
             }
             console.info("Render cancelled: " + reason)
-            this.#process.kill('SIGTERM')
-            await this.cleanup()
+            this.#process.kill('SIGINT')
             return true
         }
         return false
@@ -387,7 +396,7 @@ export default class RenderController {
     }
 
     get averageTimePerFrame() {
-        if(this.#frameTimes.length == 0) return 0;
+        if(this.#frameTimes.length == 0) return Date.now() - this.#render.started;
         const sum = this.#frameTimes.reduce((a,b) => a+b, 0)
         return Math.round(sum / this.#frameTimes.length)
     }
