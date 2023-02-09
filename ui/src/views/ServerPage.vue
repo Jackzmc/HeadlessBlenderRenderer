@@ -139,19 +139,10 @@
                             </div>
                         </div>
                     </span>
-                    <b-field label="Python Scripts (Optional)">
-                        <b-taginput :disabled="render.active"
-                            v-model="options.blend.python_scripts"
-                            placeholder="Comma-separated list of files"
-                            type="is-dark">
-                        </b-taginput>
+                    <b-field >
+                        <b-button @click="openRenderSettingsModal">View More Options</b-button>
                     </b-field>
-                    <b-field label="Extra Command Arguments (Optional)" v-if="serverSettings.extraShellArgs">
-                        <b-input
-                        v-model="options.blend.extra_arguments" 
-                        disabled 
-                        />
-                    </b-field>
+                    
                     <br>
                 </span>
                 <div class="notification is-dark" v-if="!render.active">
@@ -270,6 +261,7 @@
 import Statistics from '../components/Statistics'
 import ListComponent from '../components/ListComponent';
 import Settings from '../components/modals/Settings'
+import RenderSettings from '../components/modals/RenderSettings'
 
 import io from 'socket.io-client';
 import VirtualList from 'vue-virtual-scroll-list'
@@ -464,6 +456,23 @@ export default {
             }
         })
     },  
+    openRenderSettingsModal() {
+        this.$buefy.modal.open({
+            parent: this,
+            component: RenderSettings,
+            trapFocus: true,
+            props: {
+                settings: this.options.blend,
+                serverSettings: this.serverSettings,
+                render: this.render
+            },
+            events: {
+                save: (value) => {
+                    this.options.blend = value
+                }
+            }
+        })
+    }, 
     openPermissionsModal() {
         this.$buefy.modal.open({
             parent: this,
@@ -528,6 +537,9 @@ export default {
         })
         .then(() => {
             this.render.active = true;
+            this.render.current_frame = this.options.blend.frames.all ? this.options.blend.frames.start : 0
+            this.render.start_frame = this.render.current_frame
+            this.render.max_frames = this.options.blend.frames.stop ?? 0
             this.$buefy.toast.open({
                 type: 'is-success',
                 message: `Render of ${this.blend_file} has been started`
@@ -711,6 +723,7 @@ export default {
       })
       .on('render_start', ({render, duration}) => {
           this.render.active = true;
+          console.log(render)
           this.render.current_frame = render.currentFrame || 0;
           this.render.max_frames = render.maximumFrames;
           this.render.start_frame = render.startFrame || 0
