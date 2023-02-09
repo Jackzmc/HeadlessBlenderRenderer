@@ -326,11 +326,12 @@ export default class RenderController {
     }
     
     private async cleanup() {
-
+        console.debug("Cleaning up...")
         const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
         try {
-            for(const file of await fs.readdir(tmpFolder)) {
-                await fs.rm(file, { recursive: true, force: true })
+            const filenames = await fs.readdir(tmpFolder)
+            for(const filename of filenames) {
+                await fs.rm(path.join(tmpFolder, filename), { recursive: true, force: true })
             }
         } catch(err) {
             if(err.code == "EACCES")
