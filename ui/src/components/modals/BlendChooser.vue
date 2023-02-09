@@ -158,7 +158,7 @@
 <script>
 export default {
     name: 'BlendChooser',
-    props: ['bits'],
+    props: ['permissions'],
     data() {
         return {
             uploader: null, //SocketIOFileClient
@@ -180,7 +180,7 @@ export default {
     },
     computed: {
         hasPermission() {
-            return this.bits.includes(4)
+            return this.permissions & 4
         }
     },
     methods:{

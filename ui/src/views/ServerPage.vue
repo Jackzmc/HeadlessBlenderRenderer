@@ -10,7 +10,7 @@
             <b-navbar-item tag="router-link" to="/">
                 Servers Dashboard
             </b-navbar-item>
-            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissionBits.includes(16)">
+            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions & 16">
                 Admin Panel
             </b-navbar-item>
         </template>
@@ -56,7 +56,7 @@
                             <div class="level-left">
                                 <div class="level-item">
                                     <div class="buttons">
-                                        <b-button type="is-danger" outlined @click="cancelRender()" :disabled="!hasPermission">
+                                        <b-button type="is-danger" outlined @click="cancelRender()" :disabled="!hasRenderPermission">
                                             Stop
                                         </b-button>
                                         <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
@@ -132,7 +132,7 @@
                         <div class="level-left">
                             <div class="level-item">
                                 <div class="buttons">
-                                    <b-button :disabled="blend_file==null||!hasPermission" type="is-success" @click="startRender()">
+                                    <b-button :disabled="blend_file==null||!hasRenderPermission" type="is-success" @click="startRender()">
                                         Start Render
                                     </b-button>
                                     <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
@@ -336,18 +336,18 @@ export default {
     consoleName() {
       return `Console Output (${this.render.logs.length} lines)`
     },
-    hasPermission() {
-        return this.user.permissionBits.includes(8)
+    hasRenderPermission() {
+        return this.user.permissions & 8
     },
     tokens() {
-        if(this.user.permissions === 99 || this.user.permissionBits.includes(255)) {
+        if(this.user.permissions === 99 || this.user.permissions & 255) {
             return '∞'
         }else{
             return this.formatNumber(this.user.tokens)
         }
     },
     renderStatus() {
-        if(this.hasPermission)
+        if(this.hasRenderPermission)
             return !this.blend_file ? 'Select a blend file to start' : 'Idle'
         else 
             return 'You lack permissions to start/stop renders.'
@@ -400,7 +400,7 @@ export default {
             },
             canCancel: ["escape", "outside"],
             props: {
-                bits: this.user.permissionBits
+               permissions: this.user.permissions,
             }
         })
     },
@@ -425,7 +425,7 @@ export default {
             canCancel: ["escape", "outside"],
             props: {
                 server: this.server,
-                bits: this.user.permissionBits
+                permissions: this.user.permissions
             }
         })
     },
@@ -477,7 +477,6 @@ export default {
             canCancel: ['escape', 'outside'],
             props: {
                 permissions: this.user.permissions,
-                bits: this.user.permissionBits
             },
         })
     },
