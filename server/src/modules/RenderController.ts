@@ -127,6 +127,8 @@ export default class RenderController {
             blend,
             user
         }
+        if(options.renderQuality) options.renderQuality |= 0
+        if(isNaN(options.renderQuality)) options.renderQuality = null
 
         const renderPrefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
         const pythonScripts = options.python_scripts||[].map(v => `-P "${v}"`);
