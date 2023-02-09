@@ -305,10 +305,19 @@ export default class RenderController {
     }
     
     private async cleanup() {
-        const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
-        await fs.rm(tmpFolder, { recursive: true, force: true })
         await this.setLock(null)
-        await fs.mkdir(tmpFolder).catch(err => {})
+
+        const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
+        try {
+            for(const file of await fs.readdir(tmpFolder)) {
+                await fs.rm(file, { recursive: true, force: true })
+            }
+        } catch(err) {
+            if(err.code == "EACCES")
+                console.error("[Error] Cannot cleanup tmp folder at " + tmpFolder)
+            else
+                throw err
+        }
     }
 
     private async getLockData(): Promise<LockData> {
@@ -319,6 +328,10 @@ export default class RenderController {
         } catch(err) {
             if(err.code === 'ENOENT')
                 return null
+            else if(err.code === 'EACCES') {
+                console.warn("Warn: Cannot read render.lock due to missing permissions")
+                return null
+            }
             else
                 throw err
         }
@@ -328,12 +341,12 @@ export default class RenderController {
         const lockPath = path.join(process.env.HOME_DIR, "render.lock")
         try {
             if(obj === null) {
-                return fs.rm(lockPath, { force: true })
+                await fs.rm(lockPath, { force: true })
             } else {
-                return fs.writeFile(lockPath, JSON.stringify(obj))
+                await fs.writeFile(lockPath, JSON.stringify(obj))
             }
         } catch(err) {
-            if(err.code == "EACCESS") {
+            if(err.code === "EACCES") {
                 console.warn("Warn: Could not create render.lock due to missing permissions")
             } else {
                 throw err
