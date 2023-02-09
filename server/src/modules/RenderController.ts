@@ -204,8 +204,6 @@ export default class RenderController {
             if(options.renderQuality && options.renderQuality !== 100) {
                 args.push('--python-expr', `bpy.data.scenes[0].render.resolution_percentage = ${options.renderQuality}`)
             }
-            console.log(BLENDER_PATH, args.join(" "))
-            //blender -b "$blend_file" -noaudio --render-output "/home/ezra/tmp/" -E CYCLES -P python_scripts/settings.py -P python_scripts/render_gpu.py -y ${framearg} > >(tee logs/blender.log) 2> >(tee logs/blender_errors.log >&2) &
             const renderProcess = spawn(BLENDER_PATH, args, {
                 cwd: path.resolve(process.env.HOME_DIR),
                 stdio: ['ignore', 'pipe', 'pipe'],
