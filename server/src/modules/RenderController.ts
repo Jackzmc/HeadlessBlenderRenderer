@@ -6,7 +6,7 @@ import prettyMilliseconds from 'pretty-ms'
 import { Socket } from 'socket.io'
 import DB, { ActionType } from './Database';
 import { User } from '../ts/interfaces/RenderController_interfaces.js'
-import {promises as fs} from 'fs'
+import {createWriteStream, promises as fs, WriteStream} from 'fs'
 import { Render, StoppedRender, RenderOptions } from '../ts/interfaces/RenderController_interfaces.js'
 import { ServerStats, LogObject } from '../ts/interfaces/Statistics_interfaces.js'
 import { tmpdir } from 'os'
@@ -40,6 +40,7 @@ interface RenderStatus {
 export default class RenderController {
     active: boolean = false;
     #render: Render = null
+    #logStream: WriteStream = null
 
     #frameTimes: FrameDuration[] = []
     #lastFrameTime: FrameDuration
@@ -92,6 +93,7 @@ export default class RenderController {
             text,
             timestamp: Date.now()
         }
+        this.#logStream.write(text)
         this.emit('log', logObject)
         this.#logs.push(logObject)
         if(this.#logs.length >= 50) {
@@ -182,7 +184,7 @@ export default class RenderController {
                 '-noaudio',
                 `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
                 // '-P', path.join(pythonScriptsParent, 'settings.py'),
-                '-y',
+                // '-y',
                 '--render-format', options.renderFormat ?? 'PNG',
                 '--render-frame', `${render.startFrame}..${render.maximumFrames}`,
             ]
@@ -208,7 +210,11 @@ export default class RenderController {
                 args.push('--python-expr', `bpy.data.scenes[0].render.resolution_percentage = ${options.renderQuality}`)
             }
 
-            args.push(`"${blendPath}"`)
+            args.push(`"${blendPath}"`, '-y')
+
+            const safeName = render.blend.replace(/\s/, '_').replace(/[^0-9A-Za-z]/g,'')
+            this.#logStream = createWriteStream(path.join(process.env.HOME_DIR, "logs", `render-${safeName}-${Math.round(Date.now() / 1000)}.log`), 'utf-8')
+
             const renderProcess = spawn(BLENDER_PATH, args, {
                 cwd: path.resolve(process.env.HOME_DIR),
                 stdio: ['ignore', 'pipe', 'pipe'],
@@ -295,6 +301,8 @@ export default class RenderController {
                 this.#frameTimes = []
                 this.#lastFrameTime = 0;
                 this.active = false
+                this.#logStream.close()
+                this.#logStream = null
                 clearInterval(this.#terminateTimer);
                 this.#terminateTimer = null
                 clearInterval(this.#tokenTimer);
@@ -333,6 +341,7 @@ export default class RenderController {
     }
     
     private async cleanup() {
+        this.#logStream = null
         console.debug("Cleaning up...")
         const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
         try {
