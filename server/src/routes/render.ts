@@ -57,7 +57,8 @@ router.get('/preview', hasPermissionBit([0,1]), async(req: Request,res: Response
                 // Grab 2nd last frame
                 const lastFile = files[files.length - 2];
                 if(lastFile) {
-                    res.setHeader('X-Frame', parseInt(lastFile));
+                    // Make it 1-indexed
+                    res.setHeader('X-Frame', parseInt(lastFile) + 1);
                     res.sendFile(`${process.env.HOME_DIR}/tmp/${lastFile}`)
                     return
                 }
