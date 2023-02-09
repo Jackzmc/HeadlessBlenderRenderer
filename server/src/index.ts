@@ -35,8 +35,7 @@ import WebServer from './server'
 
     async function gracefulShutdown() {
         console.info('Received shutdown signal. Cancelling any active renders...')
-        if(renderController.active)
-            await renderController.cancelRender("SHUTTING_DOWN")
+        await renderController.cancelRender("SHUTTING_DOWN")
         process.exit(0)
     }
 })()

@@ -278,7 +278,7 @@ export default class RenderController {
         })
     }
 
-    async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<void> {
+    async cancelRender(reason: StopReason = "CANCELLED", user?: User): Promise<boolean> {
         if(this.active) {
             //Don't need to cleanup this.#render, as exit event will clean it up after SIGTERM is called.
             this.#stopReason = reason
@@ -288,10 +288,9 @@ export default class RenderController {
             console.info("Render cancelled: " + reason)
             this.#process.kill('SIGTERM')
             await this.cleanup()
-            return null;
-        }else{
-            throw new Error('Render is not active.')
+            return true
         }
+        return false
     }
     
     private async cleanup() {
