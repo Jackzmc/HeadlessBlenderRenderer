@@ -179,7 +179,6 @@ export default class RenderController {
             this.#terminateTimer = null
             const args = [
                 '-b',
-                `"${blendPath}"`,
                 '-noaudio',
                 `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
                 // '-P', path.join(pythonScriptsParent, 'settings.py'),
@@ -208,6 +207,8 @@ export default class RenderController {
             if(options.renderQuality && options.renderQuality !== 100) {
                 args.push('--python-expr', `bpy.data.scenes[0].render.resolution_percentage = ${options.renderQuality}`)
             }
+
+            args.push(`"${blendPath}"`)
             const renderProcess = spawn(BLENDER_PATH, args, {
                 cwd: path.resolve(process.env.HOME_DIR),
                 stdio: ['ignore', 'pipe', 'pipe'],
