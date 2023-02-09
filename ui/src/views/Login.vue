@@ -79,14 +79,9 @@ export default {
                 this.login.password = null
                 this.$refs.user.focus()
                 if(err.response) {
-                    if(err.response.status === 404) {
-                        return this.$buefy.snackbar.open({
-                            message: 'No account was found with that username or password',
-                            type: 'is-danger'
-                        })
-                    }else if(err.response.status === 401) {
+                    if(err.response.status === 401) {
                         this.$buefy.snackbar.open({
-                            message: 'Username or password is invalid.',
+                            message: 'Username or password is incorrect',
                             type: 'is-danger'
                         })
                     }
