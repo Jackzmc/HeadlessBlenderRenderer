@@ -5,6 +5,7 @@ import {promises as fs, createReadStream} from 'fs'
 import prettyMilliseconds from 'pretty-ms';
 import path from 'path'
 import { userCheck, hasPermissionBit } from '../modules/Middlewares';
+import { execCombinedPromise } from '../modules/utils.js';
 
 const BLENDS_DIR = process.env.BLENDS_DIR || `${process.env.HOME_DIR}/blends`
 
@@ -72,6 +73,22 @@ router.get('/:name', hasPermissionBit(4), (req: Request, res: Response) => {
     .on('end', () => {
         res.end();
     })
+})
+router.get('/:name/meta', hasPermissionBit(1), async (req: Request, res: Response) => {
+    const blendPath = path.join(BLENDS_DIR, path.normalize(req.params.name))
+    try {
+        const scriptResponse: string = await execCombinedPromise(`python3 python_scripts/blend_render_info.py "${blendPath}"`,{
+            cwd: process.env.HOME_DIR
+        })
+        const csv = scriptResponse.trim().split(" ");
+        return res.send({
+            totalFrames: parseInt(csv[1])
+        })
+    } catch(err) {
+        return res.send({
+            totalFrames: null
+        })
+    }
 })
 router.delete('/:name', hasPermissionBit(4), (req: Request,res: Response) => {
     fs.unlink(`${BLENDS_DIR}/${req.params.name}`)

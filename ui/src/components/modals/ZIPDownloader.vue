@@ -1,7 +1,13 @@
-import { hasPermissionBit } from '../../../../server/src/modules/Middlewares';
 <template>
 <div class="box">
-    <h3 class='title is-3'>Download ZIPs <a @click='refresh' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a></h3>
+    <h3 class='title is-3'>
+        Download ZIPs 
+        <div class="is-pulled-right buttons">
+            <a @click='refresh' class="button is-info is-pulled-right"><b-icon icon="refresh"></b-icon><span>Refresh</span></a>
+
+            <b-button class="is-pulled-right" icon-left="close" @click="close" />
+        </div>
+    </h3>
     <hr>
     <div v-if="hasPermission">
         <b-table
@@ -63,6 +69,9 @@ export default {
         }
     },
     methods: {
+        close() {
+            this.$parent.close()
+        },
         refresh() {
             this.loading = true;
             this.$http.get('/api/zips')

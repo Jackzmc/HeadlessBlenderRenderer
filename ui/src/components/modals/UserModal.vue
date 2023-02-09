@@ -1,6 +1,6 @@
 <template>
 <div class="box">
-    <h4 class='title is-4'>User Settings</h4>
+    <h4 class='title is-4'>User Settings <b-button class="is-pulled-right" icon-left="close" @click="close" /></h4>
     <hr>
     <div class="columns">
         <div class="column">
@@ -46,6 +46,9 @@ export default {
         }
     },
     methods: {
+        close() {
+            this.$parent.close()
+        },
         resetPass() {
             if(this.new_password !== this.password_confirm) {
                 return this.$buefy.toast.open({

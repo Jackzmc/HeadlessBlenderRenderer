@@ -1,6 +1,6 @@
 <template>
 <div class="box">
-    <h3 class='title is-3'>Settings</h3>
+    <h3 class='title is-3'>Settings <b-button class="is-pulled-right" icon-left="close" @click="save" /></h3>
     <hr>
     <b-field label="Temperature Type">
         <b-field>

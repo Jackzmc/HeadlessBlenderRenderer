@@ -123,40 +123,19 @@ export default class RenderController {
     async startRender(blend: string, user: User, options: RenderOptions = {}) {
         // if(process.platform === "win32") return reject(new Error('Renders cannot be started on windows machines. Sorry.'))
         if(!blend) throw new Error('Missing blend property')
-        let allFrames: boolean, render: Partial<Render> = {
+        let render: Partial<Render> = {
             blend,
             user
         }
         if(options.renderQuality) options.renderQuality |= 0
         if(isNaN(options.renderQuality)) options.renderQuality = null
 
-        const renderPrefix = options.useGPU ? "./renderGPU.sh" : "./renderCPU.sh"
-        const pythonScripts = options.python_scripts||[].map(v => `-P "${v}"`);
-        if(!options.frames) {
-            allFrames = true;
-            //Find the maximum amount of frames
-            try {
-                const scriptResponse: string = await execCombinedPromise(`python3 python_scripts/blend_render_info.py "blends/${blend}"`,{
-                    cwd:process.env.HOME_DIR
-                })
-                const csv = scriptResponse.trim().split(" ");
-                render.maximumFrames = parseInt(csv[1]);
-                render.currentFrame = 0;
-            }catch(err) {
-                console.error('[renderStart] Finding frame count of blend file failed:', err.message)
-                throw err
-            }
-        } else {
-            allFrames = false
-            if(Array.isArray(options.frames) && options.frames.length !== 2) {
-                throw new Error('Invalid frame specification. Please provide array of start and end frame or null for all')
-            }
-            render.currentFrame = parseInt(options.frames[0])
-            render.maximumFrames = parseInt(options.frames[1])
+        render.startFrame = render.currentFrame = Number(options.frames[0])
+        render.maximumFrames = Number(options.frames[1])
+        if(isNaN(render.startFrame) || isNaN(render.maximumFrames)) {
+            throw new Error("Frames array should be of integers")
         }
-        render.startFrame = render.currentFrame
-        const frameString = allFrames ? 'all': (`${render.currentFrame}..${render.maximumFrames}`)
-        console.log(`[renderStart] mode=${renderPrefix} blend="${blend}" frames=${frameString} ${pythonScripts.join(" ")}`);
+
         this.#previousRender = null;
         this.#stopReason = null;
         //FIXME: Seems to be failing even with unlimited tokens
@@ -266,6 +245,7 @@ export default class RenderController {
                     this.#lastFrameTime = Date.now()
                     //get frame #
                 }
+                if(msg === "Blender quit") this.cancelRender("ERROR")
                 this.pushLog(msg)
             })
             renderProcess.stderr.on('data',data => {
@@ -274,6 +254,7 @@ export default class RenderController {
                     this.emit('render_start', this.getStatus())
                     this.active = true;
                 }
+                if(data === "Blender quit") this.cancelRender("ERROR")
                 this.pushLog(data.toString())
             })
             renderProcess
@@ -304,6 +285,7 @@ export default class RenderController {
             if(user) {
                 this.#db.logAction(user, ActionType.CANCEL_RENDER, reason, this.#render.blend, this.#render.user.username)
             }
+            console.info("Render cancelled: " + reason)
             this.#process.kill('SIGTERM')
             await this.cleanup()
             return null;
@@ -314,15 +296,15 @@ export default class RenderController {
     
     private async cleanup() {
         const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
-        // This will also clear the render.lock
         await fs.rm(tmpFolder, { recursive: true, force: true })
+        await this.setLock(null)
         await fs.mkdir(tmpFolder).catch(err => {})
     }
 
     private async getLockData(): Promise<LockData> {
-        const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
+        const folder = path.join(process.env.HOME_DIR)
         try {
-            const data = await fs.readFile(path.join(tmpFolder, "render.lock"))
+            const data = await fs.readFile(path.join(folder, "render.lock"))
             return JSON.parse(data.toString()) as LockData
         } catch(err) {
             if(err.code === 'ENOENT')
@@ -333,10 +315,9 @@ export default class RenderController {
     }
 
     private async setLock(obj: LockData) {
-        const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
-        const lockPath = path.join(tmpFolder, "render.lock")
+        const lockPath = path.join(process.env.HOME_DIR, "render.lock")
         if(obj === null) {
-            return fs.rm(lockPath)
+            return fs.rm(lockPath, { force: true })
         } else {
             return fs.writeFile(lockPath, JSON.stringify(obj))
         }

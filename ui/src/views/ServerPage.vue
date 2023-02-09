@@ -44,8 +44,8 @@
             <div class="column is-5">
                 <br>
                 <br>
-                <span>
-                    <div v-if="render.active" class="notification is-dark">
+                <template v-if="render.active">
+                    <div class="notification is-dark">
                         <h6 class="title is-6">Rendering <span class="has-text-success">{{blend_file}}</span></h6>
                         <progress class="progress is-small renderprogress is-success" :value='render.current_frame' :max='render.max_frames'>{{framePercent}}</progress>
                         <p><strong>ETA: </strong>{{formatDuration(render.eta)}}</p>
@@ -72,8 +72,24 @@
                                 <p class="level-item">{{framePercent}}%</p>
                             </div>
                         </nav>
-                        
                     </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-image">
+                                <figure class="image is-4by3">
+                                    <img ref="preview"/>
+                                </figure>
+                            </div>
+                            <footer class="card-footer">
+                                <p class="card-footer-item">
+                                    Frame #{{ preview.frame }} Preview
+                                </p>
+                            </footer>
+                        </div>
+                    </div>
+                    <br>
+                </template>
+                <template v-else>
                     <b-field class="file">
                         <b-button :disabled="render.active" type="is-primary" @click="openBlendChooser" icon-left="blender-software">
                             <span>Choose a blend file</span>
@@ -82,69 +98,34 @@
                             {{ blend_file }}
                         </span>
                     </b-field>
-                    <b-field label="Render Mode">
-                        <b-radio-button v-model="options.blend.use_gpu"
-                            :native-value="false"
-                            type="is-primary is-light is-outlined">
-                            <b-icon icon="server"></b-icon>
-                            <span>CPU</span>
-                        </b-radio-button>
+                    <template v-if="blendMeta">
+                        <b-field label="Render Mode">
+                            <b-radio-button v-model="options.blend.use_gpu"
+                                :native-value="false"
+                                type="is-primary is-light is-outlined">
+                                <b-icon icon="server"></b-icon>
+                                <span>CPU</span>
+                            </b-radio-button>
 
-                        <b-radio-button v-model="options.blend.use_gpu"
-                            :native-value="true"
-                            type="is-primary is-light is-outlined">
-                            <b-icon icon="expansion-card"></b-icon>
-                            <span>GPU</span>
-                        </b-radio-button>
-                    </b-field>
-                    <b-field label="Frame Options">
-                        <b-checkbox :disabled="render.active" v-model="options.blend.frames.all">
-                            Render all frames
-                        </b-checkbox>
-                    </b-field>
-                    <span v-if="!options.blend.frames.all">
-                        <div v-if="!render.active" class="columns">
-                            <div class="column">
-                                <b-field label="Starting Frame">
-                                    <b-numberinput 
-                                    :min="0" 
-                                    :disabled="render.active" 
-                                    controls-position="compact"
-                                    v-model="options.blend.frames.start"
-                                />
-                                </b-field>
-                            </div>
-                            <div class="column">
-                                <b-field label="Ending Frame">
-                                    <b-numberinput 
-                                    :min="options.blend.frames.start > 0? options.blend.frames.start : 0" 
-                                    :disabled="render.active" 
-                                    controls-position="compact"
-                                    v-model="options.blend.frames.stop" 
-                                />
-                                </b-field>
-                            </div>
-                            <br>
-                        </div>
-                        <div v-else class="columns">
-                            <div class="column">
-                                <b-field label="Starting Frame">
-                                    <b-input disabled :value="options.blend.frames.start" />
-                                </b-field>
-                            </div>
-                            <div class="column">
-                                <b-field label="Ending Frame">
-                                    <b-input disabled :value="options.blend.frames.stop" />
-                                </b-field>
-                            </div>
-                        </div>
-                    </span>
-                    <b-field >
-                        <b-button @click="openRenderSettingsModal">View More Options</b-button>
-                    </b-field>
-                    
+                            <b-radio-button v-model="options.blend.use_gpu"
+                                :native-value="true"
+                                type="is-primary is-light is-outlined">
+                                <b-icon icon="expansion-card"></b-icon>
+                                <span>GPU</span>
+                            </b-radio-button>
+                        </b-field>
+                        <b-field label="Frame Selection">
+                            <b-slider v-model="frame_selector" :min="0" :max="blendMeta.totalFrames">
+                            </b-slider>
+                        </b-field>
+                        <br>
+                        <b-field>
+                            <b-button @click="openRenderSettingsModal">View More Options</b-button>
+                        </b-field>
+                    </template>
+                    <p v-else-if="blend_file" class="my-5 mx-2 has-text-size-2">Fetching blend metadata...</p>
                     <br>
-                </span>
+                </template>
                 <div class="notification is-dark" v-if="!render.active">
                     <nav class="level" > 
                         <!-- Left side -->
@@ -268,6 +249,9 @@ import VirtualList from 'vue-virtual-scroll-list'
 import humanizeDuration from "humanize-duration";
 import Axios from 'axios'
 
+// The absolute quickest time duration to get new frames
+const MIN_PREVIEW_TIME = 1000 * 12
+
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
   languages: {
@@ -290,7 +274,7 @@ export default {
       socket_first_inital: false, //if this is the first connection
       server_version: null,
       isSocketOffline: true,
-      previewPending: false,
+      frame_selector: [0, 0],
       //STATES
       blend_file: null, //Choosen blend file
       render: {
@@ -317,7 +301,8 @@ export default {
             stop: 1 //max frame range
           },
           python_scripts: [], //tag list of python scripts to run in py_scripts folder
-          extra_arguments: null //Any extra arguments as a string
+          extra_arguments: null, //Any extra arguments as a string
+          render_quality: 100
         },
         stats: {
           use_celsius: true //true -> celsius shown, false -> fahrenheit
@@ -329,6 +314,12 @@ export default {
       serverSettings: {
         extraShellArgs: false,
         recordStats: true
+      },
+      blendMeta: null,
+      preview: {
+        lastPreview: 0,
+        frame: 0,
+        fetching: false
       }
     }
   },
@@ -406,8 +397,11 @@ export default {
             events: {
                 setBlend: (value) => {
                     this.blend_file = value;
+                    this.frame_selector = [0, 0]
+                    this.fetchBlendMeta()
                 }
             },
+            canCancel: ["escape", "outside"],
             props: {
                 bits: this.user.permissionBits
             }
@@ -418,6 +412,7 @@ export default {
             parent: this,
             component: () => import('../components/modals/UserModal'),
             trapFocus: true,
+            canCancel: ["escape", "outside"],
             props: {
                 user: this.$store.state.users[this.server.id],
                 server: this.server,
@@ -430,6 +425,7 @@ export default {
             parent: this,
             component: () => import('../components/modals/ZIPDownloader'),
             trapFocus: true,
+            canCancel: ["escape", "outside"],
             props: {
                 server: this.server,
                 bits: this.user.permissionBits
@@ -447,6 +443,7 @@ export default {
                     socket_enabled: this.options.enable_socket
                 }
             },
+            canCancel: ["escape", "outside"],
             events: {
                 save: (values) => {
                     this.options.stats.use_celsius = values.use_celsius;
@@ -466,6 +463,7 @@ export default {
                 serverSettings: this.serverSettings,
                 render: this.render
             },
+            canCancel: ["escape", "outside"],
             events: {
                 save: (value) => {
                     this.options.blend = value
@@ -517,6 +515,32 @@ export default {
             }
         }
     },
+    async fetchPreview() {
+        this.preview.fetching = true;
+        const res = await fetch(`${this.server.address}/api/render/preview`, {headers: {
+            Authorization: this.server.jwt
+        }});
+        this.preview.fetching = false
+        if(res.headers.has('x-frame')) {
+            this.preview.frame = Number(res.headers.get('x-frame'))
+            this.preview.lastPreview = Date.now()
+            const blob = await res.blob()
+            this.$refs.preview.src = URL.createObjectURL(blob)
+        }else{
+            try {
+                const json = await res.json();
+                this.$buefy.snackbar.open({
+                    type: 'is-danger',
+                    message: `Could not get a preview: ${json.code}`,
+                })
+            }catch(err) {
+                this.$buefy.snackbar.open({
+                    type: 'is-danger',
+                    message: `Could not get a preview: ${err.message}`,
+                })
+            }
+        }
+    },
     startRender() {
         if(!this.blend_file) {
             return this.$buefy.dialog.alert({
@@ -528,18 +552,17 @@ export default {
             })
         }
         this.render.logs = []
-        const frames = this.options.blend.frames.all ? null: [ this.options.blend.frames.start,this.options.blend.frames.stop];
         Axios.post(`/api/render/${this.blend_file}` , {
             useGPU: this.options.blend.use_gpu,
-            frames,
+            frames: this.frame_selector,
             python_scripts: this.options.blend.python_scripts,
             extra_arguments: this.options.blend.extra_arguments
         })
         .then(() => {
             this.render.active = true;
-            this.render.current_frame = this.options.blend.frames.all ? this.options.blend.frames.start : 0
+            this.render.current_frame = this.frame_selector[0]
             this.render.start_frame = this.render.current_frame
-            this.render.max_frames = this.options.blend.frames.stop ?? 0
+            this.render.max_frames = this.frame_selector[1]
             this.$buefy.toast.open({
                 type: 'is-success',
                 message: `Render of ${this.blend_file} has been started`
@@ -653,6 +676,21 @@ export default {
     },
     formatNumber(number) {
         return number ? number.toLocaleString() : 0
+    },
+    fetchBlendMeta() {
+        this.blendMeta = null
+        Axios.get(`/api/blends/${this.blend_file}/meta`)
+            .then(response => {
+                this.blendMeta = response.data
+                this.frame_selector = [ 0, this.blendMeta.totalFrames ]
+            })
+            .catch(err => {
+                this.$buefy.toast.open({
+                    type: 'is-danger',
+                    title: "Could not fetch blend file metadata",
+                    message: err.message
+                })
+            })
     }
   },
   created() {
@@ -720,10 +758,12 @@ export default {
         }
         this.render.eta = eta;
         this.render.averageTimePerFrame = averageTimePerFrame;
+        if(Date.now() - this.preview.lastPreview > MIN_PREVIEW_TIME && !this.preview.fetching) {
+            this.fetchPreview()
+        }
       })
       .on('render_start', ({render, duration}) => {
           this.render.active = true;
-          console.log(render)
           this.render.current_frame = render.currentFrame || 0;
           this.render.max_frames = render.maximumFrames;
           this.render.start_frame = render.startFrame || 0
@@ -731,6 +771,7 @@ export default {
           this.render.started = duration ? duration.started : Date.now()
           this.render.eta = render.eta;
           this.render.averageTimePerFrame = render.averageTimePerFrame
+          this.preview = { frame: 0, lastPreview: 0 }
 
           this.$buefy.toast.open(`${render.startedByID} has started rendering ${render.blend}`)
       })
