@@ -1,5 +1,5 @@
 <template>
-<div class="box">
+<div class="box" style="width:50%; margin-left:25%">
     <h3 class='title is-3'>Settings <b-button class="is-pulled-right" icon-left="close" @click="save" /></h3>
     <hr>
     <b-field label="Temperature Type">
@@ -48,7 +48,7 @@ export default {
             if(window.localStorage) {
                 window.localStorage.setItem('blender_opts',JSON.stringify(saveObject))
                 this.$buefy.toast.open({
-                    type:'is-succes',
+                    type: 'is-success',
                     message:'Successfullly saved settings'
                 })
             }else{

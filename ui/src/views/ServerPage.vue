@@ -91,7 +91,7 @@
                 </template>
                 <template v-else>
                     <b-field class="file">
-                        <b-button :disabled="render.active" type="is-primary" @click="openBlendChooser" icon-left="blender-software">
+                        <b-button :disabled="render.active" type="is-primary" size="is-large" @click="openBlendChooser" icon-left="blender-software">
                             <span>Choose a blend file</span>
                         </b-button>
                         <span class="file-name" v-if="blend_file">
@@ -193,7 +193,7 @@
                     <!--<b-input v-if="options.console.enabled" :disabled="isSocketOffline" id="el_renderlog" type="textarea" v-model="logString" readonly rows=10></b-input>-->
                 </b-field>
                 <span v-else>
-                    <h5 class="title is-5">Socket has been disabled. Re-enable in settings to see console and statistics.</h5>
+                    <h5 class="title is-5">Live View has been disabled. Re-enable in settings to see console and statistics.</h5>
                     <br>
                 </span>
                 <nav class="level">
@@ -222,7 +222,7 @@
                 <span v-if="options.enable_socket">
                     <span v-if="isSocketOffline">
                         <div v-if="isSocketOffline" class="notification is-danger">
-                            Stats are disabled: Disconnected from socket server
+                            Stats are disabled: Disconnected from live view
                         </div>
                     </span>
                     <span v-else>
@@ -351,9 +351,6 @@ export default {
             return !this.blend_file ? 'Select a blend file to start' : 'Idle'
         else 
             return 'You lack permissions to start/stop renders.'
-    },
-    socketStatus() {
-      return this.isSocketOffline ? `<span class='has-text-danger'>Live View Unavailable</span>` : `<span class='has-text-success'>Live View Active</span>`
     },
     frameValue() {
         if(this.render.max_frames == null) return "- Frame #" + this.render.current_frame;
@@ -643,7 +640,7 @@ export default {
                     return;
                 }else{
                     this.$buefy.snackbar.open({
-                        message: 'Failed to login to socketIO: ' + cb.error,
+                        message: 'Could not authenticate to Live View: ' + cb.error,
                         type: 'is-danger'
                     })
                 }

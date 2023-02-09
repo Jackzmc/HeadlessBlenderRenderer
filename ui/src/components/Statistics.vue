@@ -121,7 +121,7 @@ export default {
         },
         cm_temp(val) {
             //val is celsius
-            if(val === -1) return "n/a";
+            if(val === null) return "n/a";
             let color = "";
             if(val >= 40 && val < 95) {
                 color = "has-text-orange"

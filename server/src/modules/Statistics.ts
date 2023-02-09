@@ -26,7 +26,6 @@ export default async function(): Promise<ServerStats> {
             execCombinedPromise(`${NVIDIA_SMI_PATH} --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name,fan.speed --format=csv,noheader`)
         ])
         const gpus = await parseGPUs(nvidia_smi_result as string)
-
         return {
             platform: process.platform,
             version: SERVER_VERSION,
