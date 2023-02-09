@@ -12,7 +12,7 @@ const NVIDIA_SMI_PATH = process.env.NVIDIA_SMI_PATH
 
 let antispam_stat_inc: number = 0;
 
-console.info('[STATISTICS] Running for version v' + SERVER_VERSION)
+console.info('[STATISTICS] Running for version v' + SERVER_VERSION, 'systeminformation', si.version())
 
 
 export default async function(): Promise<ServerStats> {

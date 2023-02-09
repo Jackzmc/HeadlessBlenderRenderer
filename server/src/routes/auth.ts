@@ -24,12 +24,12 @@ router.post('/login', async(req: Request, res: Response) => {
     if(!req.body.password) return res.status(400).json({error: 'Missing password', code: 'MISSING_FIELD', field: 'password'})
     try {
         const user = await db.users.select(req.body.email || req.body.username);
-        if (!user) return res.status(404).json({error:'No user found.'});
+        if (!user) return res.status(401).json({ auth: false, token: null, user: null, error: "Incorrect username or password", code: "INVALID_USER_OR_PASSWORD" });
         if(!user.password) return res.status(500).json({error: 'Internal Server Error', code: 'USER_HAS_NO_PASSWORD'})
         bcrypt.compare(req.body.password, user.password, (err: Error, passwordValid: boolean) => {
             delete user.password;
             if(err) return res.status(500).json({error: 'Internal Server Error', code: 'TEST_FAILURE'})
-            if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null });
+            if (!passwordValid) return res.status(401).json({ auth: false, token: null, user: null, error: "Incorrect username or password", code: "INVALID_USER_OR_PASSWORD" });
             jwt.sign({ 
                 username: user.username,
                 permissions: user.permissions,
