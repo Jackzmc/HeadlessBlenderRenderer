@@ -99,7 +99,7 @@
                             </b-field>
                             <b-field>
                                 <div class="buttons">
-                                    <b-button type="is-success" native-type="submit" tag="input" value="Update">Update</b-button>
+                                    <input type="submit" class="button is-success" value="Update" />
                                     <b-button :disabled="form.updateUser.permissions == 99" @click="deleteUser(selected)" type="is-danger"  icon-left="delete">Delete User</b-button>
                                     <b-button @click="selected = null" type="is-secondary" tag="input" value="Cancel">Cancel</b-button>
                                 </div>
@@ -122,7 +122,7 @@
                             </b-field>
                             <b-field>
                                 <div class="buttons">
-                                    <b-button type="is-success" native-type="submit" tag="input" value="Add User" />
+                                    <input type="submit" class="button is-success" value="Create User" />
                                     <b-button native-type="reset" type="is-secondary" tag="input" value="Reset">Reset</b-button>
                                 </div>
                             </b-field>
