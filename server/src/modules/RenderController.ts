@@ -53,6 +53,7 @@ export default class RenderController {
     #io = null
     #statsTimer: NodeJS.Timeout = null
     #tokenTimer: NodeJS.Timeout
+    #terminateTimer: NodeJS.Timeout
     #db: DB
 
     #blenderVersion: string
@@ -174,6 +175,8 @@ export default class RenderController {
     private async spawn(blendPath: string, options: RenderOptions, render: Partial<Render>) : Promise<ChildProcessByStdio<null, internal.Readable, internal.Readable>> {
         const pythonScriptsParent = path.join(process.env.HOME_DIR, "python_scripts/")
         return new Promise((resolve, reject) => {
+            clearTimeout(this.#terminateTimer)
+            this.#terminateTimer = null
             const args = [
                 '-b',
                 `"${blendPath}"`,
@@ -291,6 +294,8 @@ export default class RenderController {
                 this.#frameTimes = []
                 this.#lastFrameTime = 0;
                 this.active = false
+                clearInterval(this.#terminateTimer);
+                this.#terminateTimer = null
                 clearInterval(this.#tokenTimer);
                 await this.cleanup()
             });
@@ -311,7 +316,8 @@ export default class RenderController {
                 TreeKill(this.#process.pid, 'SIGINT', (err) => {
                     if(err) reject(err)
                 })
-                setTimeout(() => {
+                this.#terminateTimer = setTimeout(() => {
+                    this.#terminateTimer = null
                     TreeKill(this.#process.pid, (err) => {
                         if(err) reject(err)
                     })
