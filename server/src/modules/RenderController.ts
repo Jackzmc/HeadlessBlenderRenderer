@@ -13,6 +13,7 @@ import { tmpdir } from 'os'
 import path from 'path'
 import internal from 'stream'
 import TreeKill from 'tree-kill'
+import os from 'os'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 const MAX_FRAMETIME_COUNT = 20;
@@ -181,7 +182,7 @@ export default class RenderController {
             this.#terminateTimer = null
             const args = [
                 '-b',
-                `"${blendPath}"`,
+                os.platform() === "win32" ? `blends/${render.blend}` : blendPath,
                 '-noaudio',
                 `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
                 // '-P', path.join(pythonScriptsParent, 'settings.py'),
@@ -213,13 +214,14 @@ export default class RenderController {
 
             args.push()
 
-            const safeName = render.blend.replace(/\s/, '_').replace(/[^0-9A-Za-z]/g,'')
+            const safeName = render.blend.replace(/\s/, '_').replace(/[^0-9A-Za-z\.]/g,'')
             this.#logStream = createWriteStream(path.join(process.env.HOME_DIR, "logs", `render-${safeName}-${Math.round(Date.now() / 1000)}.log`), 'utf-8')
 
+            console.log(BLENDER_PATH, args.join(" "))
             const renderProcess = spawn(BLENDER_PATH, args, {
                 cwd: path.resolve(process.env.HOME_DIR),
                 stdio: ['ignore', 'pipe', 'pipe'],
-                shell: true
+                shell: os.platform() !== "win32"
             }).on('error', err => {
                 console.error('[RenderController] ERROR:', err.message)
                 const logObject = {
