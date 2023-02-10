@@ -570,6 +570,8 @@ export default {
                 type: 'is-success',
                 message: `Render of ${this.blend_file} has been started`
             })
+            this.blend_file = null
+            this.blendMeta = null
         })
         .catch(err => {
             console.error('Render failed: ', err.response)
