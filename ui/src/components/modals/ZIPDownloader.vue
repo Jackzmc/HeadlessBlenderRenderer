@@ -55,7 +55,7 @@
 
 <script>
 export default {
-    props: ['server', 'bits'],
+    props: ['server', 'permissions'],
     data() {
         return {
             loading: true,
@@ -65,7 +65,7 @@ export default {
     },
     computed: {
         hasPermission() {
-            return this.bits.includes(2)
+            return this.permissions & 2
         }
     },
     methods: {
