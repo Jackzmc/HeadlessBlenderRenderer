@@ -182,13 +182,12 @@ export default class RenderController {
             this.#terminateTimer = null
             const args = [
                 '-b',
-                os.platform() === "win32" ? `blends/${render.blend}` : blendPath,
+                '-y',
                 '-noaudio',
                 `--render-output`, path.join(process.env.HOME_DIR, "tmp/"),
                 // '-P', path.join(pythonScriptsParent, 'settings.py'),
                 '--render-format', options.renderFormat ?? 'PNG',
                 '--render-frame', `${render.startFrame}..${render.maximumFrames}`,
-                '-y'
             ]
     
             // if(options.frames !== null) {
@@ -212,7 +211,7 @@ export default class RenderController {
                 args.push('--python-expr', `bpy.data.scenes[0].render.resolution_percentage = ${options.renderQuality}`)
             }
 
-            args.push()
+            args.push(os.platform() === "win32" ? `blends/${render.blend}` : blendPath)
 
             const safeName = render.blend.replace(/\s/, '_').replace(/[^0-9A-Za-z\.]/g,'')
             this.#logStream = createWriteStream(path.join(process.env.HOME_DIR, "logs", `render-${safeName}-${Math.round(Date.now() / 1000)}.log`), 'utf-8')
