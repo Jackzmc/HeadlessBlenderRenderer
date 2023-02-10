@@ -75,6 +75,8 @@ export default class RenderController {
         }
         await this.startTimer()
         await this.fetchBlenderVersion()
+        
+
         console.log("[RenderController] Initalized & ready")
     }
 

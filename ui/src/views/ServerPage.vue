@@ -59,6 +59,9 @@
                                         <b-button type="is-danger" outlined @click="cancelRender()" :disabled="!hasRenderPermission">
                                             Stop
                                         </b-button>
+                                        <b-button type="is-warning" :disabled="!hasRenderPermission"  @click="pauseRender()">
+                                            Pause
+                                        </b-button>
                                         <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
                                             <b-icon icon="refresh" />
                                         </b-button>
