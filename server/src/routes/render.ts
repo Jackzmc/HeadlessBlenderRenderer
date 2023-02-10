@@ -19,6 +19,11 @@ router.post(['/cancel','/abort'], hasPermissionBit(8), (req: Request,res: Respon
     .then(() => res.json({success: true}))
     .catch(err => res.status(500).json({error: err.message}))
 })
+router.post(['/pause', '/resume'], hasPermissionBit(8), async (req: Request, res: Response) => {
+    renderController.toglgePause(res.locals.user)
+    .then(() => res.json({success: true}))
+    .catch(err => res.status(500).json({error: err.message}))
+})
 router.get('/logs', hasPermissionBit([0,1]), (req: Request, res: Response) => {
     res.json(renderController.logs)
 })

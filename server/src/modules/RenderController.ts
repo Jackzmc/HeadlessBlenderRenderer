@@ -26,8 +26,9 @@ interface LockData {
 }
 
 interface RenderStatus {
-    render: Render,
-    active: boolean,
+    render: Render
+    active: boolean
+    paused: boolean,
     duration?: {
         formatted: string,
         raw: number
@@ -40,6 +41,7 @@ interface RenderStatus {
 
 export default class RenderController {
     active: boolean = false;
+    paused: boolean = false
     #render: Render = null
     #logStream: WriteStream = null
 
@@ -75,7 +77,7 @@ export default class RenderController {
         }
         await this.startTimer()
         await this.fetchBlenderVersion()
-        
+
 
         console.log("[RenderController] Initalized & ready")
     }
@@ -313,6 +315,15 @@ export default class RenderController {
                 await this.cleanup()
             });
             resolve(renderProcess)
+        })
+    }
+
+    togglePause(user?: User): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            // TODO: implement
+            TreeKill(this.#process.pid, 'SIGINT', (err) => {
+                if(err) reject(err)
+            })
         })
     }
 

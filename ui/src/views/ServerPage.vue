@@ -59,8 +59,8 @@
                                         <b-button type="is-danger" outlined @click="cancelRender()" :disabled="!hasRenderPermission">
                                             Stop
                                         </b-button>
-                                        <b-button type="is-warning" :disabled="!hasRenderPermission"  @click="pauseRender()">
-                                            Pause
+                                        <b-button :type="render.paused ? 'is-info' : 'is-warning'" :disabled="!hasRenderPermission"  @click="togglePauseRender()">
+                                            {{ render.paused ? 'Resume' : 'Pause' }}
                                         </b-button>
                                         <b-button v-if="!options.enable_socket" type="is-info" @click="getRenderStatus">
                                             <b-icon icon="refresh" />
@@ -219,13 +219,6 @@
                             <b-button v-if="options.console.paused&&options.enable_socket" disabled type="has-no-background">PAUSED</b-button>
                         </div>
                     </div>
-                    <div class="level-right">
-                        <b-tooltip label="View the last rendered frame">
-                            <b-button v-if="render.current_frame > 0 && render.active" type="is-info" :loading="previewPending" @click="openPreview">
-                                Generate Preview
-                            </b-button>
-                        </b-tooltip>
-                    </div>
                 </nav>
                 
                 <span v-if="options.enable_socket && stats_available">
@@ -287,6 +280,7 @@ export default {
       //STATES
       blend_file: null, //Choosen blend file
       render: {
+        paused: false,
         logs: [], //The list of logs, is computed into a joined string
         backlog: [], //The backlog of logs if paused
         active: false, //Is the render active
@@ -490,37 +484,6 @@ export default {
             },
         })
     },
-    async openPreview() {
-        this.previewPending = true;
-        const res = await fetch(`${this.server.address}/api/render/preview`, {headers: {
-            Authorization: this.server.jwt
-        }});
-        this.previewPending = false
-        const frame = res.headers.get('x-frame')
-        if(res.headers.has('x-frame')) {
-            const blob = await res.blob()
-            const h = this.$createElement
-            const vnode = h('p', { class: "image is-4by3" }, [
-                h('img', { attrs: { src:  URL.createObjectURL(blob), alt: frame }})
-            ])
-            this.$buefy.modal.open({
-                content: [ vnode ]
-            })
-        }else{
-            try {
-                const json = await res.json();
-                this.$buefy.snackbar.open({
-                    type: 'is-danger',
-                    message: `Could not get a preview: ${json.code}`,
-                })
-            }catch(err) {
-                this.$buefy.snackbar.open({
-                    type: 'is-danger',
-                    message: `Could not get a preview: ${err.message}`,
-                })
-            }
-        }
-    },
     async fetchPreview() {
         this.preview.fetching = true;
         const res = await fetch(`${this.server.address}/api/render/preview`, {headers: {
@@ -546,6 +509,22 @@ export default {
                 })
             }
         }
+    },
+    pauseResumeRender() {
+        Axios.post(`/api/render/pause`)
+        .then(() => {
+
+        }).catch(err => {
+            console.error('Pause failed: ', err.response)
+            const msg = err.response && err.response.data.error ? err.response.data.error : err.message;
+            this.$buefy.dialog.alert({
+                title: 'Pause Failed',
+                message: msg,
+                type: 'is-danger',
+                hasIcon: true,
+                icon: 'alert-circle'
+            })
+        })
     },
     startRender() {
         if(!this.blend_file) {
@@ -577,7 +556,7 @@ export default {
             this.blendMeta = null
         })
         .catch(err => {
-            console.error('Render failed: ', err.response)
+            console.error('start failed: ', err.response)
             const msg = err.response&&err.response.data.error ? err.response.data.error : err.message;
             this.$buefy.dialog.alert({
                 title: 'Render Failed',
