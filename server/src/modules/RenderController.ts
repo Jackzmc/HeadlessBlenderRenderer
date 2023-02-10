@@ -14,6 +14,7 @@ import path from 'path'
 import internal from 'stream'
 import TreeKill from 'tree-kill'
 import os from 'os'
+import AdmZip from 'adm-zip'
 
 const UPDATE_INTERVAL: number = ( parseInt(process.env.STAT_UPDATE_INTERVAL_SECONDS) || 30 ) * 1000;
 const MAX_FRAMETIME_COUNT = 20;
@@ -293,6 +294,7 @@ export default class RenderController {
             })
             renderProcess
             .on('exit', async () => {
+                await this.packageRender()
                 const timeTaken = prettyMilliseconds(Date.now() - this.#render.started);
                 this.#previousRender = {
                     ...this.#render,
@@ -342,6 +344,31 @@ export default class RenderController {
             }
             resolve(false)
         })
+    }
+
+    // Packages the render up into a zip
+    private async packageRender() {
+        return new Promise(async(resolve, reject) => {
+            const safeName = this.#render.blend.replace(/\s/, '_').replace(/[^0-9A-Za-z\.]/g,'')
+            const zip = new AdmZip()
+            const tmpFolder = path.join(process.env.HOME_DIR, "tmp")
+            try {
+                const filenames = await fs.readdir(tmpFolder)
+                for(const filename of filenames) {
+                    zip.addLocalFile(path.join(tmpFolder, filename))
+                }
+                zip.writeZip(path.join(process.env.HOME_DIR, "zips", `${safeName}-${Date.now()}.zip`), (err) => {
+                    if(err) return reject(err)
+                    resolve(safeName)
+                })
+            } catch(err) {
+                if(err.code == "EACCES")
+                    console.error("[Error] Cannot cleanup tmp folder at " + tmpFolder)
+                else
+                    reject(err)
+            }
+        })
+        
     }
     
     private async cleanup() {
