@@ -14,7 +14,7 @@ router.use(fileUpload({
     abortOnLimit: true,
 }));
 
-router.get('/', hasPermissionBit(0), async(req: Request, res: Response) => {
+router.get('/', async(req: Request, res: Response) => {
     try {
         const entries = await fs.readdir(BLENDS_DIR, {withFileTypes: true});
         const promises = [];
@@ -38,8 +38,7 @@ router.get('/', hasPermissionBit(0), async(req: Request, res: Response) => {
                         resolve({
                             file: dirent.name,
                             size: stat.size,
-                            date: prettyMilliseconds(Date.now() - stat.mtime.getTime(), { secondsDecimalDigits: 0, millisecondsDecimalDigits: 0 }),
-                            timestamp: stat.mtime
+                            timestamp: stat.mtime.valueOf()
                         })
                     })
                     .catch(err => reject(err));
