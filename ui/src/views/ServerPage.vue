@@ -49,7 +49,7 @@
                         <h6 class="title is-6">Rendering <span class="has-text-success">{{blend_file}}</span></h6>
                         <progress class="progress is-small renderprogress is-success" :value='render.current_frame' :max='render.max_frames'>{{framePercent}}</progress>
                         <p><strong>ETA: </strong>{{formatDuration(render.eta)}}</p>
-                        <p><strong>Average time per frame: </strong>{{formatDuration(render.averageTimePerFrame)}}</p>
+                        <p><strong>Average time per frame: </strong>{{formatDuration(averageTimePerFrame)}}</p>
                         <br>
                         <nav class="level" > 
                         <!-- Left side -->
@@ -76,7 +76,7 @@
                     <div>
                         <div class="card">
                             <div class="card-image">
-                                <figure class="image is-4by3">
+                                <figure class="image is-64by64">
                                     <img ref="preview"/>
                                 </figure>
                             </div>
@@ -216,13 +216,6 @@
                             <b-button v-if="options.console.paused&&options.enable_socket" disabled type="has-no-background">PAUSED</b-button>
                         </div>
                     </div>
-                    <div class="level-right">
-                        <b-tooltip label="View the last rendered frame">
-                            <b-button v-if="render.current_frame > 0 && render.active" type="is-info" :loading="previewPending" @click="openPreview">
-                                Generate Preview
-                            </b-button>
-                        </b-tooltip>
-                    </div>
                 </nav>
                 
                 <span v-if="options.enable_socket && stats_available">
@@ -331,6 +324,10 @@ export default {
     }
   },
   computed: {
+    averageTimePerFrame() {
+        if(this.render.current_frame == 0) return Date.now() - this.render.last_frame_time
+        else return this.render.averageTimePerFrame 
+    },
     server() {
         return this.$store.state.servers[this.$route.params.server];
     },
@@ -762,6 +759,7 @@ export default {
         if(this.render.logs.length >= 200) {
             this.render.logs.splice(0, length - 200)
         }
+
         this.render.eta = eta;
         this.render.averageTimePerFrame = averageTimePerFrame;
         if(Date.now() - this.preview.lastPreview > MIN_PREVIEW_TIME && !this.preview.fetching) {
@@ -783,7 +781,7 @@ export default {
       })
       .on('render_stop', (data) => {
           this.render.active = false;
-          const duration = this.formatDuration(data.timestamp);
+          const duration = this.formatDuration(data.timeTaken);
           if(data.reason) {
             this.$buefy.dialog.alert({
                 title: 'Render Aborted',
