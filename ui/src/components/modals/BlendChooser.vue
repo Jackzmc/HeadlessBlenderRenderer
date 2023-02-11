@@ -23,7 +23,7 @@
                         {{ props.row.size | humanize}}
                     </b-table-column>
                     <b-table-column field="timestamp" label="Last Modified" sortable v-slot="props">
-                        {{ props.row.date }}
+                        {{ formatDate(props.row.timestamp) }}
                     </b-table-column>
                     <b-table-column label="Action" v-slot="props" :visible="hasPermission">
                         <div class="buttons">
@@ -184,6 +184,9 @@ export default {
         }
     },
     methods:{
+        formatDate(timestamp) {
+            return new Date(timestamp).toLocaleDateString()
+        },
         refresh() {
             this.loading = true;
             this.$http.get('/api/blends')
