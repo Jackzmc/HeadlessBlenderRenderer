@@ -32,7 +32,7 @@
         </div>
         <!-- TODO: add router-view when server settings is ever added -->
         <b-tabs type="is-toggle" @input="onTabChange">
-            <b-tab-item label="Users" v-if="user.permissionBits.includes(64)">
+            <b-tab-item label="Users" v-if="user.permissions & 64">
                 <hr>
                 <h4 class="title is-4">Registered Users</h4>
                 <p class="subtitle is-6">Click on any user to edit. The default user cannot be edited.</p>
@@ -131,7 +131,7 @@
                 </div>
                 <br>
             </b-tab-item>
-            <b-tab-item label="Render Logs" value="logs" v-if="user.permissionBits.includes(16)">
+            <b-tab-item label="Render Logs" value="logs" v-if="user.permissions & 16">
                 <VirtualList                    
                     style="height: 220px; overflow-y: auto;"
                     :data-key="'timestamp'"
@@ -141,7 +141,7 @@
                     :data-component="$options.ListComponent"
                 />
             </b-tab-item>
-            <b-tab-item label="Server Settings" v-if="user.permissionBits.includes(32)">
+            <b-tab-item label="Server Settings" v-if="user.permissions & 32">
                 <hr>
                 <b-message label="Notice" type="is-warning">This tab is currently in development. Server-side functionality may not work at this time.</b-message>
                 <form @submit.prevent="updateSettings">
@@ -156,7 +156,7 @@
                     </b-field>
                 </form>
             </b-tab-item>
-            <b-tab-item label="Info" value="info" v-if="user.permissionBits.includes(16)">
+            <b-tab-item label="Info" value="info" v-if="user.permission & 16">
                 <span v-if="serverInfo">
                     <b-message label="Error" v-if="serverInfo.error">
                         {{serverInfo.error}}

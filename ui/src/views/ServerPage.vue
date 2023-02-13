@@ -10,7 +10,7 @@
             <b-navbar-item tag="router-link" to="/">
                 Servers Dashboard
             </b-navbar-item>
-            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions & 16">
+            <b-navbar-item tag="router-link" :to="'/server/' + server.id + '/admin'" v-if="user.permissions & 16 || user.permissions == 99">
                 Admin Panel
             </b-navbar-item>
         </template>
