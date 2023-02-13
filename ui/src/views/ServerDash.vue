@@ -21,7 +21,7 @@
             </header>
             <section class="modal-card-body">
                 <b-field label="Update Interval (minutes)" message="Zero to disable timer">
-                    <b-slider v-model="settings.updateInterval" lazy :min="0" :max="120" format="raw" :step="10" ticks />
+                    <b-input type="number" v-model="settings.updateInterval" :min="0" :max="120"/>
                 </b-field>
                 <hr>
                 <p class="title is-5">Import</p>
@@ -111,7 +111,7 @@ export default {
                 address: null
             },
             localServerStatus: null,
-            settings: { active: false, updateInterval: 15},
+            settings: { active: false, updateInterval: 1 },
             updateTimer: null,
             portText: null
         }
@@ -197,6 +197,7 @@ export default {
             }
         },
         formatStatus({ status, data }) {
+            if(status === "loading") return "Refreshing..."
             if(!status || status === "loading" || status === 'logged-out') return "Not Logged In"
             if(status === "offline" || status === "error") return `Offline`
             if(data.active) return `Rendering - ${data.blend}`
