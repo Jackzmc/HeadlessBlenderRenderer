@@ -24,6 +24,13 @@ import WebServer from './server'
 
 (async() => {
     const renderController = await Socket(server);
+    app.use((req, res, next) => {
+        res.setHeader(
+            "Cache-Control",
+            "no-store, no-cache, must-revalidate, proxy-revalidate"
+        );
+        next()
+    })
     app.use('/api', WebServer(renderController))
 
     process.on('SIGTERM', () => gracefulShutdown())
